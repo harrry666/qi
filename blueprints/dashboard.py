@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from db import get_db
 from datetime import datetime, timedelta
+import threading
+from blueprints.booking import send_sms, format_phone
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -146,10 +148,33 @@ def appointments():
 @login_required
 def cancel_appointment(apt_id):
     db = get_db()
+    row = db.execute(
+        "SELECT a.*, s.name as service_name FROM appointments a "
+        "JOIN services s ON a.service_id=s.id "
+        "WHERE a.id=%s AND a.business_id=%s",
+        (apt_id, current_user.id)
+    ).fetchone()
     db.execute("UPDATE appointments SET status='cancelled' WHERE id=%s AND business_id=%s",
                (apt_id, current_user.id))
     db.commit()
     db.close()
+
+    if row:
+        try:
+            dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
+            dt_display = dt.strftime('%b %-d at %-I:%M %p')
+        except Exception:
+            dt_display = row['appointment_dt']
+        biz_name = current_user.name
+        biz_phone = current_user.phone or ''
+        message = (
+            f"Hi {row['customer_name']}, your appointment at {biz_name} has been cancelled.\n\n"
+            f"Service: {row['service_name']}\n"
+            f"Time: {dt_display}\n\n"
+            + (f"To rebook, call {biz_phone}" if biz_phone else "Please rebook at your convenience.")
+        )
+        threading.Thread(target=send_sms, args=(format_phone(row['phone']), message), daemon=True).start()
+
     flash('Appointment cancelled.', 'success')
     return redirect(url_for('dashboard.appointments'))
 

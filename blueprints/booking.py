@@ -1,10 +1,39 @@
 from flask import Blueprint, render_template, request, jsonify
 from db import get_db
 from datetime import datetime, timedelta
+import os
+import re
+import threading
 
 booking_bp = Blueprint('booking', __name__)
 
 SLOT_INTERVAL = 30
+
+TWILIO_SID   = os.environ.get('TWILIO_SID', '')
+TWILIO_TOKEN = os.environ.get('TWILIO_TOKEN', '')
+TWILIO_FROM  = os.environ.get('TWILIO_FROM', '')
+
+
+def format_phone(raw):
+    digits = re.sub(r'\D', '', raw)
+    if len(digits) == 10:
+        return f'+1{digits}'
+    if len(digits) == 11 and digits.startswith('1'):
+        return f'+{digits}'
+    return f'+1{digits}'
+
+
+def send_sms(to_phone, message):
+    if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM]):
+        return
+    try:
+        from twilio.rest import Client
+        Client(TWILIO_SID, TWILIO_TOKEN).messages.create(
+            body=message, from_=TWILIO_FROM, to=to_phone
+        )
+    except Exception:
+        pass
+
 
 def get_biz_by_slug(slug):
     db = get_db()
@@ -133,4 +162,22 @@ def api_create(slug):
     )
     db.commit()
     db.close()
+
+    try:
+        dt = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
+        dt_display = dt.strftime('%b %-d at %-I:%M %p')
+    except Exception:
+        dt_display = apt_dt
+
+    formatted_phone = format_phone(phone)
+    biz_phone = biz['phone'] or ''
+    message = (
+        f"Hi {name}! Your appointment at {biz['name']} is confirmed.\n\n"
+        f"Service: {svc['name']}\n"
+        f"Time: {dt_display}\n"
+        + (f"Address: {biz['address']}\n" if biz['address'] else '')
+        + (f"\nQuestions? Call {biz_phone}" if biz_phone else '')
+    )
+    threading.Thread(target=send_sms, args=(formatted_phone, message), daemon=True).start()
+
     return jsonify({'success': True, 'service': svc['name']})
