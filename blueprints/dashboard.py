@@ -172,4 +172,6 @@ def settings():
 
     biz = db.execute('SELECT * FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
     db.close()
-    return render_template('dashboard/settings.html', biz=biz)
+    from flask import url_for
+    booking_url = url_for('booking.book_page', slug=biz['slug'], _external=True)
+    return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url)

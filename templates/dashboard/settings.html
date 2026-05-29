@@ -25,7 +25,8 @@
 
 <div class="settings-card" style="margin-top:20px">
   <h2>Your Booking URL</h2>
-  <div class="slug-display">qi.app/book/{{ biz.slug }}</div>
+  <div class="slug-display">{{ booking_url }}</div>
+  <button onclick="navigator.clipboard.writeText('{{ booking_url }}')" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">Copy Link</button>
   <p style="font-size:13px;color:#555;margin-top:8px">Share this link with your customers.</p>
 </div>
 
