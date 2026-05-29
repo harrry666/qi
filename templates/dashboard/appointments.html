@@ -1,0 +1,55 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+
+<div class="page-title">📋 Appointments</div>
+
+<div class="filter-tabs">
+  {% for label, key in [('Upcoming','upcoming'),('Past','past'),('Cancelled','cancelled'),('All','all')] %}
+    <a href="?filter={{ key }}" class="tab-btn {% if current_filter == key %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if appointments %}
+<table class="apt-table">
+  <thead>
+    <tr>
+      <th>Date &amp; Time</th>
+      <th>Service</th>
+      <th>Customer</th>
+      <th>Phone</th>
+      <th>Comment</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in appointments %}
+    <tr>
+      <td style="font-weight:600;white-space:nowrap">{{ a.appointment_dt }}</td>
+      <td>
+        <div style="font-size:14px;color:white">{{ a.service_name }}</div>
+        {% if a.name_sub %}<div style="font-size:12px;color:#555">{{ a.name_sub }}</div>{% endif %}
+      </td>
+      <td>{{ a.customer_name }}</td>
+      <td style="color:#A78BFA">{{ a.phone }}</td>
+      <td style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>
+      <td>
+        <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
+      </td>
+      <td>
+        {% if a.status == 'confirmed' %}
+        <form method="POST" action="{{ url_for('dashboard.cancel_appointment', apt_id=a.id) }}" onsubmit="return confirm('Cancel this appointment?')">
+          <button type="submit" class="btn-cancel">Cancel</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <div class="empty-table">No appointments found.</div>
+{% endif %}
+
+{% endblock %}

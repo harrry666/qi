@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ biz.name }} — Book an Appointment</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="book-body" data-slug="{{ biz.slug }}">
+
+<div class="book-hero"></div>
+
+<div class="book-container">
+
+  <!-- Business header -->
+  <div class="book-header">
+    <div class="biz-avatar">💈</div>
+    <div>
+      <h1>{{ biz.name }}</h1>
+      <p id="header-sub">Select a service to book an appointment</p>
+    </div>
+  </div>
+
+  <!-- Screen 1: Services -->
+  <div id="screen-services" class="screen active">
+    <div class="section-title">Choose a service</div>
+    <div id="service-list"></div>
+  </div>
+
+  <!-- Screen 2: Time Slots -->
+  <div id="screen-slots" class="screen">
+    <button class="btn-back" onclick="backToServices()">← Back</button>
+    <div id="service-bar" class="service-bar"></div>
+    <div class="calendar-nav">
+      <button class="btn-nav" onclick="prevWeek()">‹</button>
+      <span id="month-label" class="month-label"></span>
+      <button class="btn-nav" onclick="nextWeek()">›</button>
+      <button class="btn-today" onclick="goToToday()">Today</button>
+    </div>
+    <div id="week-grid" class="week-grid"></div>
+  </div>
+
+  <!-- Screen 3: Login -->
+  <div id="screen-login" class="screen">
+    <button class="btn-back" onclick="backToSlots()">← Back</button>
+    <div class="login-card">
+      <h2>Your Info</h2>
+      <div class="apt-preview" style="margin-bottom:20px">
+        <div class="svc-icon" id="login-icon" style="width:44px;height:44px;font-size:20px"></div>
+        <div class="apt-preview-info">
+          <strong id="login-svc"></strong>
+          <span id="login-dt"></span>
+        </div>
+      </div>
+      <input id="cust-name" class="book-input" type="text" placeholder="Full Name">
+      <input id="cust-phone" class="book-input" type="tel" placeholder="Phone Number">
+      <button id="btn-book" class="btn-primary" onclick="submitBooking()">✓ Confirm Booking</button>
+    </div>
+  </div>
+
+  <!-- Screen 4: Success -->
+  <div id="screen-success" class="screen">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <h2>You're booked!</h2>
+      <p>See you at {{ biz.name }}.</p>
+      <div class="success-details" id="success-details"></div>
+      {% if biz.phone %}<p style="font-size:13px;color:var(--muted);margin-bottom:20px">Questions? Call <a href="tel:{{ biz.phone }}">{{ biz.phone }}</a></p>{% endif %}
+      <button class="btn-primary" onclick="resetBooking()">Book Another</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Confirm Modal -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Schedule Appointment</h2>
+      <button class="btn-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="apt-preview">
+      <div class="svc-icon" id="modal-icon" style="width:44px;height:44px;font-size:20px"></div>
+      <div class="apt-preview-info">
+        <strong id="modal-svc"></strong>
+        <span id="modal-dt"></span>
+      </div>
+    </div>
+    <textarea id="modal-comment" class="comment-field" placeholder="Add a comment (optional, up to 100 chars)" maxlength="100"></textarea>
+    <div id="char-count" class="char-count">0 / 100</div>
+    <button class="btn-primary" onclick="proceedToLogin()">✓ Confirm</button>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='booking.js') }}"></script>
+</body>
+</html>

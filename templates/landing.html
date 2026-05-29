@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Qi — Appointment Booking for Small Businesses{% endblock %}
+{% block content %}
+
+<section class="hero-landing">
+  <h1>Appointment booking,<br>made <span class="accent">simple.</span></h1>
+  <p class="hero-sub">Create your public booking page in minutes. Customers book online — you manage everything from one dashboard.</p>
+  <div class="hero-actions">
+    <a href="{{ url_for('auth.register') }}" class="btn-lg">Start for free →</a>
+    <a href="/book/demo" class="btn-lg-outline">See a demo</a>
+  </div>
+</section>
+
+<section class="features-section">
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔗</div>
+      <h3>Your own booking page</h3>
+      <p>Get a shareable link like <strong>qi.app/book/your-name</strong>. Send it to customers and they book instantly.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">✂️</div>
+      <h3>Manage your services</h3>
+      <p>Add services with custom pricing and duration. Update them anytime — changes reflect immediately.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🕐</div>
+      <h3>Smart availability</h3>
+      <p>Set your hours. Only open, conflict-free slots are shown to customers — no double bookings.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <h3>Appointment dashboard</h3>
+      <p>See today's schedule, upcoming appointments, and full history. Cancel with one click.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Start taking bookings today.</h2>
+  <p>Free to use. No credit card required.</p>
+  <a href="{{ url_for('auth.register') }}" class="btn-lg">Create your free account</a>
+</section>
+
+<footer class="landing-footer">
+  <p>© 2025 Qi · Built for local businesses</p>
+</footer>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} — Qi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dash-body">
+<div class="dash-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">Qi</div>
+    <div class="sidebar-biz" title="{{ current_user.name }}">{{ current_user.name }}</div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📅 Dashboard</a>
+      <a href="{{ url_for('dashboard.appointments') }}" class="nav-item {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">📋 Appointments</a>
+      <a href="{{ url_for('dashboard.services') }}"     class="nav-item {% if request.endpoint == 'dashboard.services' %}active{% endif %}">✂️ Services</a>
+      <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">🕐 Hours</a>
+      <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">⚙️ Settings</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="/book/{{ current_user.slug }}" target="_blank" class="booking-link-btn">View Booking Page ↗</a>
+      <a href="{{ url_for('auth.logout') }}" class="logout-link">Log out</a>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="flash flash-{{ cat }}" style="margin-bottom:16px">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+</body>
+</html>

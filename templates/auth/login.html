@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Log in — Qi{% endblock %}
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <h1>Log in</h1>
+    <p class="auth-sub">Welcome back to Qi</p>
+    <form method="POST">
+      <label class="field-label">Email</label>
+      <input class="form-input" type="email" name="email" placeholder="you@email.com" required autofocus>
+      <label class="field-label">Password</label>
+      <input class="form-input" type="password" name="password" placeholder="Password" required>
+      <button type="submit" class="btn-primary-full">Log in</button>
+    </form>
+    <p class="auth-switch">No account yet? <a href="{{ url_for('auth.register') }}">Get started free</a></p>
+  </div>
+</div>
+{% endblock %}

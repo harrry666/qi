@@ -1,0 +1,38 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Business Hours{% endblock %}
+{% block content %}
+
+<div class="page-title">🕐 Business Hours</div>
+
+<div class="hours-form">
+  <form method="POST">
+    {% for day in days %}
+    <div class="hours-row">
+      <div class="hours-day">{{ day.name }}</div>
+      <label class="hours-closed-wrap">
+        <input type="checkbox" name="{{ day.key }}_closed" {% if day.data.get('is_closed') %}checked{% endif %}
+               onchange="toggleDay('{{ day.key }}', this.checked)">
+        Closed
+      </label>
+      <div class="time-range" id="range-{{ day.key }}" {% if day.data.get('is_closed') %}style="opacity:0.3;pointer-events:none"{% endif %}>
+        <input class="dash-input" type="time" name="{{ day.key }}_open"
+               value="{{ day.data.get('open_time', '09:00') }}" style="width:120px">
+        <span>to</span>
+        <input class="dash-input" type="time" name="{{ day.key }}_close"
+               value="{{ day.data.get('close_time', '18:00') }}" style="width:120px">
+      </div>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn-save">Save Hours</button>
+  </form>
+</div>
+
+<script>
+function toggleDay(key, closed) {
+  const el = document.getElementById('range-' + key);
+  el.style.opacity = closed ? '0.3' : '1';
+  el.style.pointerEvents = closed ? 'none' : '';
+}
+</script>
+
+{% endblock %}
