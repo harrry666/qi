@@ -4,6 +4,7 @@ from db import get_db
 from datetime import datetime, timedelta
 import threading
 from blueprints.booking import send_sms, format_phone
+from blueprints.auth import CATEGORIES
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -226,10 +227,11 @@ def settings():
         address = request.form.get('address', '').strip()
         phone = request.form.get('phone', '').strip()
         description = request.form.get('description', '').strip()
+        category = request.form.get('category', '').strip()
         if name:
             db.execute(
-                'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s WHERE id=%s',
-                (name, address, phone, description, current_user.id)
+                'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s WHERE id=%s',
+                (name, address, phone, description, category, current_user.id)
             )
             db.commit()
             flash('Settings saved.', 'success')
@@ -238,4 +240,4 @@ def settings():
     db.close()
     from flask import url_for
     booking_url = url_for('booking.book_page', slug=biz['slug'], _external=True)
-    return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url)
+    return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url, categories=CATEGORIES)

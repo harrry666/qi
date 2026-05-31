@@ -16,6 +16,13 @@
     <label class="dash-label">Phone</label>
     <input class="dash-input" type="text" name="phone" value="{{ biz.phone or '' }}" placeholder="(555) 000-0000">
 
+    <label class="dash-label">Category</label>
+    <select class="dash-input" name="category">
+      {% for cat in categories %}
+      <option value="{{ cat }}" {% if biz.category == cat %}selected{% endif %}>{{ cat }}</option>
+      {% endfor %}
+    </select>
+
     <label class="dash-label">Description</label>
     <textarea class="dash-input dash-textarea" name="description" placeholder="Short description shown on your booking page">{{ biz.description or '' }}</textarea>
 

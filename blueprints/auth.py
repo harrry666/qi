@@ -7,6 +7,12 @@ import re
 
 auth_bp = Blueprint('auth', __name__)
 
+CATEGORIES = [
+    'Hair', 'Nails', 'Massage', 'Fitness & Yoga', 'Medical',
+    'Beauty', 'Skincare', 'Private Chef', 'Tattoo & Piercing',
+    'Pet Grooming', 'Photography', 'Tutoring', 'Other'
+]
+
 def slugify(text):
     text = re.sub(r'[^\w\s-]', '', text.lower().strip())
     return re.sub(r'[\s_-]+', '-', text)[:50]
@@ -26,10 +32,11 @@ def register():
         email = request.form.get('email', '').strip().lower()
         phone = request.form.get('phone', '').strip()
         password = request.form.get('password', '')
+        category = request.form.get('category', '').strip()
 
-        if not all([name, slug, email, phone, password]):
+        if not all([name, slug, email, phone, password, category]):
             flash('All fields are required.', 'error')
-            return render_template('auth/register.html', form=request.form)
+            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if len(password) < 6:
             flash('Password must be at least 6 characters.', 'error')
             return render_template('auth/register.html', form=request.form)
@@ -38,15 +45,15 @@ def register():
         if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():
             flash('That URL is already taken.', 'error')
             db.close()
-            return render_template('auth/register.html', form=request.form)
+            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if db.execute('SELECT id FROM businesses WHERE email=%s', (email,)).fetchone():
             flash('Email already registered.', 'error')
             db.close()
-            return render_template('auth/register.html', form=request.form)
+            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
         db.execute(
-            'INSERT INTO businesses (name, slug, email, password_hash, phone) VALUES (%s,%s,%s,%s,%s)',
-            (name, slug, email, generate_password_hash(password), phone)
+            'INSERT INTO businesses (name, slug, email, password_hash, phone, category) VALUES (%s,%s,%s,%s,%s,%s)',
+            (name, slug, email, generate_password_hash(password), phone, category)
         )
         db.commit()
 
@@ -66,7 +73,7 @@ def register():
         flash('Account created! Please log in.', 'success')
         return redirect(url_for('auth.login'))
 
-    return render_template('auth/register.html', form={})
+    return render_template('auth/register.html', form={}, categories=CATEGORIES)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -94,3 +101,17 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('auth.landing'))
+
+@auth_bp.route('/explore')
+def explore():
+    from db import get_db
+    cat = request.args.get('cat', '')
+    db = get_db()
+    if cat and cat in CATEGORIES:
+        rows = db.execute(
+            'SELECT * FROM businesses WHERE category=%s ORDER BY name', (cat,)
+        ).fetchall()
+    else:
+        rows = db.execute('SELECT * FROM businesses ORDER BY name').fetchall()
+    db.close()
+    return render_template('explore.html', businesses=rows, categories=CATEGORIES, active_cat=cat)

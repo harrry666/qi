@@ -75,6 +75,7 @@ def init_db():
             status TEXT DEFAULT 'confirmed',
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS category TEXT DEFAULT \'\'',
         '''CREATE TABLE IF NOT EXISTS business_blackouts (
             id SERIAL PRIMARY KEY,
             business_id INTEGER NOT NULL,
