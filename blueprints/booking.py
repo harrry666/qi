@@ -171,13 +171,25 @@ def api_create(slug):
 
     formatted_phone = format_phone(phone)
     biz_phone = biz['phone'] or ''
-    message = (
+
+    customer_msg = (
         f"Hi {name}! Your appointment at {biz['name']} is confirmed.\n\n"
         f"Service: {svc['name']}\n"
         f"Time: {dt_display}\n"
         + (f"Address: {biz['address']}\n" if biz['address'] else '')
         + (f"\nQuestions? Call {biz_phone}" if biz_phone else '')
     )
-    threading.Thread(target=send_sms, args=(formatted_phone, message), daemon=True).start()
+    threading.Thread(target=send_sms, args=(formatted_phone, customer_msg), daemon=True).start()
+
+    if biz_phone:
+        owner_msg = (
+            f"New booking at {biz['name']}!\n\n"
+            f"Customer: {name}\n"
+            f"Phone: {phone}\n"
+            f"Service: {svc['name']}\n"
+            f"Time: {dt_display}\n"
+            + (f"Note: {comment}" if comment else '')
+        )
+        threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
     return jsonify({'success': True, 'service': svc['name']})

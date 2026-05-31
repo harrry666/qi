@@ -24,9 +24,10 @@ def register():
         name = request.form.get('name', '').strip()
         slug = slugify(request.form.get('slug', '') or name)
         email = request.form.get('email', '').strip().lower()
+        phone = request.form.get('phone', '').strip()
         password = request.form.get('password', '')
 
-        if not all([name, slug, email, password]):
+        if not all([name, slug, email, phone, password]):
             flash('All fields are required.', 'error')
             return render_template('auth/register.html', form=request.form)
         if len(password) < 6:
@@ -44,8 +45,8 @@ def register():
             return render_template('auth/register.html', form=request.form)
 
         db.execute(
-            'INSERT INTO businesses (name, slug, email, password_hash) VALUES (%s,%s,%s,%s)',
-            (name, slug, email, generate_password_hash(password))
+            'INSERT INTO businesses (name, slug, email, password_hash, phone) VALUES (%s,%s,%s,%s,%s)',
+            (name, slug, email, generate_password_hash(password), phone)
         )
         db.commit()
 

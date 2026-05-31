@@ -18,6 +18,9 @@
       <label class="field-label">Email</label>
       <input class="form-input" type="email" name="email" placeholder="you@email.com" required value="{{ form.get('email','') }}">
 
+      <label class="field-label">Business Phone <span style="color:#888;font-weight:400">(for customer notifications)</span></label>
+      <input class="form-input" type="tel" name="phone" placeholder="e.g. 9095551234" required value="{{ form.get('phone','') }}">
+
       <label class="field-label">Password</label>
       <input class="form-input" type="password" name="password" placeholder="At least 6 characters" required>
 
