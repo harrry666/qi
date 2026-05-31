@@ -178,6 +178,45 @@ def cancel_appointment(apt_id):
     flash('Appointment cancelled.', 'success')
     return redirect(url_for('dashboard.appointments'))
 
+@dashboard_bp.route('/blackouts')
+@login_required
+def blackouts():
+    db = get_db()
+    rows = db.execute(
+        'SELECT * FROM business_blackouts WHERE business_id=%s ORDER BY start_date',
+        (current_user.id,)
+    ).fetchall()
+    db.close()
+    return render_template('dashboard/blackouts.html', blackouts=rows)
+
+@dashboard_bp.route('/blackouts/add', methods=['POST'])
+@login_required
+def add_blackout():
+    start = request.form.get('start_date', '').strip()
+    end = request.form.get('end_date', '').strip()
+    reason = request.form.get('reason', '').strip()
+    if not start or not end or end < start:
+        flash('Invalid date range.', 'error')
+        return redirect(url_for('dashboard.blackouts'))
+    db = get_db()
+    db.execute(
+        'INSERT INTO business_blackouts (business_id, start_date, end_date, reason) VALUES (%s,%s,%s,%s)',
+        (current_user.id, start, end, reason)
+    )
+    db.commit()
+    db.close()
+    flash('Blocked period added.', 'success')
+    return redirect(url_for('dashboard.blackouts'))
+
+@dashboard_bp.route('/blackouts/<int:bo_id>/delete', methods=['POST'])
+@login_required
+def delete_blackout(bo_id):
+    db = get_db()
+    db.execute('DELETE FROM business_blackouts WHERE id=%s AND business_id=%s', (bo_id, current_user.id))
+    db.commit()
+    db.close()
+    return redirect(url_for('dashboard.blackouts'))
+
 @dashboard_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():

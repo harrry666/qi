@@ -47,9 +47,14 @@ def generate_slots(business_id, date_obj, duration_mins):
         'SELECT * FROM business_hours WHERE business_id=%s AND weekday=%s',
         (business_id, date_obj.weekday())
     ).fetchone()
+    ds = date_obj.strftime('%Y-%m-%d')
+    blacked = db.execute(
+        'SELECT id FROM business_blackouts WHERE business_id=%s AND start_date<=%s AND end_date>=%s',
+        (business_id, ds, ds)
+    ).fetchone()
     db.close()
 
-    if not bh or bh['is_closed']:
+    if not bh or bh['is_closed'] or blacked:
         return []
 
     sh, sm = map(int, bh['open_time'].split(':'))
