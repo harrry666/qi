@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import os
 import re
 import threading
-import logging
+import sys
 
 booking_bp = Blueprint('booking', __name__)
 
@@ -26,16 +26,16 @@ def format_phone(raw):
 
 def send_sms(to_phone, message):
     if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM]):
-        logging.warning(f'[SMS] Twilio credentials missing, skipping SMS to {to_phone}')
+        print(f'[SMS] credentials missing, skip {to_phone}', flush=True, file=sys.stderr)
         return
     try:
         from twilio.rest import Client
         Client(TWILIO_SID, TWILIO_TOKEN).messages.create(
             body=message, from_=TWILIO_FROM, to=to_phone
         )
-        logging.info(f'[SMS] Sent to {to_phone}')
+        print(f'[SMS] sent to {to_phone}', flush=True, file=sys.stderr)
     except Exception as e:
-        logging.error(f'[SMS] Failed to send to {to_phone}: {e}')
+        print(f'[SMS] FAILED {to_phone}: {e}', flush=True, file=sys.stderr)
 
 
 def get_biz_by_slug(slug):
