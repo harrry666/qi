@@ -25,6 +25,10 @@
         <span class="btn-label">价格（$，选填）</span>
         <input class="dash-input" type="number" name="price" placeholder="例：20" min="0" step="0.01">
       </div>
+      <div>
+        <span class="btn-label">图标 Emoji（选填）</span>
+        <input class="dash-input" type="text" name="emoji" placeholder="例：💅 ✂️ 💆" style="font-size:20px;max-width:120px">
+      </div>
     </div>
     <div style="margin-top:14px">
       <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">+ 添加服务</button>
@@ -36,6 +40,7 @@
 <table class="svc-table">
   <thead>
     <tr>
+      <th>图标</th>
       <th>服务</th>
       <th>时长</th>
       <th>价格</th>
@@ -45,6 +50,7 @@
   <tbody>
     {% for s in services %}
     <tr>
+      <td style="font-size:22px;text-align:center;width:48px">{{ s.emoji or '✂️' }}</td>
       <td>
         <div class="svc-name">{{ s.name }}</div>
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}

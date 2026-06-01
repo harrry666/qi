@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>取消预约</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: #f5f5f7; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .card { background: #fff; border-radius: 16px; padding: 36px 32px; max-width: 440px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+    .icon { font-size: 48px; margin-bottom: 16px; display: block; }
+    h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+    .sub { color: #666; font-size: 15px; margin-bottom: 28px; line-height: 1.5; }
+    .apt-detail { background: #f8f8f8; border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; }
+    .apt-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
+    .apt-row .label { color: #888; }
+    .apt-row .val { color: #1a1a1a; font-weight: 500; text-align: right; max-width: 60%; }
+    .btn { display: block; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
+    .btn-cancel { background: #ef4444; color: #fff; }
+    .btn-cancel:hover { background: #dc2626; }
+    .btn-back { background: #f0f0f0; color: #444; margin-top: 10px; }
+    .btn-back:hover { background: #e5e5e5; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+{% if error %}
+  <span class="icon">❌</span>
+  <h1>链接无效</h1>
+  <p class="sub">此取消链接无效或已过期。</p>
+
+{% elif success %}
+  <span class="icon">✅</span>
+  <h1>预约已取消</h1>
+  <p class="sub">你的预约已成功取消，商家已收到通知。</p>
+  {% if apt %}
+  <div class="apt-detail">
+    <div class="apt-row"><span class="label">服务</span><span class="val">{{ apt.service_name }}</span></div>
+    <div class="apt-row"><span class="label">时间</span><span class="val">{{ apt.dt_display }}</span></div>
+    <div class="apt-row"><span class="label">商家</span><span class="val">{{ apt.biz_name }}</span></div>
+  </div>
+  {% endif %}
+
+{% elif already_cancelled %}
+  <span class="icon">ℹ️</span>
+  <h1>预约已取消</h1>
+  <p class="sub">此预约之前已经取消。</p>
+
+{% else %}
+  <span class="icon">📅</span>
+  <h1>取消预约</h1>
+  <p class="sub">确认后将取消以下预约，此操作无法撤销。</p>
+  {% if apt %}
+  <div class="apt-detail">
+    <div class="apt-row"><span class="label">姓名</span><span class="val">{{ apt.customer_name }}</span></div>
+    <div class="apt-row"><span class="label">服务</span><span class="val">{{ apt.service_name }}</span></div>
+    <div class="apt-row"><span class="label">时间</span><span class="val">{{ apt.dt_display }}</span></div>
+    <div class="apt-row"><span class="label">商家</span><span class="val">{{ apt.biz_name }}</span></div>
+  </div>
+  <form method="POST">
+    <button type="submit" class="btn btn-cancel">确认取消预约</button>
+  </form>
+  {% endif %}
+{% endif %}
+
+</div>
+</body>
+</html>

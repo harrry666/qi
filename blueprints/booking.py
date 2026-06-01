@@ -5,6 +5,7 @@ import os
 import re
 import threading
 import sys
+import uuid
 
 booking_bp = Blueprint('booking', __name__)
 
@@ -166,6 +167,8 @@ def api_create(slug):
     except ValueError:
         return jsonify({'error': 'Invalid appointment time'}), 400
 
+    cancel_token = str(uuid.uuid4())
+
     db = get_db()
     svc = db.execute('SELECT * FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
     if not svc:
@@ -173,8 +176,8 @@ def api_create(slug):
         return jsonify({'error': 'Service not found'}), 404
 
     db.execute(
-        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment) VALUES (%s,%s,%s,%s,%s,%s)',
-        (biz['id'], service_id, name, phone, apt_dt, comment)
+        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token) VALUES (%s,%s,%s,%s,%s,%s,%s)',
+        (biz['id'], service_id, name, phone, apt_dt, comment, cancel_token)
     )
     db.commit()
     db.close()
@@ -185,6 +188,7 @@ def api_create(slug):
     except Exception:
         dt_display = apt_dt
 
+    cancel_url = f"{request.host_url.rstrip('/')}cancel/{cancel_token}"
     formatted_phone = format_phone(phone)
     biz_phone = biz['phone'] or ''
 
@@ -194,6 +198,7 @@ def api_create(slug):
         f"Time: {dt_display}\n"
         + (f"Address: {biz['address']}\n" if biz['address'] else '')
         + (f"\nQuestions? Call {biz_phone}" if biz_phone else '')
+        + f"\n\nNeed to cancel? {cancel_url}"
     )
     threading.Thread(target=send_sms, args=(formatted_phone, customer_msg), daemon=True).start()
 
@@ -209,3 +214,62 @@ def api_create(slug):
         threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
     return jsonify({'success': True, 'service': svc['name']})
+
+
+@booking_bp.route('/cancel/<token>', methods=['GET', 'POST'])
+def cancel_by_token(token):
+    db = get_db()
+    row = db.execute(
+        "SELECT a.*, s.name as service_name, b.name as biz_name, b.phone as biz_phone "
+        "FROM appointments a "
+        "JOIN services s ON a.service_id = s.id "
+        "JOIN businesses b ON a.business_id = b.id "
+        "WHERE a.cancel_token = %s",
+        (token,)
+    ).fetchone()
+
+    if not row:
+        db.close()
+        return render_template('cancel.html', error=True)
+
+    apt = dict(row)
+    try:
+        dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
+        apt['dt_display'] = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+    except Exception:
+        apt['dt_display'] = apt['appointment_dt']
+
+    if request.method == 'POST':
+        if apt['status'] != 'confirmed':
+            db.close()
+            return render_template('cancel.html', already_cancelled=True, apt=apt)
+
+        db.execute(
+            "UPDATE appointments SET status='cancelled' WHERE cancel_token=%s AND status='confirmed'",
+            (token,)
+        )
+        db.commit()
+        db.close()
+
+        if apt['biz_phone']:
+            try:
+                dt_en = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
+                dt_display_en = dt_en.strftime('%b %-d at %-I:%M %p')
+            except Exception:
+                dt_display_en = apt['appointment_dt']
+            msg = (
+                f"Cancellation at {apt['biz_name']}:\n\n"
+                f"Customer: {apt['customer_name']}\n"
+                f"Service: {apt['service_name']}\n"
+                f"Time: {dt_display_en}"
+            )
+            threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), msg), daemon=True).start()
+
+        return render_template('cancel.html', success=True, apt=apt)
+
+    if apt['status'] != 'confirmed':
+        db.close()
+        return render_template('cancel.html', already_cancelled=True, apt=apt)
+
+    db.close()
+    return render_template('cancel.html', apt=apt)

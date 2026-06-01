@@ -61,7 +61,7 @@ function renderServices() {
   }
   list.innerHTML = state.services.map((s, i) => `
     <div class="service-item" onclick="selectService(${s.id})">
-      <div class="svc-icon">${icon(i)}</div>
+      <div class="svc-icon">${s.emoji ? esc(s.emoji) : icon(i)}</div>
       <div>
         <div class="svc-name">${esc(s.name)}</div>
         ${s.name_sub ? `<div class="svc-name-sub">${esc(s.name_sub)}</div>` : ''}

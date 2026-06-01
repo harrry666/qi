@@ -3,6 +3,10 @@ from flask_login import LoginManager
 from dotenv import load_dotenv
 from extensions import csrf, limiter
 import os
+import sys
+import threading
+import atexit
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -40,6 +44,62 @@ csrf.exempt(booking_bp)
 
 from db import init_db
 init_db()
+
+
+def send_reminders():
+    from db import get_db
+    from blueprints.booking import send_sms, format_phone
+    base_url = os.environ.get('BASE_URL', '').rstrip('/')
+    try:
+        now = datetime.now()
+        window_start = (now + timedelta(hours=23)).strftime('%Y-%m-%d %H:%M')
+        window_end   = (now + timedelta(hours=25)).strftime('%Y-%m-%d %H:%M')
+        db = get_db()
+        rows = db.execute(
+            "SELECT a.id, a.customer_name, a.phone, a.appointment_dt, a.cancel_token, "
+            "s.name as service_name, b.name as biz_name, b.address "
+            "FROM appointments a "
+            "JOIN services s ON a.service_id = s.id "
+            "JOIN businesses b ON a.business_id = b.id "
+            "WHERE a.status = 'confirmed' AND a.reminder_sent = 0 "
+            "AND a.appointment_dt >= %s AND a.appointment_dt <= %s",
+            (window_start, window_end)
+        ).fetchall()
+        for row in rows:
+            claimed = db.execute(
+                "UPDATE appointments SET reminder_sent = 1 WHERE id = %s AND reminder_sent = 0 RETURNING id",
+                (row['id'],)
+            ).fetchone()
+            db.commit()
+            if claimed:
+                try:
+                    dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
+                    dt_display = dt.strftime('%b %-d at %-I:%M %p')
+                except Exception:
+                    dt_display = row['appointment_dt']
+                cancel_part = f"\n\nNeed to cancel? {base_url}/cancel/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
+                msg = (
+                    f"Reminder: Hi {row['customer_name']}, your appointment at {row['biz_name']} is tomorrow.\n\n"
+                    f"Service: {row['service_name']}\n"
+                    f"Time: {dt_display}\n"
+                    + (f"Address: {row['address']}" if row['address'] else '')
+                    + cancel_part
+                )
+                threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg), daemon=True).start()
+        db.close()
+    except Exception as e:
+        print(f'[Reminder] ERROR: {e}', flush=True, file=sys.stderr)
+
+
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    _scheduler = BackgroundScheduler()
+    _scheduler.add_job(send_reminders, 'interval', minutes=15)
+    _scheduler.start()
+    atexit.register(lambda: _scheduler.shutdown(wait=False))
+except Exception as _e:
+    print(f'[Scheduler] failed to start: {_e}', flush=True, file=sys.stderr)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5002)

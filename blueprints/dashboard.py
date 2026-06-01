@@ -126,6 +126,7 @@ def add_service():
     duration = int(request.form.get('duration', 30))
     price_str = request.form.get('price', '').strip()
     price = float(price_str) if price_str else None
+    emoji = request.form.get('emoji', '').strip()
 
     if not name:
         flash('服务名称为必填项。', 'error')
@@ -133,8 +134,8 @@ def add_service():
 
     db = get_db()
     db.execute(
-        'INSERT INTO services (business_id, name, name_sub, duration_mins, price) VALUES (%s,%s,%s,%s,%s)',
-        (current_user.id, name, name_sub, duration, price)
+        'INSERT INTO services (business_id, name, name_sub, duration_mins, price, emoji) VALUES (%s,%s,%s,%s,%s,%s)',
+        (current_user.id, name, name_sub, duration, price, emoji)
     )
     db.commit()
     db.close()

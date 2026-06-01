@@ -90,6 +90,9 @@ def init_db():
             expires_at TIMESTAMPTZ NOT NULL,
             used INTEGER NOT NULL DEFAULT 0
         )''',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT \'\'',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancel_token TEXT',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent INTEGER NOT NULL DEFAULT 0',
     ]:
         db.execute(stmt)
     db.commit()

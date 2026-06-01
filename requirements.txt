@@ -7,3 +7,4 @@ gunicorn>=20.0
 twilio>=8.0
 flask-wtf>=1.2
 flask-limiter>=3.5
+apscheduler>=3.10
