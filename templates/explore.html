@@ -18,18 +18,21 @@
   {% if businesses %}
     {% for biz in businesses %}
     <a href="{{ url_for('booking.book_page', slug=biz.slug) }}" class="biz-card">
-      <div class="biz-card-top">
-        <div class="biz-avatar">{{ biz.name[0].upper() }}</div>
-        <span class="biz-category-badge">{{ biz.category or 'Other' }}</span>
+      <div class="biz-card-banner"></div>
+      <div class="biz-card-inner">
+        <div class="biz-card-top">
+          <div class="biz-avatar">{{ biz.name[0].upper() }}</div>
+          <span class="biz-category-badge">{{ biz.category or 'Other' }}</span>
+        </div>
+        <div class="biz-name">{{ biz.name }}</div>
+        {% if biz.address %}
+        <div class="biz-address">📍 {{ biz.address }}</div>
+        {% endif %}
+        {% if biz.description %}
+        <div class="biz-desc">{{ biz.description[:80] }}{% if biz.description|length > 80 %}...{% endif %}</div>
+        {% endif %}
+        <div class="biz-book-btn">立即预约 →</div>
       </div>
-      <div class="biz-name">{{ biz.name }}</div>
-      {% if biz.address %}
-      <div class="biz-address">📍 {{ biz.address }}</div>
-      {% endif %}
-      {% if biz.description %}
-      <div class="biz-desc">{{ biz.description[:80] }}{% if biz.description|length > 80 %}...{% endif %}</div>
-      {% endif %}
-      <div class="biz-book-btn">立即预约 →</div>
     </a>
     {% endfor %}
   {% else %}

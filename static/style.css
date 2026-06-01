@@ -66,6 +66,8 @@ a:hover { text-decoration: underline; }
 .hero-landing {
   text-align: center; padding: 100px 24px 64px;
   max-width: 680px; margin: 0 auto;
+  background-image: radial-gradient(circle, rgba(201,168,76,0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 .hero-eyebrow {
   display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
@@ -75,19 +77,28 @@ a:hover { text-decoration: underline; }
 .hero-landing h1 {
   font-size: clamp(34px, 5.5vw, 60px); font-weight: 800;
   line-height: 1.1; letter-spacing: -1.5px; color: var(--text);
+  font-family: 'Noto Serif SC', serif;
 }
 .accent { color: var(--gold); }
+.hero-thin { font-weight: 300; }
 .hero-sub {
   font-size: 17px; color: var(--muted); margin: 22px auto 0;
   max-width: 460px; line-height: 1.65;
 }
 .hero-actions { display: flex; gap: 12px; justify-content: center; margin-top: 36px; }
-.btn-lg {
-  display: inline-block; background: var(--gold); color: var(--text);
-  padding: 14px 30px; border-radius: 30px; font-size: 15px; font-weight: 700;
-  transition: background 0.15s, transform 0.1s; letter-spacing: -0.1px;
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
-.btn-lg:hover { background: var(--gold-h); color: var(--text); text-decoration: none; transform: translateY(-1px); }
+.btn-lg {
+  display: inline-block; color: var(--text);
+  padding: 14px 30px; border-radius: 30px; font-size: 15px; font-weight: 700;
+  transition: transform 0.1s; letter-spacing: -0.1px;
+  background: linear-gradient(90deg, var(--gold) 0%, #E8C96A 40%, var(--gold) 60%, var(--gold-h) 100%);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+.btn-lg:hover { color: var(--text); text-decoration: none; transform: translateY(-1px); animation-duration: 1s; }
 .btn-lg-outline {
   display: inline-block; border: 1.5px solid var(--border); color: var(--muted);
   padding: 14px 30px; border-radius: 30px; font-size: 15px; font-weight: 600;
@@ -99,8 +110,10 @@ a:hover { text-decoration: underline; }
 .features-section { padding: 56px 24px; max-width: 940px; margin: 0 auto; }
 .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .feature-card {
-  background: var(--white); border-radius: var(--radius); padding: 28px 24px;
+  background: var(--white); border-radius: 0 var(--radius) var(--radius) 0; padding: 28px 24px;
   border: 1px solid var(--border); box-shadow: var(--shadow);
+  border-left: 3px solid var(--gold); border-top: none; border-right: none; border-bottom: none;
+  padding-left: 28px;
 }
 .feature-icon { font-size: 26px; margin-bottom: 14px; }
 .feature-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
@@ -278,6 +291,13 @@ a:hover { text-decoration: underline; }
 .book-hero {
   height: 140px;
   background: linear-gradient(135deg, #1F1209 0%, #3D2410 55%, #C9A84C 100%);
+  position: relative; overflow: hidden;
+}
+.book-hero-watermark {
+  position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+  font-size: 72px; font-weight: 900; color: rgba(255,255,255,0.06);
+  white-space: nowrap; letter-spacing: -2px; pointer-events: none;
+  font-family: -apple-system, sans-serif;
 }
 
 .book-container { max-width: 760px; margin: 0 auto; padding: 0 16px 60px; }
@@ -304,11 +324,12 @@ a:hover { text-decoration: underline; }
 .service-item {
   background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius);
   display: flex; align-items: center; gap: 16px; padding: 16px 20px; margin-bottom: 10px;
-  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .service-item:hover {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+  transform: translateX(4px);
 }
 .svc-icon {
   width: 48px; height: 48px; border-radius: 50%; background: var(--gold-light);
@@ -426,7 +447,7 @@ a:hover { text-decoration: underline; }
   text-align: center; padding: 64px 24px 28px;
   border-bottom: 1px solid var(--border);
 }
-.explore-header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; color: var(--text); }
+.explore-header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; color: var(--text); font-family: 'Noto Serif SC', serif; }
 .explore-header p { color: var(--muted); font-size: 15px; }
 
 .explore-filters {
@@ -448,12 +469,14 @@ a:hover { text-decoration: underline; }
 .explore-empty { grid-column: 1/-1; text-align: center; color: var(--muted); padding: 48px 0; font-size: 15px; }
 
 .biz-card {
-  background: var(--white); border-radius: 16px; padding: 22px 20px;
+  background: var(--white); border-radius: 16px; padding: 0;
   border: 1.5px solid var(--border); box-shadow: var(--shadow);
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: 0; overflow: hidden;
   cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   color: var(--text);
 }
+.biz-card-banner { height: 6px; background: linear-gradient(90deg, var(--gold) 0%, #E8C96A 100%); }
+.biz-card-inner { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .biz-card:hover {
   transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,18,9,0.1);
   border-color: var(--gold-border); text-decoration: none;

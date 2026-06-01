@@ -59,11 +59,13 @@ function renderServices() {
     list.innerHTML = '<p style="color:var(--muted);padding:20px 0">暂无可用服务。</p>';
     return;
   }
-  list.innerHTML = state.services.map((s, i) => `
+  list.innerHTML = state.services.map((s, i) => {
+    const hotBadge = i === 0 ? '<span style="display:inline-block;background:#FBF4E3;color:#A8882A;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;border:1px solid #E8D59A;">热门</span>' : '';
+    return `
     <div class="service-item" onclick="selectService(${s.id})">
       <div class="svc-icon">${s.emoji ? esc(s.emoji) : icon(i)}</div>
       <div>
-        <div class="svc-name">${esc(s.name)}</div>
+        <div class="svc-name">${esc(s.name)}${hotBadge}</div>
         ${s.name_sub ? `<div class="svc-name-sub">${esc(s.name_sub)}</div>` : ''}
       </div>
       <div class="svc-meta">
@@ -71,7 +73,8 @@ function renderServices() {
         ${s.price ? `<div class="svc-price">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ── Slot Selection ────────────────────────────────────────────────────────────
@@ -226,6 +229,7 @@ async function submitBooking() {
       `;
       loadWeekSlots();
       showScreen('screen-success');
+      launchConfetti();
     } else {
       alert(data.error || '预约失败，请重试。');
       btn.disabled = false; btn.textContent = '确认预约';
@@ -233,6 +237,21 @@ async function submitBooking() {
   } catch {
     alert('网络错误，请重试。');
     btn.disabled = false; btn.textContent = '确认预约';
+  }
+}
+
+function launchConfetti() {
+  const colors = ['#C9A84C','#E8C96A','#FBF4E3','#A8882A','#ffffff'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;pointer-events:none;z-index:9999;width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};left:${20+Math.random()*60}%;top:-10px;opacity:1;`;
+    document.body.appendChild(el);
+    const duration = 1200 + Math.random() * 1000;
+    const xDrift = (Math.random() - 0.5) * 200;
+    el.animate([
+      { transform: `translate(0,0) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${xDrift}px, ${window.innerHeight + 50}px) rotate(${360 + Math.random()*360}deg)`, opacity: 0 }
+    ], { duration, easing: 'cubic-bezier(0.25,0.46,0.45,0.94)', fill: 'forwards' }).onfinish = () => el.remove();
   }
 }
 
