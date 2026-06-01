@@ -7,6 +7,7 @@
 <div class="settings-card">
   <h2>商家信息</h2>
   <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="dash-label">商家名称 *</label>
     <input class="dash-input" type="text" name="name" value="{{ biz.name }}" required>
 

@@ -6,6 +6,7 @@
 
 <div class="hours-form">
   <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% for day in days %}
     <div class="hours-row">
       <div class="hours-day">{{ day.name }}</div>

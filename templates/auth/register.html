@@ -6,6 +6,7 @@
     <h1>创建账号</h1>
     <p class="auth-sub">几分钟内搭好你的预约页面</p>
     <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="field-label">商家名称</label>
       <input class="form-input" type="text" name="name" id="biz-name" placeholder="例：Chris 美发工作室" required value="{{ form.get('name','') }}" autofocus>
 

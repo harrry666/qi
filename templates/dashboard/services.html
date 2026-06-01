@@ -7,6 +7,7 @@
 <div class="add-service-form">
   <h2>添加服务</h2>
   <form method="POST" action="{{ url_for('dashboard.add_service') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="form-row">
       <div>
         <span class="btn-label">服务名称 *</span>
@@ -52,6 +53,7 @@
       <td>{% if s.price %}${{ s.price|int }}{% else %}—{% endif %}</td>
       <td>
         <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('确认删除此服务？')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn-delete">删除</button>
         </form>
       </td>

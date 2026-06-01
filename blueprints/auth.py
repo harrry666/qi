@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from extensions import limiter
 from db import get_db
 from models import Business
 import re
@@ -103,6 +104,7 @@ def register():
     return render_template('auth/register.html', form={}, categories=CATEGORIES)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
@@ -130,6 +132,7 @@ def logout():
     return redirect(url_for('auth.landing'))
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit('5 per hour')
 def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()

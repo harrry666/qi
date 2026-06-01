@@ -6,6 +6,7 @@
     <h1>登录</h1>
     <p class="auth-sub">欢迎回来</p>
     <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="field-label">邮箱</label>
       <input class="form-input" type="email" name="email" placeholder="you@email.com" required autofocus>
       <label class="field-label">密码</label>

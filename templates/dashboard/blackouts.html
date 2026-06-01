@@ -8,6 +8,7 @@
 <div class="settings-card" style="max-width:700px;margin-bottom:28px">
   <h2>添加暂停期</h2>
   <form method="POST" action="{{ url_for('dashboard.add_blackout') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div>
       <label class="field-label" style="font-size:13px;color:#888">开始日期</label>
       <input class="dash-input" type="date" name="start_date" required style="width:160px">
@@ -45,6 +46,7 @@
           <td style="text-align:right">
             <form method="POST" action="{{ url_for('dashboard.delete_blackout', bo_id=bo.id) }}"
                   onsubmit="return confirm('确认删除此暂停期？')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn-cancel">删除</button>
             </form>
           </td>
