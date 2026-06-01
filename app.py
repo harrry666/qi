@@ -74,15 +74,15 @@ def send_reminders():
             if claimed:
                 try:
                     dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
-                    dt_display = dt.strftime('%b %-d at %-I:%M %p')
+                    dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
                 except Exception:
                     dt_display = row['appointment_dt']
-                cancel_part = f"\n\nNeed to cancel? {base_url}/cancel/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
+                cancel_part = f"\n\n如需取消：{base_url}/cancel/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
                 msg = (
-                    f"Reminder: Hi {row['customer_name']}, your appointment at {row['biz_name']} is tomorrow.\n\n"
-                    f"Service: {row['service_name']}\n"
-                    f"Time: {dt_display}\n"
-                    + (f"Address: {row['address']}" if row['address'] else '')
+                    f"【预约提醒】{row['customer_name']}，您明天在【{row['biz_name']}】有一个预约。\n\n"
+                    f"服务：{row['service_name']}\n"
+                    f"时间：{dt_display}\n"
+                    + (f"地址：{row['address']}" if row['address'] else '')
                     + cancel_part
                 )
                 threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg), daemon=True).start()

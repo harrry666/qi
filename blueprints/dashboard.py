@@ -228,16 +228,16 @@ def cancel_appointment(apt_id):
     if row:
         try:
             dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
-            dt_display = dt.strftime('%b %-d at %-I:%M %p')
+            dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
         except Exception:
             dt_display = row['appointment_dt']
         biz_name = current_user.name
         biz_phone = current_user.phone or ''
         message = (
-            f"Hi {row['customer_name']}, your appointment at {biz_name} has been cancelled.\n\n"
-            f"Service: {row['service_name']}\n"
-            f"Time: {dt_display}\n\n"
-            + (f"To rebook, call {biz_phone}" if biz_phone else "Please rebook at your convenience.")
+            f"【预约取消】{row['customer_name']}，您在【{biz_name}】的预约已被取消。\n\n"
+            f"服务：{row['service_name']}\n"
+            f"时间：{dt_display}\n\n"
+            + (f"如需重新预约请致电：{biz_phone}" if biz_phone else "如需重新预约请联系商家。")
         )
         threading.Thread(target=send_sms, args=(format_phone(row['phone']), message), daemon=True).start()
 
