@@ -83,6 +83,13 @@ def init_db():
             end_date TEXT NOT NULL,
             reason TEXT DEFAULT ''
         )''',
+        '''CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TIMESTAMPTZ NOT NULL,
+            used INTEGER NOT NULL DEFAULT 0
+        )''',
     ]:
         db.execute(stmt)
     db.commit()

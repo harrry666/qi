@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Find a Business — Qi{% endblock %}
+{% block title %}浏览商家 — Qi{% endblock %}
 {% block content %}
 
 <div class="explore-header">
-  <h1>Find a service near you</h1>
-  <p>Browse local businesses and book an appointment instantly.</p>
+  <h1>附近的服务</h1>
+  <p>浏览本地商家，在线立即预约。</p>
 </div>
 
 <div class="explore-filters">
-  <a href="{{ url_for('auth.explore') }}" class="filter-chip {% if not active_cat %}active{% endif %}">All</a>
+  <a href="{{ url_for('auth.explore') }}" class="filter-chip {% if not active_cat %}active{% endif %}">全部</a>
   {% for cat in categories %}
   <a href="{{ url_for('auth.explore', cat=cat) }}" class="filter-chip {% if active_cat == cat %}active{% endif %}">{{ cat }}</a>
   {% endfor %}
@@ -29,11 +29,11 @@
       {% if biz.description %}
       <div class="biz-desc">{{ biz.description[:80] }}{% if biz.description|length > 80 %}...{% endif %}</div>
       {% endif %}
-      <div class="biz-book-btn">Book now →</div>
+      <div class="biz-book-btn">立即预约 →</div>
     </a>
     {% endfor %}
   {% else %}
-    <div class="explore-empty">No businesses found in this category yet.</div>
+    <div class="explore-empty">该类别暂无商家。</div>
   {% endif %}
 </div>
 

@@ -220,6 +220,7 @@ async function submitBooking() {
         <p>📅 <strong>${fmtDisplay(state.selected.date, state.selected.time)}</strong></p>
         ${state.selected.comment ? `<p>💬 ${state.selected.comment}</p>` : ''}
       `;
+      loadWeekSlots();
       showScreen('screen-success');
     } else {
       alert(data.error || 'Booking failed. Please try again.');

@@ -1,18 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Log in — Qi{% endblock %}
+{% block title %}登录 — Qi{% endblock %}
 {% block content %}
 <div class="auth-container">
   <div class="auth-card">
-    <h1>Log in</h1>
-    <p class="auth-sub">Welcome back to Qi</p>
+    <h1>登录</h1>
+    <p class="auth-sub">欢迎回来</p>
     <form method="POST">
-      <label class="field-label">Email</label>
+      <label class="field-label">邮箱</label>
       <input class="form-input" type="email" name="email" placeholder="you@email.com" required autofocus>
-      <label class="field-label">Password</label>
-      <input class="form-input" type="password" name="password" placeholder="Password" required>
-      <button type="submit" class="btn-primary-full">Log in</button>
+      <label class="field-label">密码</label>
+      <input class="form-input" type="password" name="password" placeholder="请输入密码" required>
+      <button type="submit" class="btn-primary-full">登录</button>
     </form>
-    <p class="auth-switch">No account yet? <a href="{{ url_for('auth.register') }}">Get started free</a></p>
+    <p class="auth-switch" style="margin-bottom:8px"><a href="{{ url_for('auth.forgot_password') }}">忘记密码？</a></p>
+    <p class="auth-switch">还没有账号？<a href="{{ url_for('auth.register') }}">免费注册</a></p>
   </div>
 </div>
 {% endblock %}

@@ -10,7 +10,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'qi-dev-key-change-in-prod')
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'auth.login'
-login_manager.login_message = 'Please log in to continue.'
+login_manager.login_message = '请登录后继续。'
 login_manager.login_message_category = 'error'
 
 @login_manager.user_loader

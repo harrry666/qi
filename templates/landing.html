@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Qi — Appointment Booking for Small Businesses{% endblock %}
+{% block title %}Qi — 小商家预约管理平台{% endblock %}
 {% block content %}
 
 <section class="hero-landing">
-  <h1>Appointment booking,<br>made <span class="accent">simple.</span></h1>
-  <p class="hero-sub">Create your public booking page in minutes. Customers book online — you manage everything from one dashboard.</p>
+  <h1>在线预约，<br>从此<span class="accent">简单。</span></h1>
+  <p class="hero-sub">几分钟创建你的专属预约页面。客户在线预约，你用一个后台管理一切。</p>
   <div class="hero-actions">
-    <a href="{{ url_for('auth.register') }}" class="btn-lg">Start for free →</a>
-    <a href="/book/demo" class="btn-lg-outline">See a demo</a>
+    <a href="{{ url_for('auth.register') }}" class="btn-lg">免费开始 →</a>
+    <a href="/book/demo" class="btn-lg-outline">查看演示</a>
   </div>
 </section>
 
@@ -15,35 +15,35 @@
   <div class="features-grid">
     <div class="feature-card">
       <div class="feature-icon">🔗</div>
-      <h3>Your own booking page</h3>
-      <p>Get a shareable link like <strong>qi.app/book/your-name</strong>. Send it to customers and they book instantly.</p>
+      <h3>专属预约链接</h3>
+      <p>获得专属链接，例如 <strong>qi.app/book/你的名字</strong>。发给客户，立即可约。</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon">✂️</div>
-      <h3>Manage your services</h3>
-      <p>Add services with custom pricing and duration. Update them anytime — changes reflect immediately.</p>
+      <h3>灵活管理服务</h3>
+      <p>添加服务、设定价格和时长，随时修改，实时生效。</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon">🕐</div>
-      <h3>Smart availability</h3>
-      <p>Set your hours. Only open, conflict-free slots are shown to customers — no double bookings.</p>
+      <h3>智能空档管理</h3>
+      <p>设置营业时间，系统只显示空闲时段，杜绝重复预约。</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon">📋</div>
-      <h3>Appointment dashboard</h3>
-      <p>See today's schedule, upcoming appointments, and full history. Cancel with one click.</p>
+      <h3>预约管理后台</h3>
+      <p>查看今日日程、即将到来的预约和历史记录，一键取消。</p>
     </div>
   </div>
 </section>
 
 <section class="cta-section">
-  <h2>Start taking bookings today.</h2>
-  <p>Free to use. No credit card required.</p>
-  <a href="{{ url_for('auth.register') }}" class="btn-lg">Create your free account</a>
+  <h2>今天就开始接受预约。</h2>
+  <p>完全免费，无需绑定信用卡。</p>
+  <a href="{{ url_for('auth.register') }}" class="btn-lg">免费创建账号</a>
 </section>
 
 <footer class="landing-footer">
-  <p>© 2025 Qi · Built for local businesses</p>
+  <p>© 2025 Qi · 专为本地小商家打造</p>
 </footer>
 
 {% endblock %}

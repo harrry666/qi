@@ -1,31 +1,31 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}控制台{% endblock %}
 {% block content %}
 
 <div class="dash-header">
   <h1>{{ greeting }}, {{ current_user.name.split()[0] }} 👋</h1>
-  <p class="dash-sub">Here's what's on today's schedule.</p>
+  <p class="dash-sub">今日行程如下。</p>
 </div>
 
 <div class="stats-row">
   <div class="stat-card">
-    <div class="stat-label">Today</div>
+    <div class="stat-label">今天</div>
     <div class="stat-value">{{ today_count }}</div>
-    <div class="stat-sub">appointments</div>
+    <div class="stat-sub">个预约</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">This Week</div>
+    <div class="stat-label">本周</div>
     <div class="stat-value">{{ week_count }}</div>
-    <div class="stat-sub">confirmed</div>
+    <div class="stat-sub">已确认</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">All Time</div>
+    <div class="stat-label">累计</div>
     <div class="stat-value">{{ total }}</div>
-    <div class="stat-sub">total bookings</div>
+    <div class="stat-sub">次预约</div>
   </div>
 </div>
 
-<div class="section-heading">Today's Schedule</div>
+<div class="section-heading">今日日程</div>
 
 {% if today_apts %}
   <div class="apt-list">
@@ -42,7 +42,7 @@
     {% endfor %}
   </div>
 {% else %}
-  <div class="empty-msg">No appointments scheduled for today.</div>
+  <div class="empty-msg">今天暂无预约。</div>
 {% endif %}
 
 {% endblock %}

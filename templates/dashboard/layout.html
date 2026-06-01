@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Dashboard{% endblock %} — Qi</title>
+  <title>{% block title %}控制台{% endblock %} — Qi</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="dash-body">
@@ -13,16 +13,16 @@
     <div class="sidebar-logo">Qi</div>
     <div class="sidebar-biz" title="{{ current_user.name }}">{{ current_user.name }}</div>
     <nav class="sidebar-nav">
-      <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📅 Dashboard</a>
-      <a href="{{ url_for('dashboard.appointments') }}" class="nav-item {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">📋 Appointments</a>
-      <a href="{{ url_for('dashboard.services') }}"     class="nav-item {% if request.endpoint == 'dashboard.services' %}active{% endif %}">✂️ Services</a>
-      <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">🕐 Hours</a>
-      <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">🚫 Blocked Dates</a>
-      <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">⚙️ Settings</a>
+      <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📅 控制台</a>
+      <a href="{{ url_for('dashboard.appointments') }}" class="nav-item {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">📋 预约记录</a>
+      <a href="{{ url_for('dashboard.services') }}"     class="nav-item {% if request.endpoint == 'dashboard.services' %}active{% endif %}">✂️ 服务项目</a>
+      <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">🕐 营业时间</a>
+      <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">🚫 暂停营业</a>
+      <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">⚙️ 设置</a>
     </nav>
     <div class="sidebar-bottom">
-      <a href="/book/{{ current_user.slug }}" target="_blank" class="booking-link-btn">View Booking Page ↗</a>
-      <a href="{{ url_for('auth.logout') }}" class="logout-link">Log out</a>
+      <a href="/book/{{ current_user.slug }}" target="_blank" class="booking-link-btn">查看预约页面 ↗</a>
+      <a href="{{ url_for('auth.logout') }}" class="logout-link">退出登录</a>
     </div>
   </aside>
 

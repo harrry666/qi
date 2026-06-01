@@ -15,7 +15,7 @@ def index():
     today = datetime.now().strftime('%Y-%m-%d')
     now = datetime.now()
     hour = now.hour
-    greeting = 'Good morning' if hour < 12 else ('Good afternoon' if hour < 17 else 'Good evening')
+    greeting = '早上好' if hour < 12 else ('下午好' if hour < 17 else '晚上好')
 
     today_apts = db.execute(
         "SELECT a.*, s.name as service_name, s.duration_mins, s.price "
@@ -64,7 +64,7 @@ def add_service():
     price = float(price_str) if price_str else None
 
     if not name:
-        flash('Service name is required.', 'error')
+        flash('服务名称为必填项。', 'error')
         return redirect(url_for('dashboard.services'))
 
     db = get_db()
@@ -74,7 +74,7 @@ def add_service():
     )
     db.commit()
     db.close()
-    flash('Service added.', 'success')
+    flash('服务已添加。', 'success')
     return redirect(url_for('dashboard.services'))
 
 @dashboard_bp.route('/services/<int:svc_id>/delete', methods=['POST'])
@@ -91,7 +91,7 @@ def delete_service(svc_id):
 def hours():
     db = get_db()
     day_keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    day_names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
     if request.method == 'POST':
         for i, key in enumerate(day_keys):
@@ -108,7 +108,7 @@ def hours():
                 (current_user.id, i, open_t, close_t, closed)
             )
         db.commit()
-        flash('Hours updated.', 'success')
+        flash('营业时间已保存。', 'success')
 
     rows = db.execute(
         'SELECT * FROM business_hours WHERE business_id=%s ORDER BY weekday',
@@ -176,7 +176,7 @@ def cancel_appointment(apt_id):
         )
         threading.Thread(target=send_sms, args=(format_phone(row['phone']), message), daemon=True).start()
 
-    flash('Appointment cancelled.', 'success')
+    flash('预约已取消。', 'success')
     return redirect(url_for('dashboard.appointments'))
 
 @dashboard_bp.route('/blackouts')
@@ -197,7 +197,7 @@ def add_blackout():
     end = request.form.get('end_date', '').strip()
     reason = request.form.get('reason', '').strip()
     if not start or not end or end < start:
-        flash('Invalid date range.', 'error')
+        flash('日期范围无效。', 'error')
         return redirect(url_for('dashboard.blackouts'))
     db = get_db()
     db.execute(
@@ -206,7 +206,7 @@ def add_blackout():
     )
     db.commit()
     db.close()
-    flash('Blocked period added.', 'success')
+    flash('封闭期已添加。', 'success')
     return redirect(url_for('dashboard.blackouts'))
 
 @dashboard_bp.route('/blackouts/<int:bo_id>/delete', methods=['POST'])
@@ -234,7 +234,7 @@ def settings():
                 (name, address, phone, description, category, current_user.id)
             )
             db.commit()
-            flash('Settings saved.', 'success')
+            flash('设置已保存。', 'success')
 
     biz = db.execute('SELECT * FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
     db.close()

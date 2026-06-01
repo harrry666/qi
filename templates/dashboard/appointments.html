@@ -1,11 +1,11 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Appointments{% endblock %}
+{% block title %}预约记录{% endblock %}
 {% block content %}
 
-<div class="page-title">📋 Appointments</div>
+<div class="page-title">📋 预约记录</div>
 
 <div class="filter-tabs">
-  {% for label, key in [('Upcoming','upcoming'),('Past','past'),('Cancelled','cancelled'),('All','all')] %}
+  {% for label, key in [('即将到来','upcoming'),('已完成','past'),('已取消','cancelled'),('全部','all')] %}
     <a href="?filter={{ key }}" class="tab-btn {% if current_filter == key %}active{% endif %}">{{ label }}</a>
   {% endfor %}
 </div>
@@ -14,12 +14,12 @@
 <table class="apt-table">
   <thead>
     <tr>
-      <th>Date &amp; Time</th>
-      <th>Service</th>
-      <th>Customer</th>
-      <th>Phone</th>
-      <th>Comment</th>
-      <th>Status</th>
+      <th>日期 &amp; 时间</th>
+      <th>服务</th>
+      <th>客户</th>
+      <th>电话</th>
+      <th>备注</th>
+      <th>状态</th>
       <th></th>
     </tr>
   </thead>
@@ -35,12 +35,12 @@
       <td style="color:#A78BFA">{{ a.phone }}</td>
       <td style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>
       <td>
-        <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
+        <span class="badge badge-{{ a.status }}">{{ '已确认' if a.status == 'confirmed' else '已取消' }}</span>
       </td>
       <td>
         {% if a.status == 'confirmed' %}
-        <form method="POST" action="{{ url_for('dashboard.cancel_appointment', apt_id=a.id) }}" onsubmit="return confirm('Cancel this appointment?')">
-          <button type="submit" class="btn-cancel">Cancel</button>
+        <form method="POST" action="{{ url_for('dashboard.cancel_appointment', apt_id=a.id) }}" onsubmit="return confirm('确认取消此预约？')">
+          <button type="submit" class="btn-cancel">取消预约</button>
         </form>
         {% endif %}
       </td>
@@ -49,7 +49,7 @@
   </tbody>
 </table>
 {% else %}
-  <div class="empty-table">No appointments found.</div>
+  <div class="empty-table">暂无预约记录。</div>
 {% endif %}
 
 {% endblock %}
