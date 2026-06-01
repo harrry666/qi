@@ -138,6 +138,7 @@ def forgot_password():
         if row:
             token = secrets.token_urlsafe(32)
             expires = datetime.now(timezone.utc) + timedelta(hours=1)
+            db.execute('UPDATE password_reset_tokens SET used=1 WHERE business_id=%s AND used=0', (row['id'],))
             db.execute(
                 'INSERT INTO password_reset_tokens (business_id, token, expires_at) VALUES (%s,%s,%s)',
                 (row['id'], token, expires)

@@ -158,6 +158,14 @@ def api_create(slug):
     if not all([service_id, name, phone, apt_dt]):
         return jsonify({'error': 'Missing required fields'}), 400
 
+    try:
+        apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
+        if apt_dt_obj < datetime.now():
+            return jsonify({'error': '不能预约过去的时间'}), 400
+        apt_dt = apt_dt_obj.strftime('%Y-%m-%d %H:%M')
+    except ValueError:
+        return jsonify({'error': 'Invalid appointment time'}), 400
+
     db = get_db()
     svc = db.execute('SELECT * FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
     if not svc:

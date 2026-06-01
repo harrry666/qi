@@ -1,0 +1,98 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}数据分析{% endblock %}
+{% block content %}
+
+<div class="page-title">📊 数据分析</div>
+<p style="color:#666;font-size:14px;margin-bottom:24px">{{ this_month_label }} · 已确认预约统计</p>
+
+<div class="stats-row" style="margin-bottom:28px">
+  <div class="stat-card">
+    <div class="stat-label">{{ this_month_label }}</div>
+    <div class="stat-value">${{ '%.0f'|format(rev_this) }}</div>
+    <div class="stat-sub" style="color:{% if rev_delta >= 0 %}#4ADE80{% else %}#F87171{% endif %}">
+      {% if rev_delta >= 0 %}+{% endif %}${{ '%.0f'|format(rev_delta) }} vs 上月
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">{{ last_month_label }}</div>
+    <div class="stat-value">${{ '%.0f'|format(rev_last) }}</div>
+    <div class="stat-sub">上月收入</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">累计收入</div>
+    <div class="stat-value">${{ '%.0f'|format(rev_total) }}</div>
+    <div class="stat-sub">所有已确认预约</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+  <div class="settings-card" style="padding:20px">
+    <div class="section-heading" style="margin-bottom:16px">近 30 天预约量</div>
+    <canvas id="dailyChart" height="180"></canvas>
+  </div>
+  <div class="settings-card" style="padding:20px">
+    <div class="section-heading" style="margin-bottom:16px">热门服务</div>
+    {% if top_svc_labels %}
+      <canvas id="topSvcsChart" height="180"></canvas>
+    {% else %}
+      <p style="color:#555;font-size:14px;padding-top:8px">暂无数据。</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="settings-card" style="padding:20px;margin-bottom:20px">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+    <div class="section-heading" style="margin-bottom:0">高峰时段</div>
+    {% if peak_hour_label != '—' %}
+      <span style="font-size:13px;color:#A78BFA">高峰：{{ peak_hour_label }}</span>
+    {% endif %}
+  </div>
+  <canvas id="hourChart" height="100"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const PURPLE = '#A78BFA', PURPLE_DIM = 'rgba(167,139,250,0.25)', GRID = '#2A2A2A', LBL = '#666';
+const base = {
+  responsive: true,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: GRID }, ticks: { color: LBL, font: { size: 11 } } },
+    y: { grid: { color: GRID }, ticks: { color: LBL, font: { size: 11 }, stepSize: 1 }, beginAtZero: true }
+  }
+};
+
+new Chart(document.getElementById('dailyChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ daily_labels | tojson }},
+    datasets: [{ data: {{ daily_values | tojson }}, backgroundColor: PURPLE_DIM, borderColor: PURPLE, borderWidth: 1, borderRadius: 3 }]
+  },
+  options: { ...base, scales: { ...base.scales, x: { ...base.scales.x, ticks: { color: LBL, font: { size: 10 }, maxRotation: 45, maxTicksLimit: 10 } } } }
+});
+
+{% if top_svc_labels %}
+new Chart(document.getElementById('topSvcsChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ top_svc_labels | tojson }},
+    datasets: [{ data: {{ top_svc_values | tojson }}, backgroundColor: PURPLE_DIM, borderColor: PURPLE, borderWidth: 1, borderRadius: 3 }]
+  },
+  options: { ...base, indexAxis: 'y', scales: {
+    x: { grid: { color: GRID }, ticks: { color: LBL, font: { size: 11 }, stepSize: 1 }, beginAtZero: true },
+    y: { grid: { color: GRID }, ticks: { color: LBL, font: { size: 12 } } }
+  }}
+});
+{% endif %}
+
+new Chart(document.getElementById('hourChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ hour_labels | tojson }},
+    datasets: [{ data: {{ hour_values | tojson }}, backgroundColor: PURPLE_DIM, borderColor: PURPLE, borderWidth: 1, borderRadius: 3 }]
+  },
+  options: base
+});
+</script>
+
+{% endblock %}

@@ -6,7 +6,10 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'qi-dev-key-change-in-prod')
+_secret = os.environ.get('SECRET_KEY')
+if not _secret:
+    raise RuntimeError('SECRET_KEY environment variable is not set')
+app.secret_key = _secret
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'auth.login'

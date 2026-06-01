@@ -33,7 +33,8 @@
 <div class="settings-card" style="margin-top:20px">
   <h2>你的预约链接</h2>
   <div class="slug-display">{{ booking_url }}</div>
-  <button onclick="navigator.clipboard.writeText('{{ booking_url }}')" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">复制链接</button>
+  <button id="copy-link-btn" data-url="{{ booking_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">复制链接</button>
+  <script>document.getElementById('copy-link-btn').onclick=function(){navigator.clipboard.writeText(this.dataset.url);};</script>
   <p style="font-size:13px;color:#555;margin-top:8px">将此链接分享给你的客户。</p>
 </div>
 

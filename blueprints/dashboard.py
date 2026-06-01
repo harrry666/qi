@@ -43,6 +43,70 @@ def index():
         today_apts=today_apts, today_count=len(today_apts),
         week_count=week_count, total=total, greeting=greeting)
 
+@dashboard_bp.route('/analytics')
+@login_required
+def analytics():
+    db = get_db()
+    now = datetime.now()
+    this_month = now.strftime('%Y-%m')
+    last_month_dt = (now.replace(day=1) - timedelta(days=1))
+    last_month = last_month_dt.strftime('%Y-%m')
+    since_30 = (now - timedelta(days=29)).strftime('%Y-%m-%d')
+
+    rev_row = db.execute(
+        "SELECT "
+        "SUM(CASE WHEN SUBSTRING(a.appointment_dt, 1, 7) = %s THEN s.price ELSE 0 END) AS rev_this_month, "
+        "SUM(CASE WHEN SUBSTRING(a.appointment_dt, 1, 7) = %s THEN s.price ELSE 0 END) AS rev_last_month, "
+        "SUM(s.price) AS rev_alltime "
+        "FROM appointments a JOIN services s ON a.service_id = s.id "
+        "WHERE a.business_id = %s AND a.status = 'confirmed' AND s.price IS NOT NULL",
+        (this_month, last_month, current_user.id)
+    ).fetchone()
+    rev_this  = float(rev_row['rev_this_month'] or 0)
+    rev_last  = float(rev_row['rev_last_month'] or 0)
+    rev_total = float(rev_row['rev_alltime'] or 0)
+    rev_delta = rev_this - rev_last
+
+    daily_rows = db.execute(
+        "SELECT SUBSTRING(appointment_dt, 1, 10) AS day, COUNT(*) AS cnt "
+        "FROM appointments WHERE business_id = %s AND status = 'confirmed' AND appointment_dt >= %s "
+        "GROUP BY day ORDER BY day",
+        (current_user.id, since_30)
+    ).fetchall()
+    daily_map = {r['day']: r['cnt'] for r in daily_rows}
+    daily_labels = [(now - timedelta(days=29 - i)).strftime('%m/%d') for i in range(30)]
+    daily_full   = [(now - timedelta(days=29 - i)).strftime('%Y-%m-%d') for i in range(30)]
+    daily_values = [daily_map.get(d, 0) for d in daily_full]
+
+    top_svcs = db.execute(
+        "SELECT s.name, COUNT(*) AS cnt FROM appointments a JOIN services s ON a.service_id = s.id "
+        "WHERE a.business_id = %s AND a.status = 'confirmed' GROUP BY s.name ORDER BY cnt DESC LIMIT 6",
+        (current_user.id,)
+    ).fetchall()
+
+    hour_rows = db.execute(
+        "SELECT CAST(SUBSTRING(appointment_dt, 12, 2) AS INTEGER) AS hour, COUNT(*) AS cnt "
+        "FROM appointments WHERE business_id = %s AND status = 'confirmed' GROUP BY hour ORDER BY hour",
+        (current_user.id,)
+    ).fetchall()
+    hour_map = {r['hour']: r['cnt'] for r in hour_rows}
+    hour_labels = [f'{h:02d}:00' for h in range(7, 22)]
+    hour_values = [hour_map.get(h, 0) for h in range(7, 22)]
+    peak_hour = max(hour_map, key=hour_map.get) if hour_map else None
+    peak_hour_label = f'{peak_hour:02d}:00' if peak_hour is not None else '—'
+
+    db.close()
+    return render_template('dashboard/analytics.html',
+        rev_this=rev_this, rev_last=rev_last, rev_total=rev_total, rev_delta=rev_delta,
+        daily_labels=daily_labels, daily_values=daily_values,
+        top_svc_labels=[r['name'] for r in top_svcs],
+        top_svc_values=[r['cnt'] for r in top_svcs],
+        hour_labels=hour_labels, hour_values=hour_values,
+        peak_hour_label=peak_hour_label,
+        this_month_label=now.strftime('%Y年%-m月'),
+        last_month_label=last_month_dt.strftime('%Y年%-m月'),
+    )
+
 @dashboard_bp.route('/services')
 @login_required
 def services():

@@ -14,6 +14,7 @@
     <div class="sidebar-biz" title="{{ current_user.name }}">{{ current_user.name }}</div>
     <nav class="sidebar-nav">
       <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📅 控制台</a>
+      <a href="{{ url_for('dashboard.analytics') }}"   class="nav-item {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">📊 数据分析</a>
       <a href="{{ url_for('dashboard.appointments') }}" class="nav-item {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">📋 预约记录</a>
       <a href="{{ url_for('dashboard.services') }}"     class="nav-item {% if request.endpoint == 'dashboard.services' %}active{% endif %}">✂️ 服务项目</a>
       <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">🕐 营业时间</a>

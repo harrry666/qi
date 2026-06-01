@@ -1,7 +1,11 @@
 const SLUG = document.body.dataset.slug;
 const DAY_LETTERS = ['M','T','W','T','F','S','S'];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 const ICONS = ['✂️','💇','💈','💅','🧖','💆','🪮'];
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 let state = {
   services: [],
@@ -25,15 +29,15 @@ function fmtDate(d) {
 
 function fmtDisplay(dateStr, time) {
   const [y,m,d] = dateStr.split('-').map(Number);
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const days = ['周日','周一','周二','周三','周四','周五','周六'];
   const dt = new Date(y, m-1, d);
-  return `${days[dt.getDay()]}, ${MONTHS[m-1]} ${d}  ${time}`;
+  return `${MONTHS[m-1]}${d}日 ${days[dt.getDay()]}  ${time}`;
 }
 
 function fmtDuration(mins) {
-  if (mins < 60) return `${mins} min`;
+  if (mins < 60) return `${mins}分钟`;
   const h = Math.floor(mins/60), m = mins % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
+  return m ? `${h}小时${m}分钟` : `${h}小时`;
 }
 
 function showScreen(id) {
@@ -52,15 +56,15 @@ async function loadServices() {
 function renderServices() {
   const list = document.getElementById('service-list');
   if (!state.services.length) {
-    list.innerHTML = '<p style="color:var(--muted);padding:20px 0">No services available yet.</p>';
+    list.innerHTML = '<p style="color:var(--muted);padding:20px 0">暂无可用服务。</p>';
     return;
   }
   list.innerHTML = state.services.map((s, i) => `
     <div class="service-item" onclick="selectService(${s.id})">
       <div class="svc-icon">${icon(i)}</div>
       <div>
-        <div class="svc-name">${s.name}</div>
-        ${s.name_sub ? `<div class="svc-name-sub">${s.name_sub}</div>` : ''}
+        <div class="svc-name">${esc(s.name)}</div>
+        ${s.name_sub ? `<div class="svc-name-sub">${esc(s.name_sub)}</div>` : ''}
       </div>
       <div class="svc-meta">
         <div class="svc-duration">${fmtDuration(s.duration_mins)}</div>
@@ -194,10 +198,10 @@ function backToSlots() { showScreen('screen-slots'); }
 async function submitBooking() {
   const name = document.getElementById('cust-name').value.trim();
   const phone = document.getElementById('cust-phone').value.trim();
-  if (!name || !phone) { alert('Please fill in your name and phone number.'); return; }
+  if (!name || !phone) { alert('请填写姓名和手机号码。'); return; }
 
   const btn = document.getElementById('btn-book');
-  btn.disabled = true; btn.textContent = 'Booking...';
+  btn.disabled = true; btn.textContent = '预约中...';
 
   try {
     const res = await fetch(`/api/book/${SLUG}/create`, {
@@ -215,20 +219,20 @@ async function submitBooking() {
 
     if (data.success) {
       document.getElementById('success-details').innerHTML = `
-        <p>👤 <strong>${name}</strong></p>
-        <p>✂️ <strong>${data.service}</strong></p>
+        <p>👤 <strong>${esc(name)}</strong></p>
+        <p>✂️ <strong>${esc(data.service)}</strong></p>
         <p>📅 <strong>${fmtDisplay(state.selected.date, state.selected.time)}</strong></p>
-        ${state.selected.comment ? `<p>💬 ${state.selected.comment}</p>` : ''}
+        ${state.selected.comment ? `<p>💬 ${esc(state.selected.comment)}</p>` : ''}
       `;
       loadWeekSlots();
       showScreen('screen-success');
     } else {
-      alert(data.error || 'Booking failed. Please try again.');
-      btn.disabled = false; btn.textContent = 'Confirm Booking';
+      alert(data.error || '预约失败，请重试。');
+      btn.disabled = false; btn.textContent = '确认预约';
     }
   } catch {
-    alert('Network error. Please try again.');
-    btn.disabled = false; btn.textContent = 'Confirm Booking';
+    alert('网络错误，请重试。');
+    btn.disabled = false; btn.textContent = '确认预约';
   }
 }
 
@@ -237,7 +241,7 @@ function resetBooking() {
   document.getElementById('cust-name').value = '';
   document.getElementById('cust-phone').value = '';
   document.getElementById('btn-book').disabled = false;
-  document.getElementById('btn-book').textContent = 'Confirm Booking';
+  document.getElementById('btn-book').textContent = '确认预约';
   showScreen('screen-services');
 }
 
