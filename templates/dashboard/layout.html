@@ -13,12 +13,12 @@
     <div class="sidebar-logo">Qi</div>
     <div class="sidebar-biz" title="{{ current_user.name }}">{{ current_user.name }}</div>
     <nav class="sidebar-nav">
-      <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📅 控制台</a>
-      <a href="{{ url_for('dashboard.analytics') }}"   class="nav-item {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">📊 数据分析</a>
+      <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📅 主页</a>
+      <a href="{{ url_for('dashboard.analytics') }}"   class="nav-item {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">📊 分析报告</a>
       <a href="{{ url_for('dashboard.appointments') }}" class="nav-item {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">📋 预约记录</a>
       <a href="{{ url_for('dashboard.services') }}"     class="nav-item {% if request.endpoint == 'dashboard.services' %}active{% endif %}">✂️ 服务项目</a>
       <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">🕐 营业时间</a>
-      <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">🚫 暂停营业</a>
+      <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">🚫 休业时期</a>
       <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">⚙️ 设置</a>
     </nav>
     <div class="sidebar-bottom">

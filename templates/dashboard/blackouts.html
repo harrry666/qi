@@ -1,12 +1,12 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}暂停营业{% endblock %}
+{% block title %}休业时期{% endblock %}
 {% block content %}
 
-<div class="page-title">🚫 暂停营业</div>
-<p style="color:#666;font-size:14px;margin-bottom:24px">设定暂停期间后，客户将看不到该段时间内的可预约时间段。</p>
+<div class="page-title">🚫 休业时期</div>
+<p style="color:#666;font-size:14px;margin-bottom:24px">设定休业期间后，客户将看不到该段时间内的可预约时间段。</p>
 
 <div class="settings-card" style="max-width:700px;margin-bottom:28px">
-  <h2>添加暂停期</h2>
+  <h2>添加休业期</h2>
   <form method="POST" action="{{ url_for('dashboard.add_blackout') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div>
@@ -26,7 +26,7 @@
 </div>
 
 <div class="settings-card" style="max-width:700px">
-  <h2>已设暂停期</h2>
+  <h2>已设休业期</h2>
   {% if blackouts %}
     <table class="apt-table">
       <thead>
@@ -45,7 +45,7 @@
           <td style="color:#555">{{ bo.reason or '—' }}</td>
           <td style="text-align:right">
             <form method="POST" action="{{ url_for('dashboard.delete_blackout', bo_id=bo.id) }}"
-                  onsubmit="return confirm('确认删除此暂停期？')">
+                  onsubmit="return confirm('确认删除此休业期？')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn-cancel">删除</button>
             </form>
@@ -55,7 +55,7 @@
       </tbody>
     </table>
   {% else %}
-    <p style="color:#555;font-size:14px;padding:8px 0">暂无暂停期。</p>
+    <p style="color:#555;font-size:14px;padding:8px 0">暂无休业期。</p>
   {% endif %}
 </div>
 

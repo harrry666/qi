@@ -270,7 +270,7 @@ def add_blackout():
     )
     db.commit()
     db.close()
-    flash('封闭期已添加。', 'success')
+    flash('休业期已添加。', 'success')
     return redirect(url_for('dashboard.blackouts'))
 
 @dashboard_bp.route('/blackouts/<int:bo_id>/delete', methods=['POST'])
