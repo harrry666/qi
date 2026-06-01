@@ -48,6 +48,8 @@ function showScreen(id) {
 // ── Services ─────────────────────────────────────────────────────────────────
 
 async function loadServices() {
+  const list = document.getElementById('service-list');
+  list.innerHTML = [1,2,3].map(()=>'<div class="skel-item"></div>').join('');
   const res = await fetch(`/api/book/${SLUG}/services`);
   state.services = await res.json();
   renderServices();
