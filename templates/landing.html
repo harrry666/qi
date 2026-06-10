@@ -3,12 +3,91 @@
 {% block content %}
 
 <section class="hero-landing">
-  <span class="hero-eyebrow">专为本地小商家打造</span>
-  <h1><span class="hero-thin">在线预约，</span><br>从此<span class="accent">简单。</span></h1>
-  <p class="hero-sub">几分钟创建你的专属预约页面。客户在线预约，你用一个后台管理一切。</p>
-  <div class="hero-actions">
-    <a href="{{ url_for('auth.register') }}" class="btn-lg">免费开始 →</a>
-    <a href="{{ url_for('auth.explore') }}" class="btn-lg-outline">浏览商家</a>
+  <div class="hero-text">
+    <span class="hero-eyebrow">专为本地小商家打造</span>
+    <h1><span class="hero-thin">在线预约，</span><br>从此<span class="accent">简单。</span></h1>
+    <p class="hero-sub">几分钟创建你的专属预约页面。客户在线预约，你用一个后台管理一切。</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('auth.register') }}" class="btn-lg">免费开始 →</a>
+      <a href="{{ url_for('auth.explore') }}" class="btn-lg-outline">浏览商家</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="phone-mockup">
+      <div class="phone-status-bar">
+        <span class="phone-time">9:41</span>
+        <div class="phone-icons">
+          <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor" opacity="0.85"><rect x="0" y="3.5" width="2.5" height="7.5" rx="0.8"/><rect x="4" y="2" width="2.5" height="9" rx="0.8"/><rect x="8" y="0.5" width="2.5" height="10.5" rx="0.8"/><rect x="12" y="0" width="2.5" height="11" rx="0.8" opacity="0.35"/></svg>
+        </div>
+      </div>
+      <div class="mock-book-hero">
+        <svg class="mock-banner-svg" viewBox="0 0 310 117" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="mglow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#D4A84B" stop-opacity="0.58"/>
+              <stop offset="55%" stop-color="#C8A84A" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#C8A84A" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="bgg" cx="18%" cy="28%" r="55%">
+              <stop offset="0%" stop-color="#2E2418" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#0C0B09" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="310" height="117" fill="url(#bgg)"/>
+          <!-- Moon top-left -->
+          <circle cx="36" cy="25" r="11.5" fill="url(#mglow)"/>
+          <circle cx="36" cy="25" r="11.5" fill="none" stroke="#D4A84B" stroke-width="0.55" stroke-opacity="0.4"/>
+          <!-- Cloud wisps near moon -->
+          <path d="M20 39 Q33 35 50 39" fill="none" stroke="#C8A84A" stroke-width="0.55" stroke-opacity="0.26"/>
+          <path d="M24 44 Q40 40 57 44" fill="none" stroke="#C8A84A" stroke-width="0.48" stroke-opacity="0.17"/>
+          <path d="M55 39 Q68 36 83 39" fill="none" stroke="#C8A84A" stroke-width="0.42" stroke-opacity="0.13"/>
+          <!-- Branch stem top-right -->
+          <path d="M287 -1 Q277 13 274 31" fill="none" stroke="#C8A84A" stroke-width="0.9" stroke-opacity="0.36"/>
+          <path d="M277 7 Q265 12 260 22" fill="none" stroke="#C8A84A" stroke-width="0.72" stroke-opacity="0.3"/>
+          <path d="M274 20 Q260 23 254 33" fill="none" stroke="#C8A84A" stroke-width="0.68" stroke-opacity="0.28"/>
+          <path d="M287 -1 Q298 7 304 3" fill="none" stroke="#C8A84A" stroke-width="0.65" stroke-opacity="0.27"/>
+          <!-- Leaves -->
+          <ellipse cx="258" cy="21" rx="6" ry="2.4" transform="rotate(-33,258,21)" fill="none" stroke="#C8A84A" stroke-width="0.62" stroke-opacity="0.33"/>
+          <ellipse cx="252" cy="32" rx="6" ry="2.4" transform="rotate(-20,252,32)" fill="none" stroke="#C8A84A" stroke-width="0.62" stroke-opacity="0.29"/>
+          <ellipse cx="267" cy="13" rx="5" ry="2" transform="rotate(-26,267,13)" fill="none" stroke="#C8A84A" stroke-width="0.58" stroke-opacity="0.28"/>
+          <ellipse cx="303" cy="3" rx="5" ry="1.9" transform="rotate(8,303,3)" fill="none" stroke="#C8A84A" stroke-width="0.58" stroke-opacity="0.24"/>
+          <ellipse cx="274" cy="31" rx="4" ry="1.8" transform="rotate(-42,274,31)" fill="none" stroke="#C8A84A" stroke-width="0.58" stroke-opacity="0.23"/>
+          <!-- Ruyi cloud pattern right-middle -->
+          <path d="M289 60 Q293 55 297 60 Q301 65 297 68 Q293 65 289 68 Q285 65 289 60Z" fill="none" stroke="#C8A84A" stroke-width="0.52" stroke-opacity="0.2"/>
+          <path d="M301 53 Q305 49 309 53" fill="none" stroke="#C8A84A" stroke-width="0.46" stroke-opacity="0.15"/>
+          <!-- Mountain / wave lines bottom -->
+          <path d="M0 81 Q38 73 76 79 Q114 85 151 76 Q189 67 229 73 Q265 79 310 72" fill="none" stroke="#C8A84A" stroke-width="0.62" stroke-opacity="0.17"/>
+          <path d="M0 88 Q42 82 82 86 Q122 90 158 82 Q194 74 238 80 Q270 86 310 80" fill="none" stroke="#E5C978" stroke-width="0.72" stroke-opacity="0.25"/>
+          <path d="M0 95 Q28 91 55 87 Q86 82 109 90 Q133 98 161 87 Q189 76 221 83 Q253 90 286 86 Q298 84 310 82" fill="none" stroke="#C8A84A" stroke-width="0.88" stroke-opacity="0.33"/>
+          <path d="M0 102 Q45 97 83 94 Q119 91 149 98 Q179 105 211 99 Q249 93 281 97 Q298 99 310 95" fill="none" stroke="#E5C978" stroke-width="0.98" stroke-opacity="0.41"/>
+          <path d="M0 110 Q53 106 96 103 Q139 100 176 107 Q213 114 256 108 Q283 104 310 105" fill="none" stroke="#C8A84A" stroke-width="0.75" stroke-opacity="0.22"/>
+        </svg>
+        <div class="mock-biz-title">Chris 美发工作室</div>
+        <div class="mock-biz-sub">专业剪发造型 · 在线预约</div>
+        <div class="mock-biz-avatar">✂️</div>
+      </div>
+      <div class="mock-book-body">
+        <div class="mock-book-card">
+          <div class="mock-svc-row">
+            <div class="mock-svc-icon">✂️</div>
+            <div class="mock-svc-info">
+              <div class="mock-svc-name">男士剪发</div>
+              <div class="mock-svc-sub">30分钟 · 一位男发剪发造型</div>
+            </div>
+            <div class="mock-svc-price">$20</div>
+          </div>
+          <div class="mock-section-label">选择时间</div>
+          <div class="mock-date-chip">📅 今天 · 6月1日 周一</div>
+          <div class="mock-slots">
+            <div class="mock-slot">13:00</div>
+            <div class="mock-slot active">14:30</div>
+            <div class="mock-slot">15:30</div>
+            <div class="mock-slot">16:30</div>
+          </div>
+          <div class="mock-confirm">✓ 确认预约</div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 

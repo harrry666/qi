@@ -203,7 +203,9 @@ function backToSlots() { showScreen('screen-slots'); }
 async function submitBooking() {
   const name = document.getElementById('cust-name').value.trim();
   const phone = document.getElementById('cust-phone').value.trim();
+  const smsConsent = document.getElementById('sms-consent').checked;
   if (!name || !phone) { alert('请填写姓名和手机号码。'); return; }
+  if (!smsConsent) { alert('Please check the SMS consent box to confirm your appointment.'); return; }
 
   const btn = document.getElementById('btn-book');
   btn.disabled = true; btn.textContent = '预约中...';
@@ -261,6 +263,7 @@ function resetBooking() {
   state.selected = { service: null, date: null, time: null, comment: '' };
   document.getElementById('cust-name').value = '';
   document.getElementById('cust-phone').value = '';
+  document.getElementById('sms-consent').checked = false;
   document.getElementById('btn-book').disabled = false;
   document.getElementById('btn-book').textContent = '确认预约';
   showScreen('screen-services');
