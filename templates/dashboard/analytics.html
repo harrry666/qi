@@ -44,7 +44,7 @@
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
     <div class="section-heading" style="margin-bottom:0">高峰时段</div>
     {% if peak_hour_label != '—' %}
-      <span style="font-size:13px;color:#A78BFA">高峰：{{ peak_hour_label }}</span>
+      <span style="font-size:13px;color:#C9A84C">高峰：{{ peak_hour_label }}</span>
     {% endif %}
   </div>
   <canvas id="hourChart" height="100"></canvas>
@@ -52,7 +52,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const PURPLE = '#A78BFA', PURPLE_DIM = 'rgba(167,139,250,0.25)', GRID = '#2A2A2A', LBL = '#666';
+const GOLD = '#C9A84C', GOLD_DIM = 'rgba(201,168,76,0.25)', GRID = '#EDE8E0', LBL = '#8B7A6A';
 const base = {
   responsive: true,
   plugins: { legend: { display: false } },
@@ -66,7 +66,7 @@ new Chart(document.getElementById('dailyChart'), {
   type: 'bar',
   data: {
     labels: {{ daily_labels | tojson }},
-    datasets: [{ data: {{ daily_values | tojson }}, backgroundColor: PURPLE_DIM, borderColor: PURPLE, borderWidth: 1, borderRadius: 3 }]
+    datasets: [{ data: {{ daily_values | tojson }}, backgroundColor: GOLD_DIM, borderColor: GOLD, borderWidth: 1, borderRadius: 3 }]
   },
   options: { ...base, scales: { ...base.scales, x: { ...base.scales.x, ticks: { color: LBL, font: { size: 10 }, maxRotation: 45, maxTicksLimit: 10 } } } }
 });
@@ -76,7 +76,7 @@ new Chart(document.getElementById('topSvcsChart'), {
   type: 'bar',
   data: {
     labels: {{ top_svc_labels | tojson }},
-    datasets: [{ data: {{ top_svc_values | tojson }}, backgroundColor: PURPLE_DIM, borderColor: PURPLE, borderWidth: 1, borderRadius: 3 }]
+    datasets: [{ data: {{ top_svc_values | tojson }}, backgroundColor: GOLD_DIM, borderColor: GOLD, borderWidth: 1, borderRadius: 3 }]
   },
   options: { ...base, indexAxis: 'y', scales: {
     x: { grid: { color: GRID }, ticks: { color: LBL, font: { size: 11 }, stepSize: 1 }, beginAtZero: true },
@@ -89,7 +89,7 @@ new Chart(document.getElementById('hourChart'), {
   type: 'bar',
   data: {
     labels: {{ hour_labels | tojson }},
-    datasets: [{ data: {{ hour_values | tojson }}, backgroundColor: PURPLE_DIM, borderColor: PURPLE, borderWidth: 1, borderRadius: 3 }]
+    datasets: [{ data: {{ hour_values | tojson }}, backgroundColor: GOLD_DIM, borderColor: GOLD, borderWidth: 1, borderRadius: 3 }]
   },
   options: base
 });
