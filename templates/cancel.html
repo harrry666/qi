@@ -3,67 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>取消预约</title>
+  <title>取消预约 · Qi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: #f5f5f7; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .card { background: #fff; border-radius: 16px; padding: 36px 32px; max-width: 440px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
-    .icon { font-size: 48px; margin-bottom: 16px; display: block; }
-    h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
-    .sub { color: #666; font-size: 15px; margin-bottom: 28px; line-height: 1.5; }
-    .apt-detail { background: #f8f8f8; border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; }
-    .apt-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
-    .apt-row .label { color: #888; }
-    .apt-row .val { color: #1a1a1a; font-weight: 500; text-align: right; max-width: 60%; }
-    .btn { display: block; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
-    .btn-cancel { background: #ef4444; color: #fff; }
-    .btn-cancel:hover { background: #dc2626; }
-    .btn-back { background: #f0f0f0; color: #444; margin-top: 10px; }
-    .btn-back:hover { background: #e5e5e5; }
+    .cancel-wrap {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .cancel-card {
+      background: var(--white); border-radius: 20px; padding: 40px 32px;
+      max-width: 440px; width: 100%;
+      border: 1px solid var(--border); box-shadow: 0 4px 32px rgba(26,18,9,0.07);
+      text-align: center;
+    }
+    .state-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; margin: 0 auto 20px;
+    }
+    .state-icon-gold  { background: var(--gold-light); color: var(--gold-h); }
+    .state-icon-red   { background: #FEE2E2; color: #991B1B; }
+    .state-icon-green { background: #DCFCE7; color: #166534; }
+    .state-icon-info  { background: #EFF6FF; color: #1D4ED8; }
+    .cancel-card h1 {
+      font-size: 22px; font-weight: 800; color: var(--text);
+      margin-bottom: 8px; letter-spacing: -0.3px;
+    }
+    .cancel-sub {
+      color: var(--muted); font-size: 14px;
+      margin-bottom: 24px; line-height: 1.6;
+    }
+    .apt-detail {
+      background: var(--gold-light); border: 1px solid var(--gold-border);
+      border-radius: 14px; padding: 16px 18px;
+      margin-bottom: 24px; text-align: left;
+    }
+    .apt-row {
+      display: flex; justify-content: space-between;
+      font-size: 14px; padding: 6px 0;
+    }
+    .apt-row + .apt-row { border-top: 1px solid rgba(232,213,154,0.6); }
+    .apt-label { color: var(--muted); }
+    .apt-val { color: var(--text); font-weight: 600; text-align: right; max-width: 60%; }
+    .btn-danger {
+      display: block; width: 100%;
+      background: #EF4444; color: #fff;
+      border: none; border-radius: 30px;
+      padding: 14px; font-size: 15px; font-weight: 700;
+      cursor: pointer; text-align: center; text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-danger:hover { background: #DC2626; color: #fff; text-decoration: none; }
+    .btn-ghost {
+      display: block; width: 100%;
+      background: transparent; color: var(--gold-h);
+      border: 1.5px solid var(--gold-border); border-radius: 30px;
+      padding: 13px; font-size: 15px; font-weight: 600;
+      cursor: pointer; text-align: center; text-decoration: none;
+      margin-top: 10px; transition: all 0.15s;
+    }
+    .btn-ghost:hover { background: var(--gold-light); border-color: var(--gold); color: var(--gold-h); text-decoration: none; }
+    .qi-brand { font-size: 12px; color: var(--border); margin-top: 28px; }
+    .qi-brand strong { color: var(--muted); }
   </style>
 </head>
-<body>
-<div class="card">
+<body class="book-body">
+<div class="cancel-wrap">
+<div class="cancel-card">
 
 {% if error %}
-  <span class="icon">❌</span>
+  <div class="state-icon state-icon-red">✕</div>
   <h1>链接无效</h1>
-  <p class="sub">此取消链接无效或已过期。</p>
+  <p class="cancel-sub">此取消链接无效或已过期，请联系商家获取帮助。</p>
 
 {% elif success %}
-  <span class="icon">✅</span>
+  <div class="state-icon state-icon-green">✓</div>
   <h1>预约已取消</h1>
-  <p class="sub">你的预约已成功取消，商家已收到通知。</p>
+  <p class="cancel-sub">你的预约已成功取消，商家已收到通知。</p>
   {% if apt %}
   <div class="apt-detail">
-    <div class="apt-row"><span class="label">服务</span><span class="val">{{ apt.service_name }}</span></div>
-    <div class="apt-row"><span class="label">时间</span><span class="val">{{ apt.dt_display }}</span></div>
-    <div class="apt-row"><span class="label">商家</span><span class="val">{{ apt.biz_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">服务</span><span class="apt-val">{{ apt.service_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">时间</span><span class="apt-val">{{ apt.dt_display }}</span></div>
+    <div class="apt-row"><span class="apt-label">商家</span><span class="apt-val">{{ apt.biz_name }}</span></div>
   </div>
   {% endif %}
 
 {% elif already_cancelled %}
-  <span class="icon">ℹ️</span>
+  <div class="state-icon state-icon-info">ℹ</div>
   <h1>预约已取消</h1>
-  <p class="sub">此预约之前已经取消。</p>
+  <p class="cancel-sub">此预约之前已经取消，无需再次操作。</p>
 
 {% else %}
-  <span class="icon">📅</span>
+  <div class="state-icon state-icon-gold">📅</div>
   <h1>取消预约</h1>
-  <p class="sub">确认后将取消以下预约，此操作无法撤销。</p>
+  <p class="cancel-sub">确认后将取消以下预约，此操作无法撤销。</p>
   {% if apt %}
   <div class="apt-detail">
-    <div class="apt-row"><span class="label">姓名</span><span class="val">{{ apt.customer_name }}</span></div>
-    <div class="apt-row"><span class="label">服务</span><span class="val">{{ apt.service_name }}</span></div>
-    <div class="apt-row"><span class="label">时间</span><span class="val">{{ apt.dt_display }}</span></div>
-    <div class="apt-row"><span class="label">商家</span><span class="val">{{ apt.biz_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">姓名</span><span class="apt-val">{{ apt.customer_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">服务</span><span class="apt-val">{{ apt.service_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">时间</span><span class="apt-val">{{ apt.dt_display }}</span></div>
+    <div class="apt-row"><span class="apt-label">商家</span><span class="apt-val">{{ apt.biz_name }}</span></div>
   </div>
   <form method="POST">
-    <button type="submit" class="btn btn-cancel">确认取消预约</button>
+    <button type="submit" class="btn-danger">确认取消预约</button>
   </form>
+  <a href="javascript:window.close()" class="btn-ghost">关闭页面</a>
   {% endif %}
 {% endif %}
 
+<p class="qi-brand">由 <strong>Qi 预约</strong> 提供服务</p>
+</div>
 </div>
 </body>
 </html>
