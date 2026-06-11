@@ -196,9 +196,21 @@ def explore():
     db = get_db()
     if cat and cat in CATEGORIES:
         rows = db.execute(
-            'SELECT * FROM businesses WHERE category=%s ORDER BY name', (cat,)
+            '''SELECT b.*, COUNT(s.id) as service_count
+               FROM businesses b
+               LEFT JOIN services s ON s.business_id = b.id AND s.is_active = 1
+               WHERE b.category = %s
+               GROUP BY b.id
+               ORDER BY b.name''',
+            (cat,)
         ).fetchall()
     else:
-        rows = db.execute('SELECT * FROM businesses ORDER BY name').fetchall()
+        rows = db.execute(
+            '''SELECT b.*, COUNT(s.id) as service_count
+               FROM businesses b
+               LEFT JOIN services s ON s.business_id = b.id AND s.is_active = 1
+               GROUP BY b.id
+               ORDER BY b.name'''
+        ).fetchall()
     db.close()
     return render_template('explore.html', businesses=rows, categories=CATEGORIES, active_cat=cat)

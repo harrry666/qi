@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="explore-header">
-  <h1>附近的服务</h1>
+  <h1><span class="explore-title-underline">附近的服务</span></h1>
   <p>浏览本地商家，在线立即预约。</p>
 </div>
 
@@ -28,6 +28,13 @@
         {% if biz.address %}
         <div class="biz-address">📍 {{ biz.address }}</div>
         {% endif %}
+        <div class="biz-svc-row">
+          {% if biz.service_count > 0 %}
+          <span class="biz-service-count">{{ biz.service_count }} 项服务</span>
+          {% else %}
+          <span class="biz-service-none">暂无服务</span>
+          {% endif %}
+        </div>
         {% if biz.description %}
         <div class="biz-desc">{{ biz.description[:80] }}{% if biz.description|length > 80 %}...{% endif %}</div>
         {% endif %}
@@ -36,7 +43,11 @@
     </a>
     {% endfor %}
   {% else %}
-    <div class="explore-empty">该类别暂无商家。</div>
+    <div class="explore-empty">
+      <div class="explore-empty-icon">🔍</div>
+      <div>该类别暂无商家</div>
+      <div class="explore-empty-hint">试试其他分类，或稍后再来看看</div>
+    </div>
   {% endif %}
 </div>
 
