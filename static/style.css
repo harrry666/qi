@@ -198,6 +198,19 @@ a:hover { text-decoration: underline; }
 }
 .btn-lg-outline:hover { border-color: var(--gold-border); color: var(--text); text-decoration: none; }
 
+/* ── Trust Strip ── */
+.trust-strip {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 8px 20px; padding: 18px 24px;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.trust-pill {
+  font-size: 13px; font-weight: 600; color: var(--gold-h);
+  background: var(--gold-light); border: 1px solid var(--gold-border);
+  padding: 6px 14px; border-radius: 20px; letter-spacing: 0.01em;
+}
+.trust-sep { color: var(--border); font-size: 16px; }
+
 /* ── Features ── */
 .features-section {
   padding: 56px 24px; max-width: 940px; margin: 0 auto;
@@ -219,6 +232,16 @@ a:hover { text-decoration: underline; }
 .feature-icon { font-size: 26px; margin-bottom: 14px; }
 .feature-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 .feature-card p { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+.features-heading {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 22px; font-weight: 800; color: var(--text);
+  text-align: center; margin-bottom: 28px; letter-spacing: -0.5px;
+}
+.feature-card .feature-icon { position: relative; padding-left: 12px; }
+.feature-card .feature-icon::before {
+  content: ''; position: absolute; left: 0; top: 3px;
+  width: 3px; height: 22px; background: var(--gold); border-radius: 2px;
+}
 
 /* ── CTA section ── */
 .cta-section {
@@ -240,6 +263,13 @@ a:hover { text-decoration: underline; }
   color: var(--text); line-height: 1; letter-spacing: -2px; margin-bottom: 16px;
 }
 .footer-slogan { font-size: 14px; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 12px; }
+.footer-links {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin-bottom: 16px; font-size: 13px;
+}
+.footer-links a { color: var(--muted); }
+.footer-links a:hover { color: var(--text); text-decoration: none; }
+.footer-links span { color: var(--border); }
 .footer-copy { font-size: 12px; color: var(--border); }
 
 /* ── Scroll Reveal ── */
