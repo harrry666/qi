@@ -67,6 +67,28 @@ def analytics():
     rev_total = float(rev_row['rev_alltime'] or 0)
     rev_delta = rev_this - rev_last
 
+    # Total appointment counts this month / last month / all time
+    cnt_row = db.execute(
+        "SELECT "
+        "SUM(CASE WHEN SUBSTRING(a.appointment_dt, 1, 7) = %s THEN 1 ELSE 0 END) AS cnt_this_month, "
+        "SUM(CASE WHEN SUBSTRING(a.appointment_dt, 1, 7) = %s THEN 1 ELSE 0 END) AS cnt_last_month, "
+        "COUNT(*) AS cnt_alltime "
+        "FROM appointments a "
+        "WHERE a.business_id = %s AND a.status = 'confirmed'",
+        (this_month, last_month, current_user.id)
+    ).fetchone()
+    cnt_this  = int(cnt_row['cnt_this_month'] or 0)
+    cnt_last  = int(cnt_row['cnt_last_month'] or 0)
+    cnt_total = int(cnt_row['cnt_alltime'] or 0)
+    cnt_delta = cnt_this - cnt_last
+
+    # Count how many confirmed appointments have no price (for the disclaimer)
+    no_price_count = db.execute(
+        "SELECT COUNT(*) FROM appointments a JOIN services s ON a.service_id=s.id "
+        "WHERE a.business_id=%s AND a.status='confirmed' AND (s.price IS NULL OR s.price = 0)",
+        (current_user.id,)
+    ).fetchone()['count']
+
     daily_rows = db.execute(
         "SELECT SUBSTRING(appointment_dt, 1, 10) AS day, COUNT(*) AS cnt "
         "FROM appointments WHERE business_id = %s AND status = 'confirmed' AND appointment_dt >= %s "
@@ -98,6 +120,8 @@ def analytics():
     db.close()
     return render_template('dashboard/analytics.html',
         rev_this=rev_this, rev_last=rev_last, rev_total=rev_total, rev_delta=rev_delta,
+        cnt_this=cnt_this, cnt_last=cnt_last, cnt_total=cnt_total, cnt_delta=cnt_delta,
+        no_price_count=no_price_count,
         daily_labels=daily_labels, daily_values=daily_values,
         top_svc_labels=[r['name'] for r in top_svcs],
         top_svc_values=[r['cnt'] for r in top_svcs],
