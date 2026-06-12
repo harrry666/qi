@@ -729,3 +729,13 @@ a:hover { text-decoration: underline; }
   .hero-actions { flex-direction: column; align-items: center; }
   .auth-card { padding: 32px 24px; }
 }
+
+/* ── Analytics: Hero Stat Card (本月收入) ── */
+.stat-card-hero {
+  background: linear-gradient(135deg, #1A1209 0%, #3D2410 100%);
+  border-color: rgba(201,168,76,0.3);
+  border-top-color: var(--gold);
+}
+.stat-card-hero .stat-label { color: rgba(201,168,76,0.65); }
+.stat-card-hero .stat-value { color: var(--gold); font-size: 52px; }
+.stat-card-hero .stat-sub { color: rgba(201,168,76,0.5); }
