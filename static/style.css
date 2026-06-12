@@ -579,6 +579,13 @@ a:hover { text-decoration: underline; }
 .success-details p:last-child { margin-bottom: 0; }
 .success-details strong { color: var(--gold-h); }
 
+/* ── Booking Steps ── */
+.booking-steps { display: flex; align-items: center; gap: 0; padding: 20px 0 8px; margin-bottom: 8px; }
+.booking-steps .step { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; padding: 6px 12px; border-radius: 20px; transition: all 0.2s; }
+.booking-steps .step.active { background: var(--gold-light); color: var(--gold-h); border: 1px solid var(--gold-border); }
+.booking-steps .step.done { color: var(--gold-h); }
+.booking-steps .step-line { flex: 1; height: 1px; background: var(--border); min-width: 16px; }
+
 /* ── Explore ── */
 .explore-header {
   text-align: center; padding: 64px 24px 28px;
@@ -665,7 +672,7 @@ a:hover { text-decoration: underline; }
   .stats-row { grid-template-columns: 1fr 1fr; }
   .form-row { grid-template-columns: 1fr 1fr; }
   .week-grid { gap: 3px; }
-  .slot-btn { font-size: 10px; padding: 8px 0; }
+  .slot-btn { font-size: 10px; padding: 8px 0; min-height: 36px; }
   .hero-rich { padding: 48px 20px 40px; }
   .hero-preview { display: none; }
   .hero-actions { flex-direction: column; align-items: center; }

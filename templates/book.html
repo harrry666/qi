@@ -23,6 +23,15 @@
     </div>
   </div>
 
+  <!-- Step progress indicator -->
+  <div class="booking-steps">
+    <div class="step active" id="step-1">① 选服务</div>
+    <div class="step-line"></div>
+    <div class="step" id="step-2">② 选时间</div>
+    <div class="step-line"></div>
+    <div class="step" id="step-3">③ 填信息</div>
+  </div>
+
   <!-- Screen 1: Services -->
   <div id="screen-services" class="screen active">
     <div class="section-title">选择服务项目</div>
@@ -72,6 +81,7 @@
       <h2>预约成功！</h2>
       <p>期待您光临 {{ biz.name }}。</p>
       <div class="success-details" id="success-details"></div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">📅 别忘了记下预约时间</p>
       {% if biz.phone %}<p style="font-size:13px;color:var(--muted);margin-bottom:20px">有疑问？请致电 <a href="tel:{{ biz.phone }}">{{ biz.phone }}</a></p>{% endif %}
       <button class="btn-primary" onclick="resetBooking()">再次预约</button>
     </div>

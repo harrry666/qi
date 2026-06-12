@@ -43,6 +43,19 @@ function fmtDuration(mins) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  const stepsEl = document.querySelector('.booking-steps');
+  if (!stepsEl) return;
+  const stepMap = { 'screen-services': 1, 'screen-slots': 2, 'screen-login': 3, 'screen-success': null };
+  const activeStep = stepMap[id];
+  if (activeStep === null) { stepsEl.style.display = 'none'; return; }
+  stepsEl.style.display = 'flex';
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`step-${i}`);
+    if (!el) continue;
+    el.classList.remove('active', 'done');
+    if (i === activeStep) el.classList.add('active');
+    else if (i < activeStep) el.classList.add('done');
+  }
 }
 
 // ── Services ─────────────────────────────────────────────────────────────────
