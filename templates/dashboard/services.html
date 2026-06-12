@@ -6,7 +6,7 @@
 
 <div class="add-service-form">
   <h2>添加服务</h2>
-  <form method="POST" action="{{ url_for('dashboard.add_service') }}">
+  <form method="POST" action="{{ url_for('dashboard.add_service') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="svc-form-grid">
       <div class="svc-col-2">
@@ -28,6 +28,10 @@
       <div>
         <span class="btn-label">图标 Emoji（选填）</span>
         <input class="dash-input" type="text" name="emoji" placeholder="例：💅 ✂️ 💆" style="font-size:20px">
+      </div>
+      <div>
+        <span class="btn-label">自定义图片（选填）</span>
+        <input class="dash-input" type="file" name="icon_image" accept="image/*" style="padding:6px">
       </div>
       <div>
         <span class="btn-label">缓冲时间（分钟）</span>
@@ -55,17 +59,28 @@
   <tbody>
     {% for s in services %}
     <tr>
-      <td class="svc-emoji-cell">{{ s.emoji or '✂️' }}</td>
+      <td class="svc-emoji-cell">
+        {% if s.icon_url %}
+          <img src="{{ url_for('static', filename=s.icon_url) }}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle">
+        {% else %}
+          {{ s.emoji or '✂️' }}
+        {% endif %}
+      </td>
       <td>
         <div class="svc-name">{{ s.name }}</div>
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('dashboard.update_service_icon', svc_id=s.id) }}" enctype="multipart/form-data" style="margin-top:6px;display:flex;align-items:center;gap:6px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="file" name="icon_image" accept="image/*" style="font-size:11px;max-width:140px">
+          <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">换图</button>
+        </form>
       </td>
       <td>{{ s.duration_mins }} 分钟</td>
       <td>{% if s.buffer_mins %}{{ s.buffer_mins }} 分{% else %}—{% endif %}</td>
       <td>{% if s.price %}${{ s.price|int }}{% else %}—{% endif %}</td>
       <td>
         <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('确认删除此服务？')">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn-delete">删除</button>
         </form>
       </td>

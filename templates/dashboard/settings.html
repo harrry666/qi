@@ -6,7 +6,7 @@
 
 <div class="settings-card">
   <h2>商家信息</h2>
-  <form method="POST">
+  <form method="POST" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="dash-label">商家名称 *</label>
     <input class="dash-input" type="text" name="name" value="{{ biz.name }}" required>
@@ -26,6 +26,15 @@
 
     <label class="dash-label">简介</label>
     <textarea class="dash-input dash-textarea" name="description" placeholder="在预约页面显示的简介">{{ biz.description or '' }}</textarea>
+
+    <label class="dash-label">封面图片</label>
+    {% if biz.banner_url %}
+    <div style="margin-bottom:8px">
+      <img src="{{ url_for('static', filename=biz.banner_url) }}" alt="当前封面" style="max-width:200px;max-height:80px;border-radius:6px;object-fit:cover;border:1px solid #ddd">
+    </div>
+    {% endif %}
+    <input class="dash-input" type="file" name="banner_image" accept="image/*" style="padding:6px">
+    <div style="font-size:12px;color:#888;margin-top:4px">支持 jpg / png / webp / gif，不选则保持不变</div>
 
     <button type="submit" class="btn-save" style="margin-top:20px">保存设置</button>
   </form>

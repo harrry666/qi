@@ -95,6 +95,8 @@ def init_db():
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancel_token TEXT',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS merchant_note TEXT',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS banner_url TEXT',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS icon_url TEXT',
     ]:
         db.execute(stmt)
     db.commit()
