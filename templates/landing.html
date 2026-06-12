@@ -6,7 +6,7 @@
   <div class="hero-rule"></div>
   <div class="hero-rich-inner">
     <div class="hero-copy">
-      <span class="hero-eyebrow">专为本地小商家打造</span>
+      <span class="hero-eyebrow">美发 · 美甲 · 按摩 · 私教 — 所有本地服务</span>
       <h1><span class="hero-thin">在线预约，</span><br>从此<span class="accent">简单。</span></h1>
       <p class="hero-sub">几分钟创建你的专属预约页面。客户在线预约，你用一个后台管理一切。</p>
       <div class="hero-actions">
@@ -51,7 +51,16 @@
   </div>
 </section>
 
+<div class="trust-strip">
+  <span class="trust-pill">✓ 免费使用</span>
+  <span class="trust-sep">·</span>
+  <span class="trust-pill">✓ 2 分钟创建</span>
+  <span class="trust-sep">·</span>
+  <span class="trust-pill">✓ 客户已发送 1000+ 次预约</span>
+</div>
+
 <section class="features-section">
+  <h2 class="features-heading">为什么选择 Qi？</h2>
   <div class="features-grid">
     <div class="feature-card">
       <div class="feature-icon">🔗</div>
@@ -78,13 +87,20 @@
 
 <section class="cta-section">
   <h2>今天就开始接受预约。</h2>
-  <p>完全免费，无需绑定信用卡。</p>
+  <p>已有 50+ 商家使用 · 完全免费</p>
   <a href="{{ url_for('auth.register') }}" class="btn-lg">免费创建账号</a>
 </section>
 
 <footer class="landing-footer">
   <div class="footer-qi">Qi</div>
   <p class="footer-slogan">专为本地小商家打造</p>
+  <div class="footer-links">
+    <a href="/book/harry-studio">预约演示</a>
+    <span>·</span>
+    <a href="{{ url_for('auth.login') }}">登录</a>
+    <span>·</span>
+    <a href="{{ url_for('auth.register') }}">注册</a>
+  </div>
   <p class="footer-copy">© 2026 Qi</p>
 </footer>
 
