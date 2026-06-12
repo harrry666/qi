@@ -467,15 +467,9 @@ a:hover { text-decoration: underline; }
 .book-body { background: var(--bg); min-height: 100vh; }
 
 .book-hero {
-  height: 140px;
-  background: linear-gradient(135deg, #1F1209 0%, #3D2410 55%, #C9A84C 100%);
-  position: relative; overflow: hidden;
-}
-.book-hero-watermark {
-  position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-  font-size: 72px; font-weight: 900; color: rgba(255,255,255,0.06);
-  white-space: nowrap; letter-spacing: -2px; pointer-events: none;
-  font-family: -apple-system, sans-serif;
+  width: 100%;
+  height: 240px;
+  background: #23221E url('/static/banner.png') center/cover no-repeat;
 }
 
 .book-container { max-width: 760px; margin: 0 auto; padding: 0 16px 60px; }
@@ -938,3 +932,33 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
 }
 .confirm-actions .btn-secondary:hover { border-color: var(--gold); }
 .confirm-actions .btn-primary { flex: 2; }
+
+/* ── Book Page: Floating biz header card ── */
+.biz-header-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 24px rgba(26,18,9,0.12);
+  border: 1px solid var(--border);
+  max-width: 720px;
+  margin: -40px auto 0;
+  position: relative;
+  z-index: 10;
+  padding: 24px 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+.biz-header-card h1 {
+  font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; margin: 0;
+}
+.biz-header-card p {
+  font-size: 14px; color: var(--muted); margin: 0;
+}
+.biz-logo-box {
+  width: 60px; height: 60px; border-radius: 14px;
+  background: var(--gold-light); border: 2px solid var(--gold-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 4px;
+}
