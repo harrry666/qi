@@ -3,6 +3,8 @@ from flask_login import login_required, current_user
 from db import get_db
 from datetime import datetime, timedelta
 import threading
+import os
+from uuid import uuid4
 from blueprints.booking import send_sms, format_phone
 from blueprints.auth import CATEGORIES
 
@@ -142,6 +144,21 @@ def services():
     db.close()
     return render_template('dashboard/services.html', services=svcs)
 
+ALLOWED_EXTS = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
+
+def _save_upload(file_storage):
+    """Save uploaded image to static/uploads/, return relative path or None."""
+    if not file_storage or not file_storage.filename:
+        return None
+    ext = file_storage.filename.rsplit('.', 1)[-1].lower()
+    if ext not in ALLOWED_EXTS:
+        return None
+    upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
+    filename = uuid4().hex + '.' + ext
+    file_storage.save(os.path.join(upload_dir, filename))
+    return 'uploads/' + filename
+
 @dashboard_bp.route('/services/add', methods=['POST'])
 @login_required
 def add_service():
@@ -152,6 +169,7 @@ def add_service():
     price = float(price_str) if price_str else None
     emoji = request.form.get('emoji', '').strip()
     buffer_mins = int(request.form.get('buffer_mins', 0) or 0)
+    icon_url = _save_upload(request.files.get('icon_image'))
 
     if not name:
         flash('服务名称为必填项。', 'error')
@@ -159,12 +177,29 @@ def add_service():
 
     db = get_db()
     db.execute(
-        'INSERT INTO services (business_id, name, name_sub, duration_mins, price, emoji, buffer_mins) VALUES (%s,%s,%s,%s,%s,%s,%s)',
-        (current_user.id, name, name_sub, duration, price, emoji, buffer_mins)
+        'INSERT INTO services (business_id, name, name_sub, duration_mins, price, emoji, buffer_mins, icon_url) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
+        (current_user.id, name, name_sub, duration, price, emoji, buffer_mins, icon_url)
     )
     db.commit()
     db.close()
     flash('服务已添加。', 'success')
+    return redirect(url_for('dashboard.services'))
+
+@dashboard_bp.route('/services/<int:svc_id>/icon', methods=['POST'])
+@login_required
+def update_service_icon(svc_id):
+    icon_url = _save_upload(request.files.get('icon_image'))
+    if icon_url:
+        db = get_db()
+        db.execute(
+            'UPDATE services SET icon_url=%s WHERE id=%s AND business_id=%s',
+            (icon_url, svc_id, current_user.id)
+        )
+        db.commit()
+        db.close()
+        flash('图片已更新。', 'success')
+    else:
+        flash('请上传有效的图片文件（jpg/png/webp/gif）。', 'error')
     return redirect(url_for('dashboard.services'))
 
 @dashboard_bp.route('/services/<int:svc_id>/delete', methods=['POST'])
@@ -383,11 +418,18 @@ def settings():
         phone = request.form.get('phone', '').strip()
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
+        banner_url = _save_upload(request.files.get('banner_image'))
         if name:
-            db.execute(
-                'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s WHERE id=%s',
-                (name, address, phone, description, category, current_user.id)
-            )
+            if banner_url:
+                db.execute(
+                    'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s, banner_url=%s WHERE id=%s',
+                    (name, address, phone, description, category, banner_url, current_user.id)
+                )
+            else:
+                db.execute(
+                    'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s WHERE id=%s',
+                    (name, address, phone, description, category, current_user.id)
+                )
             db.commit()
             flash('设置已保存。', 'success')
 
