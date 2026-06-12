@@ -11,8 +11,8 @@
 <div class="dash-layout">
 
   <aside class="sidebar">
-    <div class="sidebar-logo sidebar-logo-v2">Qi</div>
-    <div class="sidebar-biz sidebar-biz-enhanced" title="{{ current_user.name }}">{{ current_user.name }}</div>
+    <div class="sidebar-logo">Qi</div>
+    <div class="sidebar-biz" title="{{ current_user.name }}">{{ current_user.name }}</div>
     <nav class="sidebar-nav">
       <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📅 主页</a>
       <a href="{{ url_for('dashboard.analytics') }}"   class="nav-item {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">📊 分析报告</a>
