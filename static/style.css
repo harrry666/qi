@@ -729,3 +729,35 @@ a:hover { text-decoration: underline; }
   .hero-actions { flex-direction: column; align-items: center; }
   .auth-card { padding: 32px 24px; }
 }
+
+/* ── Blackouts page additions ──────────────────────────────── */
+
+/* 1. Date input cross-browser consistency */
+input[type="date"].dash-input {
+  color: var(--text);
+  font-family: inherit;
+}
+input[type="date"].dash-input::-webkit-datetime-edit,
+input[type="date"].dash-input::-webkit-datetime-edit-fields-wrapper,
+input[type="date"].dash-input::-webkit-datetime-edit-text,
+input[type="date"].dash-input::-webkit-datetime-edit-day-field,
+input[type="date"].dash-input::-webkit-datetime-edit-month-field,
+input[type="date"].dash-input::-webkit-datetime-edit-year-field {
+  color: var(--text);
+  font-family: inherit;
+}
+input[type="date"].dash-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+  filter: invert(0.15);
+}
+
+/* 2. Action card — gold left border for "添加" card */
+.settings-card-action {
+  border-left: 3px solid var(--gold);
+}
+
+/* 3. Blackout table row hover — more visible inside white card */
+.blackout-table tr:hover td {
+  background: #F5EDE0;
+}
