@@ -183,6 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ta) ta.addEventListener('input', () => {
     document.getElementById('char-count').textContent = `${ta.value.length} / 100`;
   });
+  const phoneInput = document.getElementById('cust-phone');
+  if (phoneInput) phoneInput.addEventListener('input', () => {
+    document.getElementById('phone-error').style.display = 'none';
+  });
 });
 
 function proceedToLogin() {
@@ -204,7 +208,16 @@ async function submitBooking() {
   const name = document.getElementById('cust-name').value.trim();
   const phone = document.getElementById('cust-phone').value.trim();
   const smsConsent = document.getElementById('sms-consent').checked;
-  if (!name || !phone) { alert('请填写姓名和手机号码。'); return; }
+  const phoneDigits = phone.replace(/\D/g, '');
+  const phoneValid = phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits[0] === '1');
+  const phoneError = document.getElementById('phone-error');
+  if (!name) { alert('请填写姓名。'); return; }
+  if (!phoneValid) {
+    phoneError.textContent = '请输入有效的10位美国手机号';
+    phoneError.style.display = 'block';
+    return;
+  }
+  phoneError.style.display = 'none';
   if (!smsConsent) { alert('Please check the SMS consent box to confirm your appointment.'); return; }
 
   const btn = document.getElementById('btn-book');
@@ -266,6 +279,8 @@ function resetBooking() {
   document.getElementById('sms-consent').checked = false;
   document.getElementById('btn-book').disabled = false;
   document.getElementById('btn-book').textContent = '确认预约';
+  const phoneError = document.getElementById('phone-error');
+  if (phoneError) { phoneError.style.display = 'none'; phoneError.textContent = ''; }
   showScreen('screen-services');
 }
 
