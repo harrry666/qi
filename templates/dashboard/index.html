@@ -8,21 +8,26 @@
 </div>
 
 <div class="stats-row">
-  <div class="stat-card">
-    <div class="stat-label">今天</div>
+  <div class="stat-card" style="background: linear-gradient(135deg, var(--white) 60%, var(--gold-light) 100%)">
+    <div class="stat-label">📅 今日预约</div>
     <div class="stat-value">{{ today_count }}</div>
     <div class="stat-sub">个预约</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">本周</div>
+    <div class="stat-label">📊 本周预约</div>
     <div class="stat-value">{{ week_count }}</div>
     <div class="stat-sub">已确认</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">累计</div>
+    <div class="stat-label">✅ 累计总数</div>
     <div class="stat-value">{{ total }}</div>
     <div class="stat-sub">次预约</div>
   </div>
+</div>
+
+<div class="quick-actions">
+  <a href="{{ url_for('booking.book_page', slug=current_user.slug) }}" target="_blank" class="quick-btn">👀 查看我的预约页</a>
+  <a href="{{ url_for('dashboard.appointments') }}" class="quick-btn quick-btn-outline">📋 全部预约</a>
 </div>
 
 <div class="section-heading">今日日程</div>
@@ -30,8 +35,18 @@
 {% if today_apts %}
   <div class="apt-list">
     {% for a in today_apts %}
+    {% set apt_hour = a.appointment_dt[11:13]|int %}
+    {% set apt_min = a.appointment_dt[14:16]|int %}
+    {% set diff = apt_hour * 60 + apt_min - now.hour * 60 - now.minute %}
     <div class="apt-card">
-      <div class="apt-time">{{ a.appointment_dt[11:16] }}</div>
+      <div class="apt-time-col">
+        <div class="apt-time">{{ a.appointment_dt[11:16] }}</div>
+        {% if diff < 0 %}
+          <div class="apt-rel-time apt-rel-past">已过</div>
+        {% elif diff <= 120 %}
+          <div class="apt-rel-time apt-rel-soon">{{ diff }} 分钟后</div>
+        {% endif %}
+      </div>
       <div class="apt-info">
         <strong>{{ a.customer_name }}</strong>
         <span>{{ a.service_name }} · {{ a.duration_mins }} min{% if a.price %} · ${{ a.price|int }}{% endif %}</span>
@@ -42,7 +57,11 @@
     {% endfor %}
   </div>
 {% else %}
-  <div class="empty-msg">今天暂无预约。</div>
+  <div class="empty-today">
+    <div class="empty-today-icon">🌿</div>
+    <div class="empty-today-msg">今天暂无预约</div>
+    <div class="empty-today-sub">休息一下，或者分享你的预约页面吸引新客户。</div>
+  </div>
 {% endif %}
 
 {% endblock %}

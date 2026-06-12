@@ -332,13 +332,26 @@ a:hover { text-decoration: underline; }
   background: var(--white); border: 1px solid var(--border); border-radius: 10px;
   padding: 16px 20px; display: flex; align-items: center; gap: 20px;
 }
-.apt-time { font-size: 20px; font-weight: 700; color: var(--gold-h); min-width: 52px; }
+.apt-time-col { display: flex; flex-direction: column; align-items: flex-start; min-width: 64px; gap: 3px; }
+.apt-time { font-size: 22px; font-weight: 800; color: var(--gold-h); line-height: 1; }
+.apt-rel-time { font-size: 11px; font-weight: 600; border-radius: 6px; padding: 2px 6px; white-space: nowrap; }
+.apt-rel-past { background: #F5F1EA; color: var(--muted); }
+.apt-rel-soon { background: var(--gold-light); color: var(--gold-h); border: 1px solid var(--gold-border); }
 .apt-info { flex: 1; }
 .apt-info strong { display: block; font-size: 15px; color: var(--text); }
 .apt-info span { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
 .apt-comment { font-style: italic; color: var(--muted) !important; }
 .apt-phone { font-size: 13px; color: var(--muted); }
 .empty-msg { color: var(--muted); font-size: 14px; padding: 24px 0; }
+.empty-today { text-align: center; padding: 40px 24px; }
+.empty-today-icon { font-size: 36px; margin-bottom: 10px; }
+.empty-today-msg { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.empty-today-sub { font-size: 13px; color: var(--muted); }
+.quick-actions { display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+.quick-btn { padding: 10px 20px; background: var(--gold); color: var(--text); border-radius: 20px; font-size: 14px; font-weight: 600; text-decoration: none; }
+.quick-btn:hover { background: var(--gold-h); color: var(--white); text-decoration: none; }
+.quick-btn-outline { background: var(--white); border: 1.5px solid var(--border); color: var(--muted); }
+.quick-btn-outline:hover { border-color: var(--gold-border); color: var(--text); }
 
 .add-service-form { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 28px; }
 .add-service-form h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
