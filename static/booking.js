@@ -45,11 +45,11 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
   const stepsEl = document.querySelector('.booking-steps');
   if (!stepsEl) return;
-  const stepMap = { 'screen-services': 1, 'screen-slots': 2, 'screen-login': 3, 'screen-success': null };
+  const stepMap = { 'screen-services': 1, 'screen-slots': 2, 'screen-login': 3, 'screen-confirm': 4, 'screen-success': null };
   const activeStep = stepMap[id];
   if (activeStep === null) { stepsEl.style.display = 'none'; return; }
   stepsEl.style.display = 'flex';
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= 4; i++) {
     const el = document.getElementById(`step-${i}`);
     if (!el) continue;
     el.classList.remove('active', 'done');
@@ -76,16 +76,19 @@ function renderServices() {
   }
   list.innerHTML = state.services.map((s, i) => {
     const hotBadge = i === 0 ? '<span style="display:inline-block;background:#FBF4E3;color:#A8882A;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;border:1px solid #E8D59A;">热门</span>' : '';
+    const priceHtml = s.price
+      ? `<div class="svc-price-main">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>`
+      : '<div class="svc-price-tbd">价格面议</div>';
     return `
     <div class="service-item" onclick="selectService(${s.id})">
       <div class="svc-icon">${s.emoji ? esc(s.emoji) : icon(i)}</div>
-      <div>
+      <div class="svc-info">
         <div class="svc-name">${esc(s.name)}${hotBadge}</div>
         ${s.name_sub ? `<div class="svc-name-sub">${esc(s.name_sub)}</div>` : ''}
+        ${priceHtml}
       </div>
       <div class="svc-meta">
-        <div class="svc-duration">${fmtDuration(s.duration_mins)}</div>
-        ${s.price ? `<div class="svc-price">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>` : ''}
+        ${s.duration_mins ? `<div class="svc-duration">${fmtDuration(s.duration_mins)}</div>` : ''}
       </div>
     </div>
   `;
@@ -217,7 +220,7 @@ function proceedToLogin() {
 
 function backToSlots() { showScreen('screen-slots'); }
 
-async function submitBooking() {
+function showConfirmScreen() {
   const name = document.getElementById('cust-name').value.trim();
   const phone = document.getElementById('cust-phone').value.trim();
   const smsConsent = document.getElementById('sms-consent').checked;
@@ -233,8 +236,32 @@ async function submitBooking() {
   phoneError.style.display = 'none';
   if (!smsConsent) { alert('Please check the SMS consent box to confirm your appointment.'); return; }
 
-  const btn = document.getElementById('btn-book');
-  btn.disabled = true; btn.textContent = '预约中...';
+  const svc = state.selected.service;
+  const priceText = svc.price ? `$${svc.price % 1 === 0 ? svc.price|0 : svc.price}` : '价格面议';
+  const rows = [
+    { label: '服务', value: esc(svc.name) },
+    { label: '日期时间', value: fmtDisplay(state.selected.date, state.selected.time) },
+    { label: '价格', value: priceText },
+    { label: '姓名', value: esc(name) },
+    { label: '手机号', value: esc(phone) },
+  ];
+  if (state.selected.comment) rows.push({ label: '备注', value: esc(state.selected.comment) });
+
+  document.getElementById('confirm-rows').innerHTML = rows.map(r =>
+    `<div class="confirm-row"><span class="confirm-label">${r.label}</span><span class="confirm-value">${r.value}</span></div>`
+  ).join('');
+
+  const submitBtn = document.getElementById('btn-confirm-submit');
+  submitBtn.disabled = false;
+  submitBtn.textContent = '✅ 确认提交';
+  showScreen('screen-confirm');
+}
+
+async function submitBooking() {
+  const name = document.getElementById('cust-name').value.trim();
+  const phone = document.getElementById('cust-phone').value.trim();
+  const btn = document.getElementById('btn-confirm-submit');
+  btn.disabled = true; btn.textContent = '提交中...';
 
   try {
     const res = await fetch(`/api/book/${SLUG}/create`, {
@@ -262,11 +289,11 @@ async function submitBooking() {
       launchConfetti();
     } else {
       alert(data.error || '预约失败，请重试。');
-      btn.disabled = false; btn.textContent = '确认预约';
+      btn.disabled = false; btn.textContent = '✅ 确认提交';
     }
   } catch {
     alert('网络错误，请重试。');
-    btn.disabled = false; btn.textContent = '确认预约';
+    btn.disabled = false; btn.textContent = '✅ 确认提交';
   }
 }
 
@@ -291,7 +318,7 @@ function resetBooking() {
   document.getElementById('cust-phone').value = '';
   document.getElementById('sms-consent').checked = false;
   document.getElementById('btn-book').disabled = false;
-  document.getElementById('btn-book').textContent = '确认预约';
+  document.getElementById('btn-book').textContent = '下一步 →';
   const phoneError = document.getElementById('phone-error');
   if (phoneError) { phoneError.style.display = 'none'; phoneError.textContent = ''; }
   showScreen('screen-services');

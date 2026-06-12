@@ -30,6 +30,8 @@
     <div class="step" id="step-2">② 选时间</div>
     <div class="step-line"></div>
     <div class="step" id="step-3">③ 填信息</div>
+    <div class="step-line"></div>
+    <div class="step" id="step-4">④ 确认</div>
   </div>
 
   <!-- Screen 1: Services -->
@@ -70,11 +72,24 @@
         <input type="checkbox" id="sms-consent">
         <span>I agree to receive SMS appointment confirmations and reminders from this business. Msg &amp; data rates may apply. Reply STOP to unsubscribe.</span>
       </label>
-      <button id="btn-book" class="btn-primary" onclick="submitBooking()">✓ 确认预约</button>
+      <button id="btn-book" class="btn-primary" onclick="showConfirmScreen()">下一步 →</button>
     </div>
   </div>
 
-  <!-- Screen 4: Success -->
+  <!-- Screen 4: Confirm Summary -->
+  <div id="screen-confirm" class="screen">
+    <button class="btn-back" onclick="showScreen('screen-login')">← 修改</button>
+    <div class="confirm-card">
+      <div class="confirm-title">确认预约信息</div>
+      <div class="confirm-rows" id="confirm-rows"></div>
+      <div class="confirm-actions">
+        <button class="btn-secondary" onclick="showScreen('screen-login')">← 修改</button>
+        <button id="btn-confirm-submit" class="btn-primary" onclick="submitBooking()">✅ 确认提交</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 5: Success -->
   <div id="screen-success" class="screen">
     <div class="success-card">
       <div class="success-icon">✓</div>
