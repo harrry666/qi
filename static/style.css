@@ -372,7 +372,7 @@ a:hover { text-decoration: underline; }
   padding: 16px 20px; display: flex; align-items: center; gap: 20px;
 }
 .apt-time-col { display: flex; flex-direction: column; align-items: flex-start; min-width: 64px; gap: 3px; }
-.apt-time { font-size: 22px; font-weight: 800; color: var(--gold-h); line-height: 1; }
+.apt-time { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; }
 .apt-rel-time { font-size: 11px; font-weight: 600; border-radius: 6px; padding: 2px 6px; white-space: nowrap; }
 .apt-rel-past { background: #F5F1EA; color: var(--muted); }
 .apt-rel-soon { background: var(--gold-light); color: var(--gold-h); border: 1px solid var(--gold-border); }
@@ -820,9 +820,9 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
   border-top: 4px solid var(--gold-h);
   box-shadow: 0 4px 24px rgba(201,168,76,0.18);
 }
-.stat-card-hero .stat-value { font-size: 56px; color: var(--gold-h); }
-.stat-card-hero .stat-label { font-size: 13px; font-weight: 700; color: var(--gold-h); }
-.stat-card-hero .stat-sub { font-weight: 600; color: var(--gold-h); }
+.stat-card-hero .stat-value { font-size: 56px; color: var(--text); }
+.stat-card-hero .stat-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.stat-card-hero .stat-sub { font-weight: 600; color: var(--muted); }
 
 /* ── Secondary stat cards (week / total) ── */
 .stat-card-secondary .stat-value { font-size: 30px; color: var(--muted); }
