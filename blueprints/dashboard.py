@@ -284,6 +284,22 @@ def delete_blackout(bo_id):
     db.close()
     return redirect(url_for('dashboard.blackouts'))
 
+@dashboard_bp.route('/customers')
+@login_required
+def customers():
+    db = get_db()
+    rows = db.execute(
+        "SELECT customer_name, phone, COUNT(*) as visit_count, "
+        "MAX(appointment_dt) as last_visit, MIN(appointment_dt) as first_visit "
+        "FROM appointments "
+        "WHERE business_id=%s AND status='confirmed' "
+        "GROUP BY phone, customer_name "
+        "ORDER BY visit_count DESC, last_visit DESC",
+        (current_user.id,)
+    ).fetchall()
+    db.close()
+    return render_template('dashboard/customers.html', customers=rows)
+
 @dashboard_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
