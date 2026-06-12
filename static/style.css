@@ -729,3 +729,41 @@ a:hover { text-decoration: underline; }
   .hero-actions { flex-direction: column; align-items: center; }
   .auth-card { padding: 32px 24px; }
 }
+
+/* ════════════════════════════════════════════════
+   Services page — layout & visual enhancements
+════════════════════════════════════════════════ */
+
+/* Form: 4-col grid, name+subtitle each span 2 cols */
+.svc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+.svc-form-grid .svc-col-2 { grid-column: span 2; }
+
+/* Table: visible row separators override the near-invisible bg-color border */
+.svc-table td { border-bottom: 1px solid var(--border); }
+.svc-table tbody tr:last-child td { border-bottom: none; }
+/* Hover: slightly warmer tint so it reads clearly against white rows */
+.svc-table tbody tr:hover td { background: #F2EBE0; }
+
+/* Emoji cell: 28px, centered, consistent width */
+.svc-emoji-cell {
+  font-size: 28px;
+  text-align: center;
+  width: 52px;
+  vertical-align: middle;
+  line-height: 1.2;
+}
+
+/* Delete button: smooth transition; default stays gray, only turns red on hover */
+.btn-delete { transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease; }
+.btn-delete:hover { background: #FEF2F2; border-color: var(--red); color: var(--red); }
+
+/* Services form: responsive collapse on mobile */
+@media (max-width: 600px) {
+  .svc-form-grid { grid-template-columns: 1fr 1fr; }
+  .svc-form-grid .svc-col-2 { grid-column: span 2; }
+}
