@@ -269,6 +269,45 @@ def cancel_appointment(apt_id):
     flash('预约已取消。', 'success')
     return redirect(url_for('dashboard.appointments'))
 
+@dashboard_bp.route('/appointments/<int:apt_id>/reschedule', methods=['POST'])
+@login_required
+def reschedule_appointment(apt_id):
+    new_dt_raw = request.form.get('new_dt', '').strip()
+    if not new_dt_raw:
+        flash('请选择新的日期和时间。', 'error')
+        return redirect(url_for('dashboard.appointments'))
+    try:
+        new_dt = datetime.strptime(new_dt_raw, '%Y-%m-%dT%H:%M')
+    except ValueError:
+        flash('日期格式无效。', 'error')
+        return redirect(url_for('dashboard.appointments'))
+    if new_dt <= datetime.now():
+        flash('改期时间不能是过去时间。', 'error')
+        return redirect(url_for('dashboard.appointments'))
+    new_dt_str = new_dt.strftime('%Y-%m-%d %H:%M')
+    db = get_db()
+    db.execute(
+        'UPDATE appointments SET appointment_dt=%s WHERE id=%s AND business_id=%s',
+        (new_dt_str, apt_id, current_user.id)
+    )
+    db.commit()
+    db.close()
+    flash('预约时间已更新。', 'success')
+    return redirect(url_for('dashboard.appointments'))
+
+@dashboard_bp.route('/appointments/<int:apt_id>/note', methods=['POST'])
+@login_required
+def save_appointment_note(apt_id):
+    note = request.form.get('note', '').strip()
+    db = get_db()
+    db.execute(
+        'UPDATE appointments SET merchant_note=%s WHERE id=%s AND business_id=%s',
+        (note, apt_id, current_user.id)
+    )
+    db.commit()
+    db.close()
+    return ('', 204)
+
 @dashboard_bp.route('/blackouts')
 @login_required
 def blackouts():

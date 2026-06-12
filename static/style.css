@@ -850,3 +850,58 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
 .stat-value                      { color: var(--text); }
 .stat-card-secondary .stat-value { color: var(--text); }
 .stat-card-hero-dark .stat-value { color: var(--text); }
+
+/* ── Appointment expand rows (reschedule / notes) ── */
+.apt-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.expand-row td {
+  background: #f8f6f2;
+  border-top: none;
+  padding: 10px 20px 14px;
+}
+
+.reschedule-form {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.reschedule-form label {
+  font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap;
+}
+.reschedule-form input[type="datetime-local"] {
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 10px; font-size: 13px; color: var(--text); background: white;
+}
+.btn-reschedule {
+  background: none; border: 1px solid var(--gold); color: var(--gold-h);
+  border-radius: 8px; padding: 4px 12px; font-size: 13px; cursor: pointer; font-weight: 600;
+}
+.btn-reschedule:hover { background: var(--gold-light); }
+.btn-confirm-reschedule {
+  background: var(--gold); color: white; border: none;
+  border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-weight: 600;
+}
+.btn-confirm-reschedule:hover { background: var(--gold-h); }
+.btn-cancel-inline {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.btn-cancel-inline:hover { background: #f0ece4; }
+
+.btn-note-toggle {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; padding: 3px 5px; line-height: 1; opacity: 0.6;
+}
+.btn-note-toggle:hover { opacity: 1; }
+
+.note-badge { font-size: 13px; margin-left: 4px; cursor: pointer; vertical-align: middle; }
+
+.note-area { display: flex; align-items: flex-start; gap: 12px; }
+.note-area label {
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  white-space: nowrap; padding-top: 7px;
+}
+.note-area textarea {
+  flex: 1; border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; resize: vertical; min-height: 64px;
+  font-family: inherit; color: var(--text); background: white;
+}
+.note-area textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201,168,76,0.15); }
