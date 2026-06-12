@@ -6,7 +6,7 @@
 <p style="color:#666;font-size:14px;margin-bottom:24px">{{ this_month_label }} · 已确认预约统计</p>
 
 <div class="stats-row" style="margin-bottom:16px;grid-template-columns:repeat(4,1fr)">
-  <div class="stat-card stat-card-hero">
+  <div class="stat-card stat-card-hero-dark">
     <div class="stat-label">{{ this_month_label }}</div>
     <div class="stat-value">${{ '%.0f'|format(rev_this) }}</div>
     <div class="stat-sub" style="color:{% if rev_delta >= 0 %}#4ADE80{% else %}#F87171{% endif %}">
