@@ -245,8 +245,16 @@ a:hover { text-decoration: underline; }
 
 /* ── CTA section ── */
 .cta-section {
+  position: relative;
   text-align: center; background: var(--text); color: var(--white);
-  padding: 80px 24px; margin-top: 40px;
+  padding: 80px 24px; margin-top: 0;
+}
+.cta-section::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, var(--bg), var(--text));
+  pointer-events: none;
 }
 .cta-section h2 { font-size: 30px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
 .cta-section p { font-size: 15px; opacity: 0.55; margin-bottom: 28px; }
