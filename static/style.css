@@ -868,3 +868,8 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
   background: var(--gold); margin-right: 7px;
   vertical-align: middle; flex-shrink: 0;
 }
+
+/* ── Dashboard number override: stat values → dark text ── */
+.stat-value                      { color: var(--text); }
+.stat-card-secondary .stat-value { color: var(--text); }
+.stat-card-hero-dark .stat-value { color: var(--text); }
