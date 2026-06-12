@@ -41,7 +41,7 @@ def index():
     db.close()
     return render_template('dashboard/index.html',
         today_apts=today_apts, today_count=len(today_apts),
-        week_count=week_count, total=total, greeting=greeting)
+        week_count=week_count, total=total, greeting=greeting, now=now)
 
 @dashboard_bp.route('/analytics')
 @login_required
