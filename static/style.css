@@ -850,3 +850,36 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
 .stat-value                      { color: var(--text); }
 .stat-card-secondary .stat-value { color: var(--text); }
 .stat-card-hero-dark .stat-value { color: var(--text); }
+
+/* ── Service card: price highlight ── */
+.svc-info { flex: 1; min-width: 0; }
+.svc-price-main { font-size: 17px; font-weight: 700; color: var(--gold-h); margin-top: 4px; }
+.svc-price-tbd { font-size: 13px; color: var(--muted); margin-top: 4px; font-style: italic; }
+
+/* ── Confirm Summary Screen ── */
+.confirm-card {
+  background: var(--white); border-radius: var(--radius); padding: 24px;
+  margin-top: 16px; box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.confirm-title {
+  font-size: 17px; font-weight: 700; color: var(--text);
+  margin-bottom: 20px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.confirm-rows { margin-bottom: 24px; }
+.confirm-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.confirm-row:last-child { border-bottom: none; }
+.confirm-label { font-size: 13px; color: var(--muted); flex-shrink: 0; width: 72px; }
+.confirm-value { font-size: 14px; font-weight: 600; color: var(--text); text-align: right; }
+.confirm-actions { display: flex; gap: 12px; }
+.confirm-actions .btn-secondary {
+  flex: 1; padding: 14px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: var(--white);
+  font-size: 15px; font-weight: 600; color: var(--text);
+  cursor: pointer; transition: border-color 0.15s;
+}
+.confirm-actions .btn-secondary:hover { border-color: var(--gold); }
+.confirm-actions .btn-primary { flex: 2; }
