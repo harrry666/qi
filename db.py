@@ -91,6 +91,7 @@ def init_db():
             used INTEGER NOT NULL DEFAULT 0
         )''',
         'ALTER TABLE services ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT \'\'',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS buffer_mins INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancel_token TEXT',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent INTEGER NOT NULL DEFAULT 0',
     ]:
