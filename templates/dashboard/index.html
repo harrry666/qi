@@ -8,17 +8,17 @@
 </div>
 
 <div class="stats-row">
-  <div class="stat-card" style="background: linear-gradient(135deg, var(--white) 60%, var(--gold-light) 100%)">
+  <div class="stat-card stat-card-hero">
     <div class="stat-label">📅 今日预约</div>
     <div class="stat-value">{{ today_count }}</div>
     <div class="stat-sub">个预约</div>
   </div>
-  <div class="stat-card">
+  <div class="stat-card stat-card-secondary">
     <div class="stat-label">📊 本周预约</div>
     <div class="stat-value">{{ week_count }}</div>
     <div class="stat-sub">已确认</div>
   </div>
-  <div class="stat-card">
+  <div class="stat-card stat-card-secondary">
     <div class="stat-label">✅ 累计总数</div>
     <div class="stat-value">{{ total }}</div>
     <div class="stat-sub">次预约</div>
@@ -52,6 +52,7 @@
         <span>{{ a.service_name }} · {{ a.duration_mins }} min{% if a.price %} · ${{ a.price|int }}{% endif %}</span>
         {% if a.comment %}<span class="apt-comment">"{{ a.comment }}"</span>{% endif %}
       </div>
+      <div class="apt-avatar">{{ a.customer_name[0]|upper if a.customer_name else '?' }}</div>
       <div class="apt-phone">{{ a.phone }}</div>
     </div>
     {% endfor %}
