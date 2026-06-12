@@ -8,7 +8,7 @@
 </head>
 <body class="book-body" data-slug="{{ biz.slug }}">
 
-<div class="book-hero"></div>
+<div class="book-hero"{% if biz.banner_url %} style="background-image: url('{{ url_for('static', filename=biz.banner_url) }}')"{% endif %}></div>
 
 <div class="book-container">
 
