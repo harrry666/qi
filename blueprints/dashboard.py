@@ -278,7 +278,17 @@ def blackouts():
         (current_user.id,)
     ).fetchall()
     db.close()
-    return render_template('dashboard/blackouts.html', blackouts=rows)
+    blackout_list = []
+    for row in rows:
+        d = dict(row)
+        try:
+            d['start_date_fmt'] = datetime.strptime(d['start_date'], '%Y-%m-%d').strftime('%-m月%-d日')
+            d['end_date_fmt'] = datetime.strptime(d['end_date'], '%Y-%m-%d').strftime('%-m月%-d日')
+        except Exception:
+            d['start_date_fmt'] = d['start_date']
+            d['end_date_fmt'] = d['end_date']
+        blackout_list.append(d)
+    return render_template('dashboard/blackouts.html', blackouts=blackout_list)
 
 @dashboard_bp.route('/blackouts/add', methods=['POST'])
 @login_required
