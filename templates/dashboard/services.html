@@ -29,6 +29,10 @@
         <span class="btn-label">图标 Emoji（选填）</span>
         <input class="dash-input" type="text" name="emoji" placeholder="例：💅 ✂️ 💆" style="font-size:20px;max-width:120px">
       </div>
+      <div>
+        <span class="btn-label">缓冲时间（分钟）</span>
+        <input class="dash-input" type="number" name="buffer_mins" value="0" min="0" step="5" placeholder="例：10">
+      </div>
     </div>
     <div style="margin-top:14px">
       <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">+ 添加服务</button>
@@ -43,6 +47,7 @@
       <th>图标</th>
       <th>服务</th>
       <th>时长</th>
+      <th>缓冲</th>
       <th>价格</th>
       <th></th>
     </tr>
@@ -56,6 +61,7 @@
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}
       </td>
       <td>{{ s.duration_mins }} 分钟</td>
+      <td>{% if s.buffer_mins %}{{ s.buffer_mins }} 分{% else %}—{% endif %}</td>
       <td>{% if s.price %}${{ s.price|int }}{% else %}—{% endif %}</td>
       <td>
         <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('确认删除此服务？')">

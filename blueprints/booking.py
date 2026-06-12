@@ -75,7 +75,7 @@ def generate_slots(business_id, date_obj, duration_mins):
 def filter_available(business_id, date_str, slots, duration_mins):
     db = get_db()
     booked = db.execute(
-        "SELECT s.duration_mins, a.appointment_dt FROM appointments a "
+        "SELECT s.duration_mins, s.buffer_mins, a.appointment_dt FROM appointments a "
         "JOIN services s ON a.service_id=s.id "
         "WHERE a.business_id=%s AND a.appointment_dt LIKE %s AND a.status != 'cancelled'",
         (business_id, f'{date_str}%')
@@ -89,7 +89,7 @@ def filter_available(business_id, date_str, slots, duration_mins):
         conflict = False
         for b in booked:
             b_dt = datetime.strptime(b['appointment_dt'], '%Y-%m-%d %H:%M')
-            b_end = b_dt + timedelta(minutes=b['duration_mins'])
+            b_end = b_dt + timedelta(minutes=b['duration_mins'] + b['buffer_mins'])
             if not (slot_end <= b_dt or slot_dt >= b_end):
                 conflict = True
                 break
