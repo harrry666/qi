@@ -8,12 +8,12 @@
   <h2>添加服务</h2>
   <form method="POST" action="{{ url_for('dashboard.add_service') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="form-row">
-      <div>
+    <div class="svc-form-grid">
+      <div class="svc-col-2">
         <span class="btn-label">服务名称 *</span>
         <input class="dash-input" type="text" name="name" placeholder="例：男士剪发" required>
       </div>
-      <div>
+      <div class="svc-col-2">
         <span class="btn-label">副标题（选填）</span>
         <input class="dash-input" type="text" name="name_sub" placeholder="例：一位男发剪发">
       </div>
@@ -27,7 +27,7 @@
       </div>
       <div>
         <span class="btn-label">图标 Emoji（选填）</span>
-        <input class="dash-input" type="text" name="emoji" placeholder="例：💅 ✂️ 💆" style="font-size:20px;max-width:120px">
+        <input class="dash-input" type="text" name="emoji" placeholder="例：💅 ✂️ 💆" style="font-size:20px">
       </div>
       <div>
         <span class="btn-label">缓冲时间（分钟）</span>
@@ -55,7 +55,7 @@
   <tbody>
     {% for s in services %}
     <tr>
-      <td style="font-size:22px;text-align:center;width:48px">{{ s.emoji or '✂️' }}</td>
+      <td class="svc-emoji-cell">{{ s.emoji or '✂️' }}</td>
       <td>
         <div class="svc-name">{{ s.name }}</div>
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}
