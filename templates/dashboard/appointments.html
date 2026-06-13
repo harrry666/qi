@@ -28,7 +28,7 @@
     <tr>
       <td style="font-weight:600;white-space:nowrap">{{ a.appointment_dt }}</td>
       <td>
-        <div style="font-size:14px;color:white">{{ a.service_name }}</div>
+        <div style="font-size:14px;color:var(--text)">{{ a.service_name }}</div>
         {% if a.name_sub %}<div style="font-size:12px;color:#555">{{ a.name_sub }}</div>{% endif %}
       </td>
       <td>
@@ -37,7 +37,7 @@
           <span class="note-badge" onclick="toggleNote({{ a.id }})" title="查看商家备注">📝</span>
         {% endif %}
       </td>
-      <td style="color:#A78BFA">{{ a.phone }}</td>
+      <td style="color:var(--gold-h)">{{ a.phone }}</td>
       <td style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>
       <td>
         <span class="badge badge-{{ a.status }}">{{ '已确认' if a.status == 'confirmed' else '已取消' }}</span>
