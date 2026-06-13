@@ -1,32 +1,45 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Services{% endblock %}
+{% block title %}服务项目{% endblock %}
 {% block content %}
 
-<div class="page-title">✂️ Services</div>
+<div class="page-title">✂️ 服务项目</div>
 
 <div class="add-service-form">
-  <h2>Add a service</h2>
-  <form method="POST" action="{{ url_for('dashboard.add_service') }}">
-    <div class="form-row">
-      <div>
-        <span class="btn-label">Service Name *</span>
-        <input class="dash-input" type="text" name="name" placeholder="e.g. Haircut for 1 man" required>
+  <h2>添加服务</h2>
+  <form method="POST" action="{{ url_for('dashboard.add_service') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="svc-form-grid">
+      <div class="svc-col-2">
+        <span class="btn-label">服务名称 *</span>
+        <input class="dash-input" type="text" name="name" placeholder="例：男士剪发" required>
+      </div>
+      <div class="svc-col-2">
+        <span class="btn-label">副标题（选填）</span>
+        <input class="dash-input" type="text" name="name_sub" placeholder="例：一位男发剪发">
       </div>
       <div>
-        <span class="btn-label">Sub-label (optional)</span>
-        <input class="dash-input" type="text" name="name_sub" placeholder="e.g. 一位男发剪发">
-      </div>
-      <div>
-        <span class="btn-label">Duration (min)</span>
+        <span class="btn-label">时长（分钟）</span>
         <input class="dash-input" type="number" name="duration" value="30" min="5" step="5">
       </div>
       <div>
-        <span class="btn-label">Price ($, optional)</span>
-        <input class="dash-input" type="number" name="price" placeholder="e.g. 20" min="0" step="0.01">
+        <span class="btn-label">价格（$，选填）</span>
+        <input class="dash-input" type="number" name="price" placeholder="例：20" min="0" step="0.01">
+      </div>
+      <div>
+        <span class="btn-label">图标 Emoji（选填）</span>
+        <input class="dash-input" type="text" name="emoji" placeholder="例：💅 ✂️ 💆" style="font-size:20px">
+      </div>
+      <div>
+        <span class="btn-label">自定义图片（选填）</span>
+        <input class="dash-input" type="file" name="icon_image" accept="image/*" style="padding:6px">
+      </div>
+      <div>
+        <span class="btn-label">缓冲时间（分钟）</span>
+        <input class="dash-input" type="number" name="buffer_mins" value="0" min="0" step="5" placeholder="例：10">
       </div>
     </div>
     <div style="margin-top:14px">
-      <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">+ Add Service</button>
+      <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">+ 添加服务</button>
     </div>
   </form>
 </div>
@@ -35,24 +48,40 @@
 <table class="svc-table">
   <thead>
     <tr>
-      <th>Service</th>
-      <th>Duration</th>
-      <th>Price</th>
+      <th>图标</th>
+      <th>服务</th>
+      <th>时长</th>
+      <th>缓冲</th>
+      <th>价格</th>
       <th></th>
     </tr>
   </thead>
   <tbody>
     {% for s in services %}
     <tr>
+      <td class="svc-emoji-cell">
+        {% if s.icon_url %}
+          <img src="{{ url_for('static', filename=s.icon_url) }}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle">
+        {% else %}
+          {{ s.emoji or '✂️' }}
+        {% endif %}
+      </td>
       <td>
         <div class="svc-name">{{ s.name }}</div>
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('dashboard.update_service_icon', svc_id=s.id) }}" enctype="multipart/form-data" style="margin-top:6px;display:flex;align-items:center;gap:6px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="file" name="icon_image" accept="image/*" style="font-size:11px;max-width:140px">
+          <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">换图</button>
+        </form>
       </td>
-      <td>{{ s.duration_mins }} min</td>
+      <td>{{ s.duration_mins }} 分钟</td>
+      <td>{% if s.buffer_mins %}{{ s.buffer_mins }} 分{% else %}—{% endif %}</td>
       <td>{% if s.price %}${{ s.price|int }}{% else %}—{% endif %}</td>
       <td>
-        <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('Delete this service?')">
-          <button type="submit" class="btn-delete">Delete</button>
+        <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('确认删除此服务？')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-delete">删除</button>
         </form>
       </td>
     </tr>
@@ -60,7 +89,7 @@
   </tbody>
 </table>
 {% else %}
-  <div class="empty-msg">No services yet. Add your first one above.</div>
+  <div class="empty-msg">暂无服务，请在上方添加。</div>
 {% endif %}
 
 {% endblock %}

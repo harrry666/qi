@@ -1,51 +1,53 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Blocked Dates{% endblock %}
+{% block title %}休业时期{% endblock %}
 {% block content %}
 
-<div class="page-title">🚫 Blocked Dates</div>
-<p style="color:#666;font-size:14px;margin-bottom:24px">Dates in a blocked period show no available slots to customers.</p>
+<div class="page-title">🚫 休业时期</div>
+<p style="color:#666;font-size:14px;margin-bottom:24px">设定休业期间后，客户将看不到该段时间内的可预约时间段。</p>
 
-<div class="settings-card" style="max-width:700px;margin-bottom:28px">
-  <h2>Add Blocked Period</h2>
+<div class="settings-card settings-card-action" style="max-width:700px;margin-bottom:28px">
+  <h2>添加休业期</h2>
   <form method="POST" action="{{ url_for('dashboard.add_blackout') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div>
-      <label class="field-label" style="font-size:13px;color:#888">Start Date</label>
+      <label class="field-label" style="font-size:13px;color:#888">开始日期</label>
       <input class="dash-input" type="date" name="start_date" required style="width:160px">
     </div>
     <div>
-      <label class="field-label" style="font-size:13px;color:#888">End Date</label>
+      <label class="field-label" style="font-size:13px;color:#888">结束日期</label>
       <input class="dash-input" type="date" name="end_date" required style="width:160px">
     </div>
     <div style="flex:1;min-width:160px">
-      <label class="field-label" style="font-size:13px;color:#888">Reason (optional)</label>
-      <input class="dash-input" type="text" name="reason" placeholder="e.g. Vacation, Holiday" style="width:100%">
+      <label class="field-label" style="font-size:13px;color:#888">原因（选填）</label>
+      <input class="dash-input" type="text" name="reason" placeholder="例：假期、节假日" style="width:100%">
     </div>
-    <button type="submit" class="btn-save" style="margin-top:0">Add</button>
+    <button type="submit" class="btn-save" style="margin-top:0">添加</button>
   </form>
 </div>
 
 <div class="settings-card" style="max-width:700px">
-  <h2>Current Blocked Periods</h2>
+  <h2>已设休业期</h2>
   {% if blackouts %}
-    <table class="apt-table">
+    <table class="apt-table blackout-table">
       <thead>
         <tr>
-          <th>Start</th>
-          <th>End</th>
-          <th>Reason</th>
+          <th>开始</th>
+          <th>结束</th>
+          <th>原因</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         {% for bo in blackouts %}
         <tr>
-          <td style="font-weight:600;white-space:nowrap">{{ bo.start_date }}</td>
-          <td style="white-space:nowrap">{{ bo.end_date }}</td>
+          <td style="font-weight:600;white-space:nowrap">{{ bo.start_date_fmt }}</td>
+          <td style="white-space:nowrap">{{ bo.end_date_fmt }}</td>
           <td style="color:#555">{{ bo.reason or '—' }}</td>
           <td style="text-align:right">
             <form method="POST" action="{{ url_for('dashboard.delete_blackout', bo_id=bo.id) }}"
-                  onsubmit="return confirm('Remove this blocked period?')">
-              <button type="submit" class="btn-cancel">Remove</button>
+                  onsubmit="return confirm('确认删除此休业期？')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-cancel">删除</button>
             </form>
           </td>
         </tr>
@@ -53,7 +55,7 @@
       </tbody>
     </table>
   {% else %}
-    <p style="color:#555;font-size:14px;padding:8px 0">No blocked periods set.</p>
+    <p style="color:#555;font-size:14px;padding:8px 0">暂无休业期。</p>
   {% endif %}
 </div>
 

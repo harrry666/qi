@@ -1,23 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Qi{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="public-body">
 
 <nav class="public-nav">
-  <a href="{{ url_for('auth.landing') }}" class="nav-logo">Qi</a>
+  <a href="{{ url_for('auth.landing') }}" class="nav-logo">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="" class="nav-logo-img">
+    Qi
+  </a>
   <div class="nav-links">
-    <a href="{{ url_for('auth.explore') }}">Explore</a>
+    <a href="{{ url_for('auth.explore') }}">浏览商家</a>
     {% if current_user.is_authenticated %}
-      <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
-      <a href="{{ url_for('auth.logout') }}">Log out</a>
+      <a href="{{ url_for('dashboard.index') }}">主页</a>
+      <a href="{{ url_for('auth.logout') }}">退出登录</a>
     {% else %}
-      <a href="{{ url_for('auth.login') }}">Log in</a>
-      <a href="{{ url_for('auth.register') }}" class="btn-sm">Get Started</a>
+      <a href="{{ url_for('auth.login') }}">登录</a>
+      <a href="{{ url_for('auth.register') }}" class="btn-sm">免费注册</a>
     {% endif %}
   </div>
 </nav>
@@ -33,6 +38,33 @@
 {% endwith %}
 
 {% block content %}{% endblock %}
+
+<script>
+(function(){
+  var nav = document.querySelector('.public-nav');
+  if(!nav) return;
+  window.addEventListener('scroll', function(){
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  }, {passive:true});
+})();
+</script>
+<script>
+(function(){
+  var cards = document.querySelectorAll('.feature-card, .biz-card');
+  if(!cards.length) return;
+  cards.forEach(function(c){ c.classList.add('reveal'); });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var delay = Array.from(e.target.parentElement.children).indexOf(e.target) * 70;
+        setTimeout(function(){ e.target.classList.add('visible'); }, delay);
+        obs.unobserve(e.target);
+      }
+    });
+  }, {threshold:0.1});
+  cards.forEach(function(c){ obs.observe(c); });
+})();
+</script>
 
 </body>
 </html>

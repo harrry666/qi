@@ -1,11 +1,39 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from extensions import limiter
 from db import get_db
 from models import Business
 import re
+import secrets
+import smtplib
+import os
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta, timezone
 
 auth_bp = Blueprint('auth', __name__)
+
+MAIL_SERVER   = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+MAIL_PORT     = int(os.environ.get('MAIL_PORT', 587))
+MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
+MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+MAIL_FROM     = os.environ.get('MAIL_FROM', MAIL_USERNAME)
+
+def send_email(to, subject, body):
+    if not all([MAIL_USERNAME, MAIL_PASSWORD]):
+        return
+    msg = MIMEText(body, 'plain', 'utf-8')
+    msg['Subject'] = subject
+    msg['From'] = MAIL_FROM
+    msg['To'] = to
+    try:
+        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as smtp:
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.login(MAIL_USERNAME, MAIL_PASSWORD)
+            smtp.sendmail(MAIL_FROM, to, msg.as_string())
+    except Exception:
+        pass
 
 CATEGORIES = [
     'Hair', 'Nails', 'Massage', 'Fitness & Yoga', 'Medical',
@@ -35,19 +63,19 @@ def register():
         category = request.form.get('category', '').strip()
 
         if not all([name, slug, email, phone, password, category]):
-            flash('All fields are required.', 'error')
+            flash('所有字段为必填项。', 'error')
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if len(password) < 6:
-            flash('Password must be at least 6 characters.', 'error')
+            flash('密码至少 6 个字符。', 'error')
             return render_template('auth/register.html', form=request.form)
 
         db = get_db()
         if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():
-            flash('That URL is already taken.', 'error')
+            flash('该链接地址已被使用。', 'error')
             db.close()
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if db.execute('SELECT id FROM businesses WHERE email=%s', (email,)).fetchone():
-            flash('Email already registered.', 'error')
+            flash('该邮箱已被注册。', 'error')
             db.close()
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
@@ -70,12 +98,13 @@ def register():
         db.commit()
         db.close()
 
-        flash('Account created! Please log in.', 'success')
+        flash('账号已创建，请登录。', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html', form={}, categories=CATEGORIES)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
@@ -88,7 +117,7 @@ def login():
         db.close()
 
         if not row or not check_password_hash(row['password_hash'], password):
-            flash('Invalid email or password.', 'error')
+            flash('邮箱或密码错误。', 'error')
             return render_template('auth/login.html')
 
         login_user(Business(row))
@@ -102,6 +131,64 @@ def logout():
     logout_user()
     return redirect(url_for('auth.landing'))
 
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit('5 per hour')
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        db = get_db()
+        row = db.execute('SELECT * FROM businesses WHERE email=%s', (email,)).fetchone()
+        if row:
+            token = secrets.token_urlsafe(32)
+            expires = datetime.now(timezone.utc) + timedelta(hours=1)
+            db.execute('UPDATE password_reset_tokens SET used=1 WHERE business_id=%s AND used=0', (row['id'],))
+            db.execute(
+                'INSERT INTO password_reset_tokens (business_id, token, expires_at) VALUES (%s,%s,%s)',
+                (row['id'], token, expires)
+            )
+            db.commit()
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            send_email(
+                email,
+                '重置你的 Qi 密码',
+                f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
+            )
+        db.close()
+        flash('如果该邮箱已注册，重置链接已发送，请查收。', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/forgot_password.html')
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    db = get_db()
+    row = db.execute(
+        "SELECT * FROM password_reset_tokens WHERE token=%s AND used=0 AND expires_at > NOW()",
+        (token,)
+    ).fetchone()
+    if not row:
+        db.close()
+        flash('链接已失效或过期，请重新申请。', 'error')
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        if len(password) < 6:
+            db.close()
+            flash('密码至少 6 个字符。', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        db.execute(
+            'UPDATE businesses SET password_hash=%s WHERE id=%s',
+            (generate_password_hash(password), row['business_id'])
+        )
+        db.execute('UPDATE password_reset_tokens SET used=1 WHERE token=%s', (token,))
+        db.commit()
+        db.close()
+        flash('密码已重置，请登录。', 'success')
+        return redirect(url_for('auth.login'))
+
+    db.close()
+    return render_template('auth/reset_password.html', token=token)
+
 @auth_bp.route('/explore')
 def explore():
     from db import get_db
@@ -109,9 +196,21 @@ def explore():
     db = get_db()
     if cat and cat in CATEGORIES:
         rows = db.execute(
-            'SELECT * FROM businesses WHERE category=%s ORDER BY name', (cat,)
+            '''SELECT b.*, COUNT(s.id) as service_count
+               FROM businesses b
+               LEFT JOIN services s ON s.business_id = b.id AND s.is_active = 1
+               WHERE b.category = %s
+               GROUP BY b.id
+               ORDER BY b.name''',
+            (cat,)
         ).fetchall()
     else:
-        rows = db.execute('SELECT * FROM businesses ORDER BY name').fetchall()
+        rows = db.execute(
+            '''SELECT b.*, COUNT(s.id) as service_count
+               FROM businesses b
+               LEFT JOIN services s ON s.business_id = b.id AND s.is_active = 1
+               GROUP BY b.id
+               ORDER BY b.name'''
+        ).fetchall()
     db.close()
     return render_template('explore.html', businesses=rows, categories=CATEGORIES, active_cat=cat)

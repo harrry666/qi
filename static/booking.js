@@ -1,7 +1,11 @@
 const SLUG = document.body.dataset.slug;
 const DAY_LETTERS = ['M','T','W','T','F','S','S'];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 const ICONS = ['✂️','💇','💈','💅','🧖','💆','🪮'];
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 let state = {
   services: [],
@@ -25,25 +29,40 @@ function fmtDate(d) {
 
 function fmtDisplay(dateStr, time) {
   const [y,m,d] = dateStr.split('-').map(Number);
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const days = ['周日','周一','周二','周三','周四','周五','周六'];
   const dt = new Date(y, m-1, d);
-  return `${days[dt.getDay()]}, ${MONTHS[m-1]} ${d}  ${time}`;
+  return `${MONTHS[m-1]}${d}日 ${days[dt.getDay()]}  ${time}`;
 }
 
 function fmtDuration(mins) {
-  if (mins < 60) return `${mins} min`;
+  if (mins < 60) return `${mins}分钟`;
   const h = Math.floor(mins/60), m = mins % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
+  return m ? `${h}小时${m}分钟` : `${h}小时`;
 }
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  const stepsEl = document.querySelector('.booking-steps');
+  if (!stepsEl) return;
+  const stepMap = { 'screen-services': 1, 'screen-slots': 2, 'screen-login': 3, 'screen-confirm': 4, 'screen-success': null };
+  const activeStep = stepMap[id];
+  if (activeStep === null) { stepsEl.style.display = 'none'; return; }
+  stepsEl.style.display = 'flex';
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById(`step-${i}`);
+    if (!el) continue;
+    el.classList.remove('active', 'done');
+    if (i === activeStep) el.classList.add('active');
+    else if (i < activeStep) el.classList.add('done');
+  }
 }
 
 // ── Services ─────────────────────────────────────────────────────────────────
 
 async function loadServices() {
+  const list = document.getElementById('service-list');
+  list.innerHTML = [1,2,3].map(()=>'<div class="skel-item"></div>').join('');
   const res = await fetch(`/api/book/${SLUG}/services`);
   state.services = await res.json();
   renderServices();
@@ -52,22 +71,31 @@ async function loadServices() {
 function renderServices() {
   const list = document.getElementById('service-list');
   if (!state.services.length) {
-    list.innerHTML = '<p style="color:var(--muted);padding:20px 0">No services available yet.</p>';
+    list.innerHTML = '<p style="color:var(--muted);padding:20px 0">暂无可用服务。</p>';
     return;
   }
-  list.innerHTML = state.services.map((s, i) => `
+  list.innerHTML = state.services.map((s, i) => {
+    const hotBadge = i === 0 ? '<span style="display:inline-block;background:#FBF4E3;color:#A8882A;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;border:1px solid #E8D59A;">热门</span>' : '';
+    const priceHtml = s.price
+      ? `<div class="svc-price-main">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>`
+      : '<div class="svc-price-tbd">价格面议</div>';
+    const iconHtml = s.icon_url
+      ? `<img src="/static/${esc(s.icon_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`
+      : (s.emoji ? esc(s.emoji) : icon(i));
+    return `
     <div class="service-item" onclick="selectService(${s.id})">
-      <div class="svc-icon">${icon(i)}</div>
-      <div>
-        <div class="svc-name">${s.name}</div>
-        ${s.name_sub ? `<div class="svc-name-sub">${s.name_sub}</div>` : ''}
+      <div class="svc-icon">${iconHtml}</div>
+      <div class="svc-info">
+        <div class="svc-name">${esc(s.name)}${hotBadge}</div>
+        ${s.name_sub ? `<div class="svc-name-sub">${esc(s.name_sub)}</div>` : ''}
+        ${priceHtml}
       </div>
       <div class="svc-meta">
-        <div class="svc-duration">${fmtDuration(s.duration_mins)}</div>
-        ${s.price ? `<div class="svc-price">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>` : ''}
+        ${s.duration_mins ? `<div class="svc-duration">${fmtDuration(s.duration_mins)}</div>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ── Slot Selection ────────────────────────────────────────────────────────────
@@ -79,8 +107,11 @@ function selectService(id) {
   state.weekStart = getMonday(new Date());
 
   const i = state.services.indexOf(svc);
+  const barIconHtml = svc.icon_url
+    ? `<img src="/static/${esc(svc.icon_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`
+    : icon(i);
   document.getElementById('service-bar').innerHTML = `
-    <div class="svc-icon">${icon(i)}</div>
+    <div class="svc-icon">${barIconHtml}</div>
     <div>
       <div class="svc-name">${svc.name}</div>
       ${svc.name_sub ? `<div class="svc-name-sub">${svc.name_sub}</div>` : ''}
@@ -174,6 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ta) ta.addEventListener('input', () => {
     document.getElementById('char-count').textContent = `${ta.value.length} / 100`;
   });
+  const phoneInput = document.getElementById('cust-phone');
+  if (phoneInput) phoneInput.addEventListener('input', () => {
+    document.getElementById('phone-error').style.display = 'none';
+  });
 });
 
 function proceedToLogin() {
@@ -191,13 +226,48 @@ function proceedToLogin() {
 
 function backToSlots() { showScreen('screen-slots'); }
 
+function showConfirmScreen() {
+  const name = document.getElementById('cust-name').value.trim();
+  const phone = document.getElementById('cust-phone').value.trim();
+  const smsConsent = document.getElementById('sms-consent').checked;
+  const phoneDigits = phone.replace(/\D/g, '');
+  const phoneValid = phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits[0] === '1');
+  const phoneError = document.getElementById('phone-error');
+  if (!name) { alert('请填写姓名。'); return; }
+  if (!phoneValid) {
+    phoneError.textContent = '请输入有效的10位美国手机号';
+    phoneError.style.display = 'block';
+    return;
+  }
+  phoneError.style.display = 'none';
+  if (!smsConsent) { alert('Please check the SMS consent box to confirm your appointment.'); return; }
+
+  const svc = state.selected.service;
+  const priceText = svc.price ? `$${svc.price % 1 === 0 ? svc.price|0 : svc.price}` : '价格面议';
+  const rows = [
+    { label: '服务', value: esc(svc.name) },
+    { label: '日期时间', value: fmtDisplay(state.selected.date, state.selected.time) },
+    { label: '价格', value: priceText },
+    { label: '姓名', value: esc(name) },
+    { label: '手机号', value: esc(phone) },
+  ];
+  if (state.selected.comment) rows.push({ label: '备注', value: esc(state.selected.comment) });
+
+  document.getElementById('confirm-rows').innerHTML = rows.map(r =>
+    `<div class="confirm-row"><span class="confirm-label">${r.label}</span><span class="confirm-value">${r.value}</span></div>`
+  ).join('');
+
+  const submitBtn = document.getElementById('btn-confirm-submit');
+  submitBtn.disabled = false;
+  submitBtn.textContent = '✅ 确认提交';
+  showScreen('screen-confirm');
+}
+
 async function submitBooking() {
   const name = document.getElementById('cust-name').value.trim();
   const phone = document.getElementById('cust-phone').value.trim();
-  if (!name || !phone) { alert('Please fill in your name and phone number.'); return; }
-
-  const btn = document.getElementById('btn-book');
-  btn.disabled = true; btn.textContent = 'Booking...';
+  const btn = document.getElementById('btn-confirm-submit');
+  btn.disabled = true; btn.textContent = '提交中...';
 
   try {
     const res = await fetch(`/api/book/${SLUG}/create`, {
@@ -215,19 +285,36 @@ async function submitBooking() {
 
     if (data.success) {
       document.getElementById('success-details').innerHTML = `
-        <p>👤 <strong>${name}</strong></p>
-        <p>✂️ <strong>${data.service}</strong></p>
+        <p>👤 <strong>${esc(name)}</strong></p>
+        <p>✂️ <strong>${esc(data.service)}</strong></p>
         <p>📅 <strong>${fmtDisplay(state.selected.date, state.selected.time)}</strong></p>
-        ${state.selected.comment ? `<p>💬 ${state.selected.comment}</p>` : ''}
+        ${state.selected.comment ? `<p>💬 ${esc(state.selected.comment)}</p>` : ''}
       `;
+      loadWeekSlots();
       showScreen('screen-success');
+      launchConfetti();
     } else {
-      alert(data.error || 'Booking failed. Please try again.');
-      btn.disabled = false; btn.textContent = 'Confirm Booking';
+      alert(data.error || '预约失败，请重试。');
+      btn.disabled = false; btn.textContent = '✅ 确认提交';
     }
   } catch {
-    alert('Network error. Please try again.');
-    btn.disabled = false; btn.textContent = 'Confirm Booking';
+    alert('网络错误，请重试。');
+    btn.disabled = false; btn.textContent = '✅ 确认提交';
+  }
+}
+
+function launchConfetti() {
+  const colors = ['#C9A84C','#E8C96A','#FBF4E3','#A8882A','#ffffff'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;pointer-events:none;z-index:9999;width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};left:${20+Math.random()*60}%;top:-10px;opacity:1;`;
+    document.body.appendChild(el);
+    const duration = 1200 + Math.random() * 1000;
+    const xDrift = (Math.random() - 0.5) * 200;
+    el.animate([
+      { transform: `translate(0,0) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${xDrift}px, ${window.innerHeight + 50}px) rotate(${360 + Math.random()*360}deg)`, opacity: 0 }
+    ], { duration, easing: 'cubic-bezier(0.25,0.46,0.45,0.94)', fill: 'forwards' }).onfinish = () => el.remove();
   }
 }
 
@@ -235,8 +322,11 @@ function resetBooking() {
   state.selected = { service: null, date: null, time: null, comment: '' };
   document.getElementById('cust-name').value = '';
   document.getElementById('cust-phone').value = '';
+  document.getElementById('sms-consent').checked = false;
   document.getElementById('btn-book').disabled = false;
-  document.getElementById('btn-book').textContent = 'Confirm Booking';
+  document.getElementById('btn-book').textContent = '下一步 →';
+  const phoneError = document.getElementById('phone-error');
+  if (phoneError) { phoneError.style.display = 'none'; phoneError.textContent = ''; }
   showScreen('screen-services');
 }
 

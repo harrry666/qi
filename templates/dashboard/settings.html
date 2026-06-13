@@ -1,52 +1,53 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Settings{% endblock %}
+{% block title %}设置{% endblock %}
 {% block content %}
 
-<div class="page-title">⚙️ Settings</div>
+<div class="page-title">⚙️ 设置</div>
 
 <div class="settings-card">
-  <h2>Business Profile</h2>
+  <h2>商家信息</h2>
   <form method="POST" enctype="multipart/form-data">
-    <label class="dash-label">Business Name *</label>
+    <label class="dash-label">商家名称 *</label>
     <input class="dash-input" type="text" name="name" value="{{ biz.name }}" required>
 
-    <label class="dash-label">Address</label>
-    <input class="dash-input" type="text" name="address" value="{{ biz.address or '' }}" placeholder="123 Main St, City, State">
+    <label class="dash-label">地址</label>
+    <input class="dash-input" type="text" name="address" value="{{ biz.address or '' }}" placeholder="街道地址、城市、州">
 
-    <label class="dash-label">Phone</label>
+    <label class="dash-label">电话</label>
     <input class="dash-input" type="text" name="phone" value="{{ biz.phone or '' }}" placeholder="(555) 000-0000">
 
-    <label class="dash-label">Category</label>
+    <label class="dash-label">类别</label>
     <select class="dash-input" name="category">
       {% for cat in categories %}
       <option value="{{ cat }}" {% if biz.category == cat %}selected{% endif %}>{{ cat }}</option>
       {% endfor %}
     </select>
 
-    <label class="dash-label">Description</label>
-    <textarea class="dash-input dash-textarea" name="description" placeholder="Short description shown on your booking page">{{ biz.description or '' }}</textarea>
+    <label class="dash-label">简介</label>
+    <textarea class="dash-input dash-textarea" name="description" placeholder="在预约页面显示的简介">{{ biz.description or '' }}</textarea>
 
-    <label class="dash-label" style="margin-top:20px;display:block">Avatar <span style="color:#555;font-weight:400;font-size:12px">(square, shown on explore page)</span></label>
+    <label class="dash-label" style="margin-top:20px;display:block">头像 <span style="color:#555;font-weight:400;font-size:12px">（正方形，显示在浏览页）</span></label>
     {% if biz.avatar_url %}
     <img src="{{ biz.avatar_url }}" style="width:72px;height:72px;border-radius:12px;object-fit:cover;margin-bottom:8px;display:block">
     {% endif %}
     <input class="dash-input" type="file" name="avatar" accept="image/*">
 
-    <label class="dash-label" style="margin-top:16px;display:block">Cover Photo <span style="color:#555;font-weight:400;font-size:12px">(wide banner, shown on booking page)</span></label>
+    <label class="dash-label" style="margin-top:16px;display:block">封面图片 <span style="color:#555;font-weight:400;font-size:12px">（宽幅横图，显示在预约页顶部）</span></label>
     {% if biz.cover_url %}
     <img src="{{ biz.cover_url }}" style="width:100%;max-width:480px;height:120px;border-radius:10px;object-fit:cover;margin-bottom:8px;display:block">
     {% endif %}
     <input class="dash-input" type="file" name="cover" accept="image/*">
 
-    <button type="submit" class="btn-save" style="margin-top:20px">Save Settings</button>
+    <button type="submit" class="btn-save" style="margin-top:20px">保存设置</button>
   </form>
 </div>
 
 <div class="settings-card" style="margin-top:20px">
-  <h2>Your Booking URL</h2>
+  <h2>你的预约链接</h2>
   <div class="slug-display">{{ booking_url }}</div>
-  <button onclick="navigator.clipboard.writeText('{{ booking_url }}')" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">Copy Link</button>
-  <p style="font-size:13px;color:#555;margin-top:8px">Share this link with your customers.</p>
+  <button id="copy-link-btn" data-url="{{ booking_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">复制链接</button>
+  <script>document.getElementById('copy-link-btn').onclick=function(){navigator.clipboard.writeText(this.dataset.url);};</script>
+  <p style="font-size:13px;color:#555;margin-top:8px">将此链接分享给你的客户。</p>
 </div>
 
 {% endblock %}

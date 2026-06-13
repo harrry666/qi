@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Find a Business — Qi{% endblock %}
+{% block title %}浏览商家 — Qi{% endblock %}
 {% block content %}
 
 <div class="explore-header">
-  <h1>Find a service near you</h1>
-  <p>Browse local businesses and book an appointment instantly.</p>
+  <h1><span class="explore-title-underline">附近的服务</span></h1>
+  <p>浏览本地商家，在线立即预约。</p>
 </div>
 
 <div class="explore-filters">
-  <a href="{{ url_for('auth.explore') }}" class="filter-chip {% if not active_cat %}active{% endif %}">All</a>
+  <a href="{{ url_for('auth.explore') }}" class="filter-chip {% if not active_cat %}active{% endif %}">全部</a>
   {% for cat in categories %}
   <a href="{{ url_for('auth.explore', cat=cat) }}" class="filter-chip {% if active_cat == cat %}active{% endif %}">{{ cat }}</a>
   {% endfor %}
@@ -18,26 +18,40 @@
   {% if businesses %}
     {% for biz in businesses %}
     <a href="{{ url_for('booking.book_page', slug=biz.slug) }}" class="biz-card">
-      <div class="biz-card-top">
-        {% if biz.avatar_url %}
-        <img src="{{ biz.avatar_url }}" class="biz-avatar" style="object-fit:cover">
-        {% else %}
-        <div class="biz-avatar">{{ biz.name[0].upper() }}</div>
+      <div class="biz-card-banner" {% if biz.cover_url %}style="background-image:url('{{ biz.cover_url }}');background-size:cover;background-position:center"{% endif %}></div>
+      <div class="biz-card-inner">
+        <div class="biz-card-top">
+          {% if biz.avatar_url %}
+          <img src="{{ biz.avatar_url }}" class="biz-avatar" style="object-fit:cover">
+          {% else %}
+          <div class="biz-avatar">{{ biz.name[0].upper() }}</div>
+          {% endif %}
+          <span class="biz-category-badge">{{ biz.category or 'Other' }}</span>
+        </div>
+        <div class="biz-name">{{ biz.name }}</div>
+        {% if biz.address %}
+        <div class="biz-address">📍 {{ biz.address }}</div>
         {% endif %}
-        <span class="biz-category-badge">{{ biz.category or 'Other' }}</span>
+        <div class="biz-svc-row">
+          {% if biz.service_count > 0 %}
+          <span class="biz-service-count">{{ biz.service_count }} 项服务</span>
+          {% else %}
+          <span class="biz-service-none">暂无服务</span>
+          {% endif %}
+        </div>
+        {% if biz.description %}
+        <div class="biz-desc">{{ biz.description[:80] }}{% if biz.description|length > 80 %}...{% endif %}</div>
+        {% endif %}
+        <div class="biz-book-btn">立即预约 →</div>
       </div>
-      <div class="biz-name">{{ biz.name }}</div>
-      {% if biz.address %}
-      <div class="biz-address">📍 {{ biz.address }}</div>
-      {% endif %}
-      {% if biz.description %}
-      <div class="biz-desc">{{ biz.description[:80] }}{% if biz.description|length > 80 %}...{% endif %}</div>
-      {% endif %}
-      <div class="biz-book-btn">Book now →</div>
     </a>
     {% endfor %}
   {% else %}
-    <div class="explore-empty">No businesses found in this category yet.</div>
+    <div class="explore-empty">
+      <div class="explore-empty-icon">🔍</div>
+      <div>该类别暂无商家</div>
+      <div class="explore-empty-hint">试试其他分类，或稍后再来看看</div>
+    </div>
   {% endif %}
 </div>
 

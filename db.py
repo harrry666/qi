@@ -85,6 +85,20 @@ def init_db():
             end_date TEXT NOT NULL,
             reason TEXT DEFAULT ''
         )''',
+        '''CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TIMESTAMPTZ NOT NULL,
+            used INTEGER NOT NULL DEFAULT 0
+        )''',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT \'\'',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS buffer_mins INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancel_token TEXT',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS merchant_note TEXT',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS banner_url TEXT',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS icon_url TEXT',
     ]:
         db.execute(stmt)
     db.commit()

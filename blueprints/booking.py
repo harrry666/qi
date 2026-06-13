@@ -5,6 +5,7 @@ import os
 import re
 import threading
 import sys
+import uuid
 
 booking_bp = Blueprint('booking', __name__)
 
@@ -74,7 +75,7 @@ def generate_slots(business_id, date_obj, duration_mins):
 def filter_available(business_id, date_str, slots, duration_mins):
     db = get_db()
     booked = db.execute(
-        "SELECT s.duration_mins, a.appointment_dt FROM appointments a "
+        "SELECT s.duration_mins, s.buffer_mins, a.appointment_dt FROM appointments a "
         "JOIN services s ON a.service_id=s.id "
         "WHERE a.business_id=%s AND a.appointment_dt LIKE %s AND a.status != 'cancelled'",
         (business_id, f'{date_str}%')
@@ -88,7 +89,7 @@ def filter_available(business_id, date_str, slots, duration_mins):
         conflict = False
         for b in booked:
             b_dt = datetime.strptime(b['appointment_dt'], '%Y-%m-%d %H:%M')
-            b_end = b_dt + timedelta(minutes=b['duration_mins'])
+            b_end = b_dt + timedelta(minutes=b['duration_mins'] + b['buffer_mins'])
             if not (slot_end <= b_dt or slot_dt >= b_end):
                 conflict = True
                 break
@@ -158,6 +159,16 @@ def api_create(slug):
     if not all([service_id, name, phone, apt_dt]):
         return jsonify({'error': 'Missing required fields'}), 400
 
+    try:
+        apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
+        if apt_dt_obj < datetime.now():
+            return jsonify({'error': '不能预约过去的时间'}), 400
+        apt_dt = apt_dt_obj.strftime('%Y-%m-%d %H:%M')
+    except ValueError:
+        return jsonify({'error': 'Invalid appointment time'}), 400
+
+    cancel_token = str(uuid.uuid4())
+
     db = get_db()
     svc = db.execute('SELECT * FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
     if not svc:
@@ -165,39 +176,95 @@ def api_create(slug):
         return jsonify({'error': 'Service not found'}), 404
 
     db.execute(
-        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment) VALUES (%s,%s,%s,%s,%s,%s)',
-        (biz['id'], service_id, name, phone, apt_dt, comment)
+        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token) VALUES (%s,%s,%s,%s,%s,%s,%s)',
+        (biz['id'], service_id, name, phone, apt_dt, comment, cancel_token)
     )
     db.commit()
     db.close()
 
     try:
         dt = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
-        dt_display = dt.strftime('%b %-d at %-I:%M %p')
+        dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
     except Exception:
         dt_display = apt_dt
 
+    cancel_url = f"{request.host_url.rstrip('/')}cancel/{cancel_token}"
     formatted_phone = format_phone(phone)
     biz_phone = biz['phone'] or ''
 
     customer_msg = (
-        f"Hi {name}! Your appointment at {biz['name']} is confirmed.\n\n"
-        f"Service: {svc['name']}\n"
-        f"Time: {dt_display}\n"
-        + (f"Address: {biz['address']}\n" if biz['address'] else '')
-        + (f"\nQuestions? Call {biz_phone}" if biz_phone else '')
+        f"【预约确认】{name}，您在【{biz['name']}】的预约已确认。\n\n"
+        f"服务：{svc['name']}\n"
+        f"时间：{dt_display}\n"
+        + (f"地址：{biz['address']}\n" if biz['address'] else '')
+        + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
+        + f"\n如需取消：{cancel_url}"
     )
     threading.Thread(target=send_sms, args=(formatted_phone, customer_msg), daemon=True).start()
 
     if biz_phone:
         owner_msg = (
-            f"New booking at {biz['name']}!\n\n"
-            f"Customer: {name}\n"
-            f"Phone: {phone}\n"
-            f"Service: {svc['name']}\n"
-            f"Time: {dt_display}\n"
-            + (f"Note: {comment}" if comment else '')
+            f"【新预约】{biz['name']}\n\n"
+            f"客人：{name}\n"
+            f"电话：{phone}\n"
+            f"服务：{svc['name']}\n"
+            f"时间：{dt_display}\n"
+            + (f"备注：{comment}" if comment else '')
         )
         threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
     return jsonify({'success': True, 'service': svc['name']})
+
+
+@booking_bp.route('/cancel/<token>', methods=['GET', 'POST'])
+def cancel_by_token(token):
+    db = get_db()
+    row = db.execute(
+        "SELECT a.*, s.name as service_name, b.name as biz_name, b.phone as biz_phone "
+        "FROM appointments a "
+        "JOIN services s ON a.service_id = s.id "
+        "JOIN businesses b ON a.business_id = b.id "
+        "WHERE a.cancel_token = %s",
+        (token,)
+    ).fetchone()
+
+    if not row:
+        db.close()
+        return render_template('cancel.html', error=True)
+
+    apt = dict(row)
+    try:
+        dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
+        apt['dt_display'] = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+    except Exception:
+        apt['dt_display'] = apt['appointment_dt']
+
+    if request.method == 'POST':
+        if apt['status'] != 'confirmed':
+            db.close()
+            return render_template('cancel.html', already_cancelled=True, apt=apt)
+
+        db.execute(
+            "UPDATE appointments SET status='cancelled' WHERE cancel_token=%s AND status='confirmed'",
+            (token,)
+        )
+        db.commit()
+        db.close()
+
+        if apt['biz_phone']:
+            msg = (
+                f"【预约取消】{apt['biz_name']}\n\n"
+                f"客人：{apt['customer_name']}\n"
+                f"服务：{apt['service_name']}\n"
+                f"原定时间：{apt['dt_display']}"
+            )
+            threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), msg), daemon=True).start()
+
+        return render_template('cancel.html', success=True, apt=apt)
+
+    if apt['status'] != 'confirmed':
+        db.close()
+        return render_template('cancel.html', already_cancelled=True, apt=apt)
+
+    db.close()
+    return render_template('cancel.html', apt=apt)

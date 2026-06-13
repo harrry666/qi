@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ biz.name }} — Book an Appointment</title>
+  <title>{{ biz.name }} — 预约服务</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="book-body" data-slug="{{ biz.slug }}">
@@ -12,43 +12,52 @@
 
 <div class="book-container">
 
-  <!-- Business header -->
-  <div class="book-header">
+  <!-- Business header card -->
+  <div class="biz-header-card">
     {% if biz.avatar_url %}
-    <img src="{{ biz.avatar_url }}" class="biz-avatar" style="object-fit:cover;border-radius:12px">
+    <img src="{{ biz.avatar_url }}" class="biz-logo-box" style="object-fit:cover;border-radius:12px">
     {% else %}
-    <div class="biz-avatar">💈</div>
+    <div class="biz-logo-box">💈</div>
     {% endif %}
-    <div>
-      <h1>{{ biz.name }}</h1>
-      <p id="header-sub">Select a service to book an appointment</p>
-    </div>
+    <h1>{{ biz.name }}</h1>
+    <p id="header-sub">选择服务开始预约</p>
+  </div>
+
+  <!-- Step progress indicator -->
+  <div class="booking-steps">
+    <div class="step active" id="step-1">① 选服务</div>
+    <div class="step-line"></div>
+    <div class="step" id="step-2">② 选时间</div>
+    <div class="step-line"></div>
+    <div class="step" id="step-3">③ 填信息</div>
+    <div class="step-line"></div>
+    <div class="step" id="step-4">④ 确认</div>
   </div>
 
   <!-- Screen 1: Services -->
   <div id="screen-services" class="screen active">
-    <div class="section-title">Choose a service</div>
+    <div class="section-title">选择服务项目</div>
     <div id="service-list"></div>
   </div>
 
   <!-- Screen 2: Time Slots -->
   <div id="screen-slots" class="screen">
-    <button class="btn-back" onclick="backToServices()">← Back</button>
+    <button class="btn-back" onclick="backToServices()">← 返回</button>
     <div id="service-bar" class="service-bar"></div>
     <div class="calendar-nav">
       <button class="btn-nav" onclick="prevWeek()">‹</button>
       <span id="month-label" class="month-label"></span>
       <button class="btn-nav" onclick="nextWeek()">›</button>
-      <button class="btn-today" onclick="goToToday()">Today</button>
+      <button class="btn-today" onclick="goToToday()">今天</button>
     </div>
     <div id="week-grid" class="week-grid"></div>
   </div>
 
   <!-- Screen 3: Login -->
   <div id="screen-login" class="screen">
-    <button class="btn-back" onclick="backToSlots()">← Back</button>
+    <button class="btn-back" onclick="backToSlots()">← 返回</button>
     <div class="login-card">
-      <h2>Your Info</h2>
+      <h2>填写信息</h2>
       <div class="apt-preview" style="margin-bottom:20px">
         <div class="svc-icon" id="login-icon" style="width:44px;height:44px;font-size:20px"></div>
         <div class="apt-preview-info">
@@ -56,21 +65,40 @@
           <span id="login-dt"></span>
         </div>
       </div>
-      <input id="cust-name" class="book-input" type="text" placeholder="Full Name">
-      <input id="cust-phone" class="book-input" type="tel" placeholder="Phone Number">
-      <button id="btn-book" class="btn-primary" onclick="submitBooking()">✓ Confirm Booking</button>
+      <input id="cust-name" class="book-input" type="text" placeholder="姓名">
+      <input id="cust-phone" class="book-input" type="tel" placeholder="手机号码（10位）">
+      <span id="phone-error" style="display:none;font-size:12px;color:#EF4444;margin:-8px 0 8px"></span>
+      <label class="sms-consent-label">
+        <input type="checkbox" id="sms-consent">
+        <span>I agree to receive SMS appointment confirmations and reminders from this business. Msg &amp; data rates may apply. Reply STOP to unsubscribe.</span>
+      </label>
+      <button id="btn-book" class="btn-primary" onclick="showConfirmScreen()">下一步 →</button>
     </div>
   </div>
 
-  <!-- Screen 4: Success -->
+  <!-- Screen 4: Confirm Summary -->
+  <div id="screen-confirm" class="screen">
+    <button class="btn-back" onclick="showScreen('screen-login')">← 修改</button>
+    <div class="confirm-card">
+      <div class="confirm-title">确认预约信息</div>
+      <div class="confirm-rows" id="confirm-rows"></div>
+      <div class="confirm-actions">
+        <button class="btn-secondary" onclick="showScreen('screen-login')">← 修改</button>
+        <button id="btn-confirm-submit" class="btn-primary" onclick="submitBooking()">✅ 确认提交</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 5: Success -->
   <div id="screen-success" class="screen">
     <div class="success-card">
       <div class="success-icon">✓</div>
-      <h2>You're booked!</h2>
-      <p>See you at {{ biz.name }}.</p>
+      <h2>预约成功！</h2>
+      <p>期待您光临 {{ biz.name }}。</p>
       <div class="success-details" id="success-details"></div>
-      {% if biz.phone %}<p style="font-size:13px;color:var(--muted);margin-bottom:20px">Questions? Call <a href="tel:{{ biz.phone }}">{{ biz.phone }}</a></p>{% endif %}
-      <button class="btn-primary" onclick="resetBooking()">Book Another</button>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">📅 别忘了记下预约时间</p>
+      {% if biz.phone %}<p style="font-size:13px;color:var(--muted);margin-bottom:20px">有疑问？请致电 <a href="tel:{{ biz.phone }}">{{ biz.phone }}</a></p>{% endif %}
+      <button class="btn-primary" onclick="resetBooking()">再次预约</button>
     </div>
   </div>
 
@@ -80,7 +108,7 @@
 <div id="modal-overlay" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2>Schedule Appointment</h2>
+      <h2>确认预约</h2>
       <button class="btn-close" onclick="closeModal()">×</button>
     </div>
     <div class="apt-preview">
@@ -90,9 +118,9 @@
         <span id="modal-dt"></span>
       </div>
     </div>
-    <textarea id="modal-comment" class="comment-field" placeholder="Add a comment (optional, up to 100 chars)" maxlength="100"></textarea>
+    <textarea id="modal-comment" class="comment-field" placeholder="添加备注（选填，最多100字）" maxlength="100"></textarea>
     <div id="char-count" class="char-count">0 / 100</div>
-    <button class="btn-primary" onclick="proceedToLogin()">✓ Confirm</button>
+    <button class="btn-primary" onclick="proceedToLogin()">✓ 确认</button>
   </div>
 </div>
 
