@@ -6,6 +6,7 @@
   <title>{% block title %}控制台{% endblock %} — Qi</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 </head>
 <body class="dash-body">
 <div class="dash-layout">
@@ -43,5 +44,75 @@
   </main>
 
 </div>
+
+<!-- Crop Modal -->
+<div id="crop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:24px;width:90%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#1A1209">裁切图片</div>
+    <div style="max-height:360px;overflow:hidden;border-radius:8px;background:#f0f0f0">
+      <img id="crop-img" style="max-width:100%;display:block">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+      <button onclick="cancelCrop()" style="padding:9px 20px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;font-size:14px">取消</button>
+      <button onclick="confirmCrop()" style="padding:9px 20px;background:#C9A84C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">确认裁切</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script>
+var _cropper = null, _activeInput = null, _cropRatio = 1, _outW = 400, _outH = 400;
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input[type=file][data-crop]').forEach(function(input) {
+    input.addEventListener('change', function() {
+      if (!this.files || !this.files[0]) return;
+      _activeInput = this;
+      _cropRatio = parseFloat(this.dataset.cropRatio || '1');
+      _outW = parseInt(this.dataset.outW || '400');
+      _outH = parseInt(this.dataset.outH || '400');
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = document.getElementById('crop-img');
+        img.src = e.target.result;
+        var modal = document.getElementById('crop-modal');
+        modal.style.display = 'flex';
+        if (_cropper) { _cropper.destroy(); _cropper = null; }
+        _cropper = new Cropper(img, {
+          aspectRatio: _cropRatio,
+          viewMode: 1,
+          autoCropArea: 0.9,
+          movable: true,
+          zoomable: true,
+          rotatable: false
+        });
+      };
+      reader.readAsDataURL(this.files[0]);
+    });
+  });
+});
+
+function confirmCrop() {
+  if (!_cropper || !_activeInput) return;
+  _cropper.getCroppedCanvas({width: _outW, height: _outH, imageSmoothingQuality: 'high'})
+    .toBlob(function(blob) {
+      var file = new File([blob], 'cropped.jpg', {type: 'image/jpeg'});
+      var dt = new DataTransfer();
+      dt.items.add(file);
+      _activeInput.files = dt.files;
+      var preview = _activeInput.previousElementSibling;
+      if (preview && preview.tagName === 'IMG') {
+        preview.src = URL.createObjectURL(blob);
+        preview.style.display = 'block';
+      }
+      cancelCrop();
+    }, 'image/jpeg', 0.92);
+}
+
+function cancelCrop() {
+  document.getElementById('crop-modal').style.display = 'none';
+  if (_cropper) { _cropper.destroy(); _cropper = null; }
+}
+</script>
 </body>
 </html>

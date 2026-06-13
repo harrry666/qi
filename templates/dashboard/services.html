@@ -60,8 +60,8 @@
     {% for s in services %}
     <tr>
       <td class="svc-emoji-cell">
-        {% if s.icon_url %}
-          <img src="{{ url_for('static', filename=s.icon_url) }}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle">
+        {% if s.icon_url and s.icon_url.startswith('http') %}
+          <img src="{{ s.icon_url }}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle">
         {% else %}
           {{ s.emoji or '✂️' }}
         {% endif %}
@@ -71,7 +71,7 @@
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}
         <form method="POST" action="{{ url_for('dashboard.update_service_icon', svc_id=s.id) }}" enctype="multipart/form-data" style="margin-top:6px;display:flex;align-items:center;gap:6px">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="file" name="icon_image" accept="image/*" style="font-size:11px;max-width:140px">
+          <input type="file" name="icon_image" accept="image/*" style="font-size:11px;max-width:140px" data-crop data-crop-ratio="1" data-out-w="200" data-out-h="200">
           <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">上传</button>
         </form>
       </td>

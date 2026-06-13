@@ -30,13 +30,13 @@
     {% if biz.avatar_url %}
     <img src="{{ biz.avatar_url }}" style="width:72px;height:72px;border-radius:12px;object-fit:cover;margin-bottom:8px;display:block">
     {% endif %}
-    <input class="dash-input" type="file" name="avatar" accept="image/*">
+    <input class="dash-input" type="file" name="avatar" accept="image/*" data-crop data-crop-ratio="1" data-out-w="400" data-out-h="400">
 
     <label class="dash-label" style="margin-top:16px;display:block">封面图片 <span style="color:#555;font-weight:400;font-size:12px">（宽幅横图，显示在预约页顶部）</span></label>
     {% if biz.cover_url %}
     <img src="{{ biz.cover_url }}" style="width:100%;max-width:480px;height:120px;border-radius:10px;object-fit:cover;margin-bottom:8px;display:block">
     {% endif %}
-    <input class="dash-input" type="file" name="cover" accept="image/*">
+    <input class="dash-input" type="file" name="cover" accept="image/*" data-crop data-crop-ratio="3" data-out-w="1200" data-out-h="400">
 
     <button type="submit" class="btn-save" style="margin-top:20px">保存设置</button>
   </form>
