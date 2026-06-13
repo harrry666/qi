@@ -72,7 +72,7 @@
         <form method="POST" action="{{ url_for('dashboard.update_service_icon', svc_id=s.id) }}" enctype="multipart/form-data" style="margin-top:6px;display:flex;align-items:center;gap:6px">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="file" name="icon_image" accept="image/*" style="font-size:11px;max-width:140px">
-          <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">换图</button>
+          <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">上传</button>
         </form>
       </td>
       <td>{{ s.duration_mins }} 分钟</td>
