@@ -721,19 +721,76 @@ a:hover { text-decoration: underline; }
   .hero-rich .hero-sub { margin-left: auto; margin-right: auto; }
   .qi-phone { width: 240px; }
 }
-@media (max-width: 600px) {
-  .public-nav { padding: 0 20px; }
+/* ── Mobile top bar & bottom nav (hidden on desktop) ─────── */
+.mobile-topbar { display: none; }
+.mobile-bottom-nav { display: none; }
+
+@media (max-width: 768px) {
+  /* Hide desktop sidebar */
+  .sidebar { display: none !important; }
+
+  /* Mobile top bar */
+  .mobile-topbar {
+    display: flex; align-items: center; gap: 10px;
+    position: fixed; top: 0; left: 0; right: 0; height: 52px;
+    background: white; border-bottom: 1px solid #E8D5A3;
+    padding: 0 16px; z-index: 200;
+  }
+  .mobile-biz-name {
+    flex: 1; font-size: 14px; font-weight: 700;
+    color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mobile-book-link {
+    font-size: 12px; font-weight: 600; color: var(--gold-h);
+    white-space: nowrap; text-decoration: none;
+  }
+
+  /* Mobile bottom nav */
+  .mobile-bottom-nav {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+    height: 62px; background: white; border-top: 1px solid #E8D5A3;
+    z-index: 200; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mobile-tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+    color: #AAA; text-decoration: none; padding: 6px 4px;
+  }
+  .mobile-tab.active { color: var(--gold-h); }
+  .mobile-tab:hover { text-decoration: none; }
+  .tab-icon { font-size: 20px; line-height: 1; }
+  .tab-label { font-size: 10px; font-weight: 600; }
+
+  /* Layout adjustments */
   .dash-layout { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; }
-  .dash-main { padding: 16px; }
-  .stats-row { grid-template-columns: 1fr 1fr; }
-  .form-row { grid-template-columns: 1fr 1fr; }
+  .dash-main {
+    padding: 16px; padding-top: 68px; padding-bottom: 78px;
+    max-width: 100%;
+  }
+
+  /* Stats */
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-value { font-size: 32px !important; }
+
+  /* Tables: horizontal scroll */
+  .apt-table, .services-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Forms */
+  .form-row { grid-template-columns: 1fr; }
+  .hours-row { flex-wrap: wrap; gap: 8px; }
+  .settings-card { padding: 20px 16px; }
+
+  /* Booking page */
   .week-grid { gap: 3px; }
   .slot-btn { font-size: 10px; padding: 8px 0; min-height: 36px; }
+
+  /* Public pages */
+  .public-nav { padding: 0 20px; }
   .hero-rich { padding: 48px 20px 40px; }
   .hero-preview { display: none; }
   .hero-actions { flex-direction: column; align-items: center; }
   .auth-card { padding: 32px 24px; }
+  .explore-grid { grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 12px 60px; }
 }
 
 /* ── Analytics: Revenue Hero Stat Card (本月收入) ── */

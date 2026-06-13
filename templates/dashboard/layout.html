@@ -9,6 +9,33 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 </head>
 <body class="dash-body">
+
+<!-- Mobile top bar -->
+<header class="mobile-topbar">
+  <img src="{{ url_for('static', filename='logo.png') }}" style="height:32px;width:auto">
+  <span class="mobile-biz-name">{{ current_user.name }}</span>
+  <a href="/book/{{ current_user.slug }}" target="_blank" class="mobile-book-link">预约页 ↗</a>
+</header>
+
+<!-- Mobile bottom nav -->
+<nav class="mobile-bottom-nav">
+  <a href="{{ url_for('dashboard.index') }}" class="mobile-tab {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+    <span class="tab-icon">📅</span><span class="tab-label">主页</span>
+  </a>
+  <a href="{{ url_for('dashboard.appointments') }}" class="mobile-tab {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">
+    <span class="tab-icon">📋</span><span class="tab-label">预约</span>
+  </a>
+  <a href="{{ url_for('dashboard.services') }}" class="mobile-tab {% if request.endpoint == 'dashboard.services' %}active{% endif %}">
+    <span class="tab-icon">✂️</span><span class="tab-label">服务</span>
+  </a>
+  <a href="{{ url_for('dashboard.analytics') }}" class="mobile-tab {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">
+    <span class="tab-icon">📊</span><span class="tab-label">分析</span>
+  </a>
+  <a href="{{ url_for('dashboard.settings') }}" class="mobile-tab {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">
+    <span class="tab-icon">⚙️</span><span class="tab-label">设置</span>
+  </a>
+</nav>
+
 <div class="dash-layout">
 
   <aside class="sidebar">
