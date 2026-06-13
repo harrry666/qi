@@ -8,13 +8,17 @@
 </head>
 <body class="book-body" data-slug="{{ biz.slug }}">
 
-<div class="book-hero"></div>
+<div class="book-hero" {% if biz.cover_url %}style="background-image:url('{{ biz.cover_url }}');background-size:cover;background-position:center"{% endif %}></div>
 
 <div class="book-container">
 
   <!-- Business header -->
   <div class="book-header">
+    {% if biz.avatar_url %}
+    <img src="{{ biz.avatar_url }}" class="biz-avatar" style="object-fit:cover;border-radius:12px">
+    {% else %}
     <div class="biz-avatar">💈</div>
+    {% endif %}
     <div>
       <h1>{{ biz.name }}</h1>
       <p id="header-sub">Select a service to book an appointment</p>

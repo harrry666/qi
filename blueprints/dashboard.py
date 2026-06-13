@@ -3,8 +3,18 @@ from flask_login import login_required, current_user
 from db import get_db
 from datetime import datetime, timedelta
 import threading
+import os
 from blueprints.booking import send_sms, format_phone
 from blueprints.auth import CATEGORIES
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    api_key=os.environ.get('CLOUDINARY_API_KEY', ''),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET', ''),
+    secure=True
+)
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -228,10 +238,30 @@ def settings():
         phone = request.form.get('phone', '').strip()
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
+
+        avatar_url = current_user.avatar_url or ''
+        cover_url = current_user.cover_url or ''
+
+        avatar_file = request.files.get('avatar')
+        if avatar_file and avatar_file.filename:
+            try:
+                result = cloudinary.uploader.upload(avatar_file, folder='qi/avatars', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
+                avatar_url = result['secure_url']
+            except Exception as e:
+                flash(f'Avatar upload failed: {e}', 'error')
+
+        cover_file = request.files.get('cover')
+        if cover_file and cover_file.filename:
+            try:
+                result = cloudinary.uploader.upload(cover_file, folder='qi/covers', transformation=[{'width': 1200, 'height': 400, 'crop': 'fill'}])
+                cover_url = result['secure_url']
+            except Exception as e:
+                flash(f'Cover upload failed: {e}', 'error')
+
         if name:
             db.execute(
-                'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s WHERE id=%s',
-                (name, address, phone, description, category, current_user.id)
+                'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s, avatar_url=%s, cover_url=%s WHERE id=%s',
+                (name, address, phone, description, category, avatar_url, cover_url, current_user.id)
             )
             db.commit()
             flash('Settings saved.', 'success')

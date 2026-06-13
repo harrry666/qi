@@ -76,6 +76,8 @@ def init_db():
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS category TEXT DEFAULT \'\'',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT \'\'',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS cover_url TEXT DEFAULT \'\'',
         '''CREATE TABLE IF NOT EXISTS business_blackouts (
             id SERIAL PRIMARY KEY,
             business_id INTEGER NOT NULL,
