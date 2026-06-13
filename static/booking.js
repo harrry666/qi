@@ -192,7 +192,12 @@ function openModal(dateStr, time) {
   const svc = state.selected.service;
   const i = state.services.indexOf(svc);
 
-  document.getElementById('modal-icon').textContent = icon(i);
+  const modalIconEl = document.getElementById('modal-icon');
+  if (svc.icon_url && svc.icon_url.startsWith('http')) {
+    modalIconEl.innerHTML = `<img src="${svc.icon_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`;
+  } else {
+    modalIconEl.textContent = svc.emoji || icon(i);
+  }
   document.getElementById('modal-svc').textContent = svc.name;
   document.getElementById('modal-dt').textContent = fmtDisplay(dateStr, time);
   document.getElementById('modal-comment').value = '';
@@ -218,7 +223,12 @@ function proceedToLogin() {
   closeModal();
   const svc = state.selected.service;
   const i = state.services.indexOf(svc);
-  document.getElementById('login-icon').textContent = icon(i);
+  const loginIconEl = document.getElementById('login-icon');
+  if (svc.icon_url && svc.icon_url.startsWith('http')) {
+    loginIconEl.innerHTML = `<img src="${svc.icon_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`;
+  } else {
+    loginIconEl.textContent = svc.emoji || icon(i);
+  }
   document.getElementById('login-svc').textContent = svc.name;
   document.getElementById('login-dt').textContent = fmtDisplay(state.selected.date, state.selected.time);
   showScreen('screen-login');
