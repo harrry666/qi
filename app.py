@@ -15,6 +15,7 @@ _secret = os.environ.get('SECRET_KEY')
 if not _secret:
     raise RuntimeError('SECRET_KEY environment variable is not set')
 app.secret_key = _secret
+app.config['WTF_CSRF_ENABLED'] = False
 
 csrf.init_app(app)
 limiter.init_app(app)
