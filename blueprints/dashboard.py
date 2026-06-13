@@ -152,20 +152,14 @@ def services():
     db.close()
     return render_template('dashboard/services.html', services=svcs)
 
-ALLOWED_EXTS = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
-
-def _save_upload(file_storage):
-    """Save uploaded image to static/uploads/, return relative path or None."""
+def _upload_to_cloudinary(file_storage, folder='qi/services', **kwargs):
     if not file_storage or not file_storage.filename:
         return None
-    ext = file_storage.filename.rsplit('.', 1)[-1].lower()
-    if ext not in ALLOWED_EXTS:
+    try:
+        result = cloudinary.uploader.upload(file_storage, folder=folder, **kwargs)
+        return result['secure_url']
+    except Exception as e:
         return None
-    upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads')
-    os.makedirs(upload_dir, exist_ok=True)
-    filename = uuid4().hex + '.' + ext
-    file_storage.save(os.path.join(upload_dir, filename))
-    return 'uploads/' + filename
 
 @dashboard_bp.route('/services/add', methods=['POST'])
 @login_required
@@ -177,7 +171,7 @@ def add_service():
     price = float(price_str) if price_str else None
     emoji = request.form.get('emoji', '').strip()
     buffer_mins = int(request.form.get('buffer_mins', 0) or 0)
-    icon_url = _save_upload(request.files.get('icon_image'))
+    icon_url = _upload_to_cloudinary(request.files.get('icon_image'), transformation=[{'width': 200, 'height': 200, 'crop': 'fill'}])
 
     if not name:
         flash('服务名称为必填项。', 'error')
@@ -196,7 +190,7 @@ def add_service():
 @dashboard_bp.route('/services/<int:svc_id>/icon', methods=['POST'])
 @login_required
 def update_service_icon(svc_id):
-    icon_url = _save_upload(request.files.get('icon_image'))
+    icon_url = _upload_to_cloudinary(request.files.get('icon_image'), transformation=[{'width': 200, 'height': 200, 'crop': 'fill'}])
     if icon_url:
         db = get_db()
         db.execute(

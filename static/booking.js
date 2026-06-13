@@ -79,8 +79,9 @@ function renderServices() {
     const priceHtml = s.price
       ? `<div class="svc-price-main">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>`
       : '<div class="svc-price-tbd">价格面议</div>';
-    const iconHtml = s.icon_url
-      ? `<img src="/static/${esc(s.icon_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`
+    const iconSrc = s.icon_url && s.icon_url.startsWith('http') ? s.icon_url : null;
+    const iconHtml = iconSrc
+      ? `<img src="${iconSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`
       : (s.emoji ? esc(s.emoji) : icon(i));
     return `
     <div class="service-item" onclick="selectService(${s.id})">
@@ -107,8 +108,9 @@ function selectService(id) {
   state.weekStart = getMonday(new Date());
 
   const i = state.services.indexOf(svc);
-  const barIconHtml = svc.icon_url
-    ? `<img src="/static/${esc(svc.icon_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`
+  const barIconSrc = svc.icon_url && svc.icon_url.startsWith('http') ? svc.icon_url : null;
+  const barIconHtml = barIconSrc
+    ? `<img src="${barIconSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`
     : icon(i);
   document.getElementById('service-bar').innerHTML = `
     <div class="svc-icon">${barIconHtml}</div>
