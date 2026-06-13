@@ -469,8 +469,7 @@ a:hover { text-decoration: underline; }
 .book-hero {
   width: 100%;
   height: 240px;
-  background-color: #23221E;
-  background-image: url('/static/banner.png');
+  background: linear-gradient(135deg, #F5ECD7 0%, #E8D5A3 40%, #D4B87A 100%);
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -669,7 +668,13 @@ a:hover { text-decoration: underline; }
   cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   color: var(--text);
 }
-.biz-card-banner { height: 6px; background: linear-gradient(90deg, var(--gold) 0%, #E8C96A 100%); }
+.biz-card-banner {
+  height: 100px;
+  background: linear-gradient(135deg, #F5ECD7 0%, #E8D5A3 50%, #D4B87A 100%);
+  background-size: cover;
+  background-position: center;
+  border-radius: 14px 14px 0 0;
+}
 .biz-card-inner { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .biz-card:hover {
   transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,18,9,0.1);
@@ -677,9 +682,11 @@ a:hover { text-decoration: underline; }
 }
 .biz-card-top { display: flex; align-items: center; justify-content: space-between; }
 .biz-avatar {
-  width: 44px; height: 44px; border-radius: 12px; background: var(--gold-light);
-  color: #8B6914; font-size: 18px; font-weight: 800;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, #C9A84C, #8B6914);
+  color: white; font-size: 18px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .biz-category-badge {
   font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px;
@@ -962,7 +969,9 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
 }
 .biz-logo-box {
   width: 60px; height: 60px; border-radius: 14px;
-  background: var(--gold-light); border: 2px solid var(--gold-border);
+  background: linear-gradient(135deg, #C9A84C, #8B6914);
+  border: 2px solid var(--gold-border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 28px; margin-bottom: 4px;
+  font-size: 28px; font-weight: 800; color: white;
+  margin-bottom: 4px;
 }

@@ -15,9 +15,9 @@
   <!-- Business header card -->
   <div class="biz-header-card">
     {% if biz.avatar_url %}
-    <img src="{{ biz.avatar_url }}" class="biz-logo-box" style="object-fit:cover;border-radius:12px">
+    <img src="{{ biz.avatar_url }}" class="biz-logo-box" style="object-fit:cover;border-radius:14px">
     {% else %}
-    <div class="biz-logo-box">💈</div>
+    <div class="biz-logo-box">{{ biz.name[0].upper() }}</div>
     {% endif %}
     <h1>{{ biz.name }}</h1>
     <p id="header-sub">选择服务开始预约</p>
