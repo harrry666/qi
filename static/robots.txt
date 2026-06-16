@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /cancel/
+
+Allow: /
+Allow: /explore
+Allow: /book/
+Allow: /login
+Allow: /register

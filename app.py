@@ -43,8 +43,46 @@ app.register_blueprint(dashboard_bp)
 app.register_blueprint(booking_bp)
 csrf.exempt(booking_bp)
 
+from flask import send_from_directory
+
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory(app.static_folder, 'robots.txt')
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https: blob:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "form-action 'self'; "
+        "base-uri 'self'"
+    )
+    return response
+
 from db import init_db
 init_db()
+
+@app.errorhandler(404)
+def not_found(e):
+    from flask import render_template
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    from flask import render_template
+    return render_template('500.html'), 500
 
 
 def send_reminders():

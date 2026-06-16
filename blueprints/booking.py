@@ -150,6 +150,8 @@ def api_create(slug):
         return jsonify({'error': 'Not found'}), 404
 
     data = request.json or {}
+    if data.get('hp'):
+        return jsonify({'success': True, 'service': 'OK'})
     service_id = data.get('service_id')
     name = (data.get('customer_name') or '').strip()
     phone = (data.get('phone') or '').strip()
