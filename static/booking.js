@@ -97,6 +97,16 @@ function renderServices() {
     </div>
   `;
   }).join('');
+  animateServices();
+}
+
+function animateServices() {
+  const items = document.querySelectorAll('.service-item');
+  items.forEach(function(el, i) {
+    setTimeout(function() {
+      el.classList.add('svc-visible');
+    }, i * 60);
+  });
 }
 
 // ── Slot Selection ────────────────────────────────────────────────────────────

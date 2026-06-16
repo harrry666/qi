@@ -77,7 +77,10 @@ a:hover { text-decoration: underline; }
 .hero-rich {
   position: relative; overflow: hidden;
   padding: 96px 48px 80px;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 70% 60% at 72% 50%, rgba(201,168,76,0.06) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='1' fill='rgba(201%2C168%2C76%2C0.08)'/%3E%3C/svg%3E"),
+    var(--bg);
 }
 .hero-rule {
   position: absolute; top: 64px; bottom: 64px; left: 40px;
@@ -100,7 +103,16 @@ a:hover { text-decoration: underline; }
 }
 .hero-rich .hero-sub { margin: 22px 0 0; max-width: 440px; }
 .hero-rich .hero-actions { justify-content: flex-start; margin-top: 34px; }
-.hero-preview { display: flex; justify-content: center; perspective: 1600px; }
+.hero-preview { position: relative; display: flex; justify-content: center; perspective: 1600px; }
+.hero-preview::before {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px; height: 380px; border-radius: 50%;
+  background: rgba(201,168,76,0.12);
+  filter: blur(80px);
+  z-index: 0; pointer-events: none;
+}
 .hero-eyebrow {
   display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
   color: var(--gold-h); text-transform: uppercase; margin-bottom: 24px;
@@ -114,6 +126,7 @@ a:hover { text-decoration: underline; }
 .qi-phone {
   width: 298px; border-radius: 40px; background: var(--white);
   border: 2px solid rgba(26,18,9,0.07); overflow: hidden;
+  position: relative; z-index: 1;
   transform: rotate(4deg);
   box-shadow:
     0 54px 104px -34px rgba(0,0,0,0.72),
@@ -219,8 +232,14 @@ a:hover { text-decoration: underline; }
 .features-section::before {
   content: '';
   position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  width: 1px; height: 40px;
-  background: linear-gradient(to bottom, var(--gold-border), transparent);
+  width: 80px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-border), transparent);
+}
+.features-section::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(201,168,76,0.04) 0%, transparent 70%);
+  pointer-events: none; z-index: -1;
 }
 .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .feature-card {
@@ -1032,3 +1051,11 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
   font-size: 28px; font-weight: 800; color: white;
   margin-bottom: 4px;
 }
+
+/* ── Service item entrance animation ── */
+.service-item { opacity: 0; transform: translateY(20px); }
+.service-item.svc-visible {
+  opacity: 1; transform: translateY(0);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.service-item.svc-visible:hover { transform: translateX(4px); }
