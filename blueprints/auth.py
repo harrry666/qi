@@ -49,6 +49,10 @@ def slugify(text):
 def landing():
     return render_template('landing.html')
 
+@auth_bp.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
