@@ -301,6 +301,7 @@ async function submitBooking() {
         phone,
         appointment_dt: `${state.selected.date} ${state.selected.time}`,
         comment: state.selected.comment,
+        hp: document.getElementById('hp_website') ? document.getElementById('hp_website').value : '',
       }),
     });
     const data = await res.json();
