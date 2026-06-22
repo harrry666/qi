@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "analytics-metrics": {
+      "source": "hoodini/ai-agents-skills",
+      "sourceType": "github",
+      "skillPath": "skills/analytics-metrics/SKILL.md",
+      "computedHash": "e3e9a408e00744f3aab3640f8357725ae0267f2f6d85f0a0aaabeca3132017f9"
+    },
+    "frontend-design-system": {
+      "source": "akillness/oh-my-skills",
+      "sourceType": "github",
+      "skillPath": ".agent-skills/frontend-design-system/SKILL.md",
+      "computedHash": "2319d565559f72539de9ae46514c728eda93fb167d3fb32471f6e23207f8d52f"
+    },
+    "frontend-design-ui-ux": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "skillPath": "frontend-design-ui-ux/SKILL.md",
+      "computedHash": "30f899e46aa0bbfeec9aa29a9016dfff8c58c30fbd1dccf138d826e342028c6b"
+    }
+  }
+}
