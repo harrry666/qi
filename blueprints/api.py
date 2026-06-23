@@ -21,6 +21,32 @@ def get_merchant_from_token():
         db.close()
 
 
+def get_client_token():
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return None
+    return auth_header[7:]
+
+
+def get_client_from_token():
+    token = get_client_token()
+    if not token:
+        return None
+    db = get_db()
+    try:
+        user = db.execute('SELECT * FROM users WHERE client_token=%s', (token,)).fetchone()
+        return dict(user) if user else None
+    finally:
+        db.close()
+
+
+def require_client():
+    user = get_client_from_token()
+    if not user:
+        return None, (jsonify({'error': 'unauthorized'}), 401)
+    return user, None
+
+
 def require_merchant():
     biz = get_merchant_from_token()
     if not biz:
@@ -131,6 +157,9 @@ def create_booking():
     if not all([slug, service_id, customer_name, phone, date, time]):
         return jsonify({'error': '缺少必填字段'}), 400
 
+    client = get_client_from_token()
+    openid = client['openid'] if client else None
+
     db = get_db()
     try:
         biz = db.execute('SELECT * FROM businesses WHERE slug=%s', (slug,)).fetchone()
@@ -156,8 +185,8 @@ def create_booking():
 
         cancel_token = str(uuid.uuid4())
         db.execute(
-            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token)
+            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token, openid)
         )
         db.commit()
 
@@ -586,6 +615,60 @@ def merchant_analytics():
             'top_services': [{'name': r['name'], 'count': r['count']} for r in top_svcs],
             'peak_hours': [{'hour': r['hour'], 'count': r['count']} for r in peak_hours],
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/wx_login', methods=['POST'])
+def wx_login():
+    from blueprints.wx import jscode2session, wx_configured
+    if not wx_configured():
+        return jsonify({'error': 'wx not configured'}), 503
+    data = request.json or {}
+    code = (data.get('code') or '').strip()
+    if not code:
+        return jsonify({'error': '缺少 code'}), 400
+    openid = jscode2session(code)
+    if not openid:
+        return jsonify({'error': '微信登录失败'}), 400
+    db = get_db()
+    try:
+        user = db.execute('SELECT * FROM users WHERE openid=%s', (openid,)).fetchone()
+        if user:
+            token = user['client_token']
+        else:
+            token = str(uuid.uuid4())
+            db.execute(
+                'INSERT INTO users (openid, client_token) VALUES (%s,%s)',
+                (openid, token)
+            )
+            db.commit()
+        return jsonify({'token': token})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/my/bookings')
+def my_bookings():
+    user, err = require_client()
+    if err:
+        return err
+    db = get_db()
+    try:
+        rows = db.execute(
+            "SELECT a.cancel_token, a.appointment_dt, a.status, "
+            "s.name as service_name, b.name as business_name, b.address "
+            "FROM appointments a "
+            "JOIN services s ON a.service_id=s.id "
+            "JOIN businesses b ON a.business_id=b.id "
+            "WHERE a.openid=%s ORDER BY a.appointment_dt DESC",
+            (user['openid'],)
+        ).fetchall()
+        return jsonify({'appointments': [dict(r) for r in rows]})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:

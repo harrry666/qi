@@ -100,6 +100,14 @@ def init_db():
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS banner_url TEXT',
         'ALTER TABLE services ADD COLUMN IF NOT EXISTS icon_url TEXT',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS api_token TEXT',
+        '''CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            openid TEXT UNIQUE NOT NULL,
+            client_token TEXT UNIQUE NOT NULL,
+            nickname TEXT DEFAULT '',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )''',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS openid TEXT',
     ]:
         db.execute(stmt)
     db.commit()
