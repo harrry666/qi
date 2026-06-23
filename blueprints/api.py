@@ -153,6 +153,7 @@ def create_booking():
     date = (data.get('date') or '').strip()
     time = (data.get('time') or '').strip()
     comment = (data.get('comment') or '').strip()
+    subscribe_authed = 1 if data.get('subscribe_authed') in (1, '1', True) else 0
 
     if not all([slug, service_id, customer_name, phone, date, time]):
         return jsonify({'error': '缺少必填字段'}), 400
@@ -185,8 +186,8 @@ def create_booking():
 
         cancel_token = str(uuid.uuid4())
         db.execute(
-            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token, openid)
+            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid, subscribe_authed) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token, openid, subscribe_authed)
         )
         db.commit()
 

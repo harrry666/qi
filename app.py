@@ -132,10 +132,58 @@ def send_reminders():
         print(f'[Reminder] ERROR: {e}', flush=True, file=sys.stderr)
 
 
+def send_wx_reminders():
+    from db import get_db
+    from blueprints.wx import send_subscribe_message, wx_configured
+    if not wx_configured():
+        return
+    try:
+        now = datetime.now()
+        window_start = (now + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M')
+        window_end   = (now + timedelta(minutes=90)).strftime('%Y-%m-%d %H:%M')
+        db = get_db()
+        rows = db.execute(
+            "SELECT a.id, a.openid, a.appointment_dt, "
+            "s.name as service_name, b.name as biz_name, b.address "
+            "FROM appointments a "
+            "JOIN services s ON a.service_id = s.id "
+            "JOIN businesses b ON a.business_id = b.id "
+            "WHERE a.status = 'confirmed' AND a.subscribe_authed = 1 "
+            "AND a.wx_reminder_sent = 0 AND a.openid IS NOT NULL "
+            "AND a.appointment_dt >= %s AND a.appointment_dt <= %s",
+            (window_start, window_end)
+        ).fetchall()
+        for row in rows:
+            claimed = db.execute(
+                "UPDATE appointments SET wx_reminder_sent = 1 WHERE id = %s AND wx_reminder_sent = 0 RETURNING id",
+                (row['id'],)
+            ).fetchone()
+            db.commit()
+            if claimed:
+                try:
+                    dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
+                    dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+                except Exception:
+                    dt_display = row['appointment_dt']
+                data = {
+                    'thing1': {'value': row['biz_name'][:20]},
+                    'thing2': {'value': row['service_name'][:20]},
+                    'time3': {'value': dt_display},
+                    'thing4': {'value': (row['address'] or '')[:20]},
+                }
+                threading.Thread(
+                    target=send_subscribe_message, args=(row['openid'], data), daemon=True
+                ).start()
+        db.close()
+    except Exception as e:
+        print(f'[WXReminder] ERROR: {e}', flush=True, file=sys.stderr)
+
+
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
     _scheduler = BackgroundScheduler()
     _scheduler.add_job(send_reminders, 'interval', minutes=15)
+    _scheduler.add_job(send_wx_reminders, 'interval', minutes=15)
     _scheduler.start()
     atexit.register(lambda: _scheduler.shutdown(wait=False))
 except Exception as _e:
