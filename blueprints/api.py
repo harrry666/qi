@@ -810,3 +810,107 @@ def merchant_update_profile():
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
+
+
+@api_bp.route('/merchant/hours', methods=['GET'])
+def merchant_get_hours():
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        rows = db.execute(
+            'SELECT * FROM business_hours WHERE business_id=%s ORDER BY weekday',
+            (biz['id'],)
+        ).fetchall()
+        hours_map = {r['weekday']: {'open_time': r['open_time'], 'close_time': r['close_time'], 'is_closed': r['is_closed']} for r in rows}
+        days = []
+        day_names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        for i in range(7):
+            d = hours_map.get(i, {'open_time': '09:00', 'close_time': '18:00', 'is_closed': 0})
+            days.append({'weekday': i, 'name': day_names[i], **d})
+        return jsonify({'hours': days})
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/hours', methods=['PUT'])
+def merchant_update_hours():
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    days = data.get('days', [])
+    db = get_db()
+    try:
+        for d in days:
+            db.execute(
+                '''INSERT INTO business_hours (business_id, weekday, open_time, close_time, is_closed)
+                   VALUES (%s,%s,%s,%s,%s)
+                   ON CONFLICT (business_id, weekday)
+                   DO UPDATE SET open_time=EXCLUDED.open_time, close_time=EXCLUDED.close_time, is_closed=EXCLUDED.is_closed''',
+                (biz['id'], d['weekday'], d.get('open_time', '09:00'), d.get('close_time', '18:00'), 1 if d.get('is_closed') else 0)
+            )
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/blackouts', methods=['GET'])
+def merchant_get_blackouts():
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        rows = db.execute(
+            'SELECT * FROM business_blackouts WHERE business_id=%s ORDER BY start_date',
+            (biz['id'],)
+        ).fetchall()
+        return jsonify({'blackouts': [dict(r) for r in rows]})
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/blackouts', methods=['POST'])
+def merchant_add_blackout():
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    start = (data.get('start_date') or '').strip()
+    end = (data.get('end_date') or '').strip()
+    reason = (data.get('reason') or '').strip()
+    if not start or not end or end < start:
+        return jsonify({'error': '日期范围无效'}), 400
+    db = get_db()
+    try:
+        row = db.execute(
+            'INSERT INTO business_blackouts (business_id, start_date, end_date, reason) VALUES (%s,%s,%s,%s) RETURNING id',
+            (biz['id'], start, end, reason)
+        ).fetchone()
+        db.commit()
+        return jsonify({'id': row['id'], 'start_date': start, 'end_date': end, 'reason': reason})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/blackouts/<int:bo_id>', methods=['DELETE'])
+def merchant_delete_blackout(bo_id):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        db.execute('DELETE FROM business_blackouts WHERE id=%s AND business_id=%s', (bo_id, biz['id']))
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
