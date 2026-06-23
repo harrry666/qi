@@ -294,6 +294,65 @@ def merchant_appointments():
         db.close()
 
 
+@api_bp.route('/merchant/appointments/list')
+def merchant_appointments_list():
+    biz, err = require_merchant()
+    if err:
+        return err
+    filter_val = request.args.get('filter', 'all')
+    today = datetime.now().strftime('%Y-%m-%d')
+    db = get_db()
+    try:
+        sql = (
+            "SELECT a.*, s.name as service_name, s.duration_mins, s.price "
+            "FROM appointments a JOIN services s ON a.service_id=s.id "
+            "WHERE a.business_id=%s"
+        )
+        params = [biz['id']]
+        if filter_val == 'upcoming':
+            sql += " AND SUBSTRING(a.appointment_dt, 1, 10) >= %s AND a.status != 'cancelled'"
+            params.append(today)
+        elif filter_val == 'past':
+            sql += " AND SUBSTRING(a.appointment_dt, 1, 10) < %s"
+            params.append(today)
+        elif filter_val == 'cancelled':
+            sql += " AND a.status = 'cancelled'"
+        sql += " ORDER BY a.appointment_dt"
+        rows = db.execute(sql, tuple(params)).fetchall()
+        return jsonify({'appointments': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/appointments/<int:apt_id>/confirm', methods=['POST'])
+def merchant_confirm_appointment(apt_id):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        row = db.execute(
+            'SELECT business_id FROM appointments WHERE id=%s',
+            (apt_id,)
+        ).fetchone()
+        if not row:
+            return jsonify({'error': '预约不存在'}), 404
+        if row['business_id'] != biz['id']:
+            return jsonify({'error': 'unauthorized'}), 403
+        db.execute(
+            "UPDATE appointments SET status='confirmed' WHERE id=%s AND business_id=%s",
+            (apt_id, biz['id'])
+        )
+        db.commit()
+        return jsonify({'ok': True, 'status': 'confirmed'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
 @api_bp.route('/merchant/appointments/<int:apt_id>/cancel', methods=['POST'])
 def merchant_cancel_appointment(apt_id):
     from blueprints.booking import send_sms, format_phone
@@ -413,6 +472,56 @@ def merchant_delete_service(svc_id):
         db.close()
 
 
+@api_bp.route('/merchant/services/<int:service_id>', methods=['PUT'])
+def merchant_update_service(service_id):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        row = db.execute(
+            'SELECT id FROM services WHERE id=%s AND business_id=%s',
+            (service_id, biz['id'])
+        ).fetchone()
+        if not row:
+            return jsonify({'error': '服务不存在'}), 404
+        data = request.json or {}
+        fields = []
+        params = []
+        if 'name' in data:
+            fields.append('name=%s')
+            params.append((data.get('name') or '').strip())
+        if 'price' in data:
+            price = data.get('price')
+            fields.append('price=%s')
+            params.append(float(price) if price is not None else None)
+        if 'duration' in data:
+            fields.append('duration_mins=%s')
+            params.append(int(data.get('duration')))
+        if 'emoji' in data:
+            fields.append('emoji=%s')
+            params.append((data.get('emoji') or '').strip())
+        if 'description' in data:
+            fields.append('name_sub=%s')
+            params.append((data.get('description') or '').strip())
+        if fields:
+            params.extend([service_id, biz['id']])
+            db.execute(
+                'UPDATE services SET ' + ', '.join(fields) + ' WHERE id=%s AND business_id=%s',
+                tuple(params)
+            )
+            db.commit()
+        svc = db.execute(
+            'SELECT * FROM services WHERE id=%s AND business_id=%s',
+            (service_id, biz['id'])
+        ).fetchone()
+        return jsonify(dict(svc))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
 @api_bp.route('/merchant/analytics')
 def merchant_analytics():
     biz, err = require_merchant()
@@ -423,6 +532,7 @@ def merchant_analytics():
         now = datetime.now()
         this_month = now.strftime('%Y-%m')
         last_month = (now.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+        tomorrow = (now + timedelta(days=1)).strftime('%Y-%m-%d')
 
         rev_row = db.execute(
             "SELECT "
@@ -452,6 +562,12 @@ def merchant_analytics():
             (biz['id'],)
         ).fetchall()
 
+        tmr_row = db.execute(
+            "SELECT COUNT(*) AS cnt FROM appointments "
+            "WHERE business_id=%s AND status='confirmed' AND SUBSTRING(appointment_dt, 1, 10) = %s",
+            (biz['id'], tomorrow)
+        ).fetchone()
+
         peak_hours = db.execute(
             "SELECT CAST(SUBSTRING(appointment_dt, 12, 2) AS INTEGER) as hour, COUNT(*) as count "
             "FROM appointments WHERE business_id=%s AND status='confirmed' "
@@ -466,6 +582,7 @@ def merchant_analytics():
             'cnt_this_month': int(cnt_row['cnt_this_month'] or 0),
             'cnt_last_month': int(cnt_row['cnt_last_month'] or 0),
             'cnt_total': int(cnt_row['cnt_alltime'] or 0),
+            'tomorrow_count': int(tmr_row['cnt'] or 0),
             'top_services': [{'name': r['name'], 'count': r['count']} for r in top_svcs],
             'peak_hours': [{'hour': r['hour'], 'count': r['count']} for r in peak_hours],
         })
