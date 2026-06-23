@@ -1,9 +1,11 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, url_for
 from db import get_db
 from datetime import datetime, timedelta
+import os
 import uuid
 import threading
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -719,6 +721,75 @@ def merchant_register():
             )
         db.commit()
         return jsonify({'token': token, 'business_name': name, 'id': biz_id})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+ALLOWED_IMG = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+MAX_UPLOAD = 5 * 1024 * 1024
+
+
+def save_upload(file, kind):
+    if os.environ.get('OSS_BUCKET'):
+        pass
+    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = os.path.splitext(secure_filename(file.filename or ''))[1].lower() or '.jpg'
+    fname = f'{kind}_{uuid.uuid4().hex}{ext}'
+    file.save(os.path.join(upload_dir, fname))
+    return url_for('static', filename=f'uploads/{fname}', _external=True)
+
+
+@api_bp.route('/merchant/upload', methods=['POST'])
+def merchant_upload():
+    biz, err = require_merchant()
+    if err:
+        return err
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'error': '缺少文件'}), 400
+    kind = (request.values.get('type') or 'avatar').strip()
+    if kind not in ('avatar', 'cover'):
+        kind = 'avatar'
+    if file.mimetype not in ALLOWED_IMG:
+        return jsonify({'error': '仅支持图片格式'}), 400
+    file.seek(0, os.SEEK_END)
+    if file.tell() > MAX_UPLOAD:
+        return jsonify({'error': '图片不能超过 5MB'}), 400
+    file.seek(0)
+    try:
+        url = save_upload(file, kind)
+        return jsonify({'url': url})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@api_bp.route('/merchant/profile', methods=['PUT'])
+def merchant_update_profile():
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    fields = []
+    params = []
+    for key in ('name', 'description', 'address', 'phone', 'avatar_url', 'cover_url'):
+        if key in data:
+            fields.append(f'{key}=%s')
+            params.append((data.get(key) or '').strip())
+    if not fields:
+        return jsonify({'error': '没有可更新的字段'}), 400
+    db = get_db()
+    try:
+        params.append(biz['id'])
+        db.execute('UPDATE businesses SET ' + ', '.join(fields) + ' WHERE id=%s', tuple(params))
+        db.commit()
+        row = db.execute('SELECT * FROM businesses WHERE id=%s', (biz['id'],)).fetchone()
+        row = dict(row)
+        row.pop('password_hash', None)
+        row.pop('api_token', None)
+        return jsonify({'business': row})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
