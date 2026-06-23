@@ -737,8 +737,19 @@ MAX_UPLOAD = 5 * 1024 * 1024
 
 
 def save_upload(file, kind):
-    if os.environ.get('OSS_BUCKET'):
-        pass
+    if os.environ.get('CLOUDINARY_CLOUD_NAME'):
+        import cloudinary, cloudinary.uploader
+        cloudinary.config(
+            cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+            api_key=os.environ.get('CLOUDINARY_API_KEY', ''),
+            api_secret=os.environ.get('CLOUDINARY_API_SECRET', ''),
+        )
+        if kind == 'cover':
+            folder, trans = 'qi/covers', [{'width': 1200, 'height': 400, 'crop': 'fill'}]
+        else:
+            folder, trans = 'qi/avatars', [{'width': 400, 'height': 400, 'crop': 'fill'}]
+        result = cloudinary.uploader.upload(file, folder=folder, transformation=trans)
+        return result.get('secure_url')
     upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads')
     os.makedirs(upload_dir, exist_ok=True)
     ext = os.path.splitext(secure_filename(file.filename or ''))[1].lower() or '.jpg'
