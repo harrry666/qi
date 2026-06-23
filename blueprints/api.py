@@ -96,7 +96,7 @@ def get_business(slug):
                 'phone': biz['phone'],
                 'category': biz['category'],
                 'avatar_url': biz.get('avatar_url'),
-                'banner_url': biz.get('banner_url'),
+                'cover_url': biz.get('cover_url'),
             },
             'services': [dict(s) for s in svcs],
             'hours': [dict(h) for h in hours],
