@@ -61,7 +61,7 @@ def list_businesses():
     db = get_db()
     try:
         rows = db.execute(
-            'SELECT id, name, slug, category, description, address, avatar_url, phone FROM businesses ORDER BY id'
+            'SELECT id, name, slug, category, description, address, avatar_url, cover_url, phone FROM businesses ORDER BY id'
         ).fetchall()
         return jsonify({'businesses': [dict(r) for r in rows]})
     except Exception as e:
@@ -301,7 +301,12 @@ def merchant_me():
     biz, err = require_merchant()
     if err:
         return err
-    return jsonify({'id': biz['id'], 'name': biz['name'], 'email': biz['email'], 'slug': biz['slug']})
+    return jsonify({
+        'id': biz['id'], 'name': biz['name'], 'email': biz['email'], 'slug': biz['slug'],
+        'description': biz.get('description', ''), 'address': biz.get('address', ''),
+        'phone': biz.get('phone', ''), 'avatar_url': biz.get('avatar_url', ''),
+        'cover_url': biz.get('cover_url', ''),
+    })
 
 
 @api_bp.route('/merchant/appointments')
