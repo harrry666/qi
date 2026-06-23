@@ -3,7 +3,7 @@ from db import get_db
 from datetime import datetime, timedelta
 import uuid
 import threading
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -669,6 +669,55 @@ def my_bookings():
             (user['openid'],)
         ).fetchall()
         return jsonify({'appointments': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/categories')
+def categories():
+    from blueprints.auth import CATEGORIES
+    return jsonify({'categories': CATEGORIES})
+
+
+@api_bp.route('/merchant/register', methods=['POST'])
+def merchant_register():
+    from blueprints.auth import slugify, CATEGORIES
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    phone = (data.get('phone') or '').strip()
+    password = data.get('password') or ''
+    category = (data.get('category') or '').strip()
+    slug = slugify(data.get('slug') or name)
+    if not all([name, slug, email, phone, password, category]):
+        return jsonify({'error': '所有字段为必填项'}), 400
+    if len(password) < 6:
+        return jsonify({'error': '密码至少 6 个字符'}), 400
+    db = get_db()
+    try:
+        if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():
+            return jsonify({'error': '该链接地址已被使用'}), 400
+        if db.execute('SELECT id FROM businesses WHERE email=%s', (email,)).fetchone():
+            return jsonify({'error': '该邮箱已被注册'}), 400
+        token = str(uuid.uuid4())
+        cur = db.execute(
+            'INSERT INTO businesses (name, slug, email, password_hash, phone, category, api_token) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id',
+            (name, slug, email, generate_password_hash(password), phone, category, token)
+        )
+        biz_id = cur.fetchone()['id']
+        defaults = [
+            (0,'09:00','18:00',0),(1,'09:00','18:00',0),(2,'09:00','18:00',0),
+            (3,'09:00','18:00',0),(4,'09:00','18:00',0),(5,'09:00','17:00',0),(6,'09:00','17:00',1),
+        ]
+        for wd, ot, ct, closed in defaults:
+            db.execute(
+                'INSERT INTO business_hours (business_id, weekday, open_time, close_time, is_closed) VALUES (%s,%s,%s,%s,%s)',
+                (biz_id, wd, ot, ct, closed)
+            )
+        db.commit()
+        return jsonify({'token': token, 'business_name': name, 'id': biz_id})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
