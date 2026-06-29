@@ -13,6 +13,9 @@ let state = {
   weekStart: null,
 };
 
+let _codeCountdown = 0;
+let _codeTimer = null;
+
 function icon(i) { return ICONS[i % ICONS.length]; }
 
 function getMonday(d) {
@@ -248,6 +251,50 @@ function proceedToLogin() {
 
 function backToSlots() { showScreen('screen-slots'); }
 
+async function sendVerifyCode() {
+  const phone = document.getElementById('cust-phone').value.trim();
+  const phoneDigits = phone.replace(/\D/g, '');
+  const phoneValid = phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits[0] === '1');
+  const phoneError = document.getElementById('phone-error');
+  if (!phoneValid) {
+    phoneError.textContent = '请先输入有效的10位美国手机号';
+    phoneError.style.display = 'block';
+    return;
+  }
+  phoneError.style.display = 'none';
+  const btn = document.getElementById('btn-send-code');
+  btn.disabled = true;
+  btn.textContent = '发送中...';
+  try {
+    const res = await fetch('/api/verify/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ phone }),
+    });
+    const data = await res.json();
+    if (data.sent) {
+      document.getElementById('code-row').style.display = 'block';
+      _codeCountdown = 60;
+      btn.textContent = `${_codeCountdown}s`;
+      _codeTimer = setInterval(() => {
+        _codeCountdown--;
+        if (_codeCountdown <= 0) {
+          clearInterval(_codeTimer); _codeTimer = null;
+          btn.disabled = false; btn.textContent = '重新发送';
+        } else {
+          btn.textContent = `${_codeCountdown}s`;
+        }
+      }, 1000);
+    } else {
+      btn.disabled = false; btn.textContent = '获取验证码';
+      alert(data.error || '发送失败，请重试');
+    }
+  } catch {
+    btn.disabled = false; btn.textContent = '获取验证码';
+    alert('发送失败，请重试');
+  }
+}
+
 function showConfirmScreen() {
   const name = document.getElementById('cust-name').value.trim();
   const phone = document.getElementById('cust-phone').value.trim();
@@ -262,6 +309,15 @@ function showConfirmScreen() {
     return;
   }
   phoneError.style.display = 'none';
+  const codeRow = document.getElementById('code-row');
+  if (codeRow) {
+    const code = (document.getElementById('cust-code').value || '').trim();
+    if (!code) {
+      phoneError.textContent = '请先点击「获取验证码」并输入收到的验证码';
+      phoneError.style.display = 'block';
+      return;
+    }
+  }
   if (!smsConsent) { alert('Please check the SMS consent box to confirm your appointment.'); return; }
 
   const svc = state.selected.service;
@@ -302,6 +358,7 @@ async function submitBooking() {
         appointment_dt: `${state.selected.date} ${state.selected.time}`,
         comment: state.selected.comment,
         hp: document.getElementById('hp_website') ? document.getElementById('hp_website').value : '',
+        verify_code: document.getElementById('cust-code') ? document.getElementById('cust-code').value.trim() : '',
       }),
     });
     const data = await res.json();
@@ -350,6 +407,13 @@ function resetBooking() {
   document.getElementById('btn-book').textContent = '下一步 →';
   const phoneError = document.getElementById('phone-error');
   if (phoneError) { phoneError.style.display = 'none'; phoneError.textContent = ''; }
+  if (_codeTimer) { clearInterval(_codeTimer); _codeTimer = null; }
+  const codeEl = document.getElementById('cust-code');
+  if (codeEl) codeEl.value = '';
+  const codeRow = document.getElementById('code-row');
+  if (codeRow) codeRow.style.display = 'none';
+  const sendBtn = document.getElementById('btn-send-code');
+  if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '获取验证码'; }
   showScreen('screen-services');
 }
 

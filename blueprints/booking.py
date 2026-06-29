@@ -14,9 +14,10 @@ booking_bp = Blueprint('booking', __name__)
 
 SLOT_INTERVAL = 30
 
-TWILIO_SID   = os.environ.get('TWILIO_SID', '')
-TWILIO_TOKEN = os.environ.get('TWILIO_TOKEN', '')
-TWILIO_FROM  = os.environ.get('TWILIO_FROM', '')
+TWILIO_SID        = os.environ.get('TWILIO_SID', '')
+TWILIO_TOKEN      = os.environ.get('TWILIO_TOKEN', '')
+TWILIO_FROM       = os.environ.get('TWILIO_FROM', '')
+TWILIO_VERIFY_SID = os.environ.get('TWILIO_VERIFY_SID', '')
 
 
 def format_phone(raw):
@@ -108,7 +109,7 @@ def book_page(slug):
     biz = get_biz_by_slug(slug)
     if not biz:
         return '<h2 style="font-family:sans-serif;padding:40px">Business not found.</h2>', 404
-    return render_template('book.html', biz=biz)
+    return render_template('book.html', biz=biz, verify_enabled=bool(TWILIO_VERIFY_SID))
 
 @booking_bp.route('/api/book/<slug>/services')
 def api_services(slug):
@@ -174,6 +175,20 @@ def api_create(slug):
         apt_dt = apt_dt_obj.strftime('%Y-%m-%d %H:%M')
     except ValueError:
         return jsonify({'error': 'Invalid appointment time'}), 400
+
+    if TWILIO_VERIFY_SID:
+        verify_code = (data.get('verify_code') or '').strip()
+        if not verify_code:
+            return jsonify({'error': '请输入手机验证码'}), 400
+        try:
+            from twilio.rest import Client as _TwilioClient
+            _check = _TwilioClient(TWILIO_SID, TWILIO_TOKEN).verify.v2.services(TWILIO_VERIFY_SID).verification_checks.create(
+                to=format_phone(phone), code=verify_code
+            )
+            if _check.status != 'approved':
+                return jsonify({'error': '验证码错误或已过期'}), 400
+        except Exception:
+            return jsonify({'error': '验证失败，请重新获取验证码'}), 400
 
     cancel_token = str(uuid.uuid4())
 
