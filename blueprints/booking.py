@@ -196,7 +196,8 @@ def api_create(slug):
     except Exception:
         dt_display = apt_dt
 
-    cancel_url = f"{request.host_url.rstrip('/')}cancel/{cancel_token}"
+    _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+    cancel_url = f"{_base}/cancel/{cancel_token}"
     formatted_phone = format_phone(phone)
     biz_phone = biz['phone'] or ''
 

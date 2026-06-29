@@ -221,6 +221,8 @@ def create_booking():
 
         biz_phone = biz.get('phone') or ''
         formatted_customer_phone = format_phone(phone)
+        _base = os.environ.get('BASE_URL', '').rstrip('/')
+        cancel_url = f"{_base}/cancel/{cancel_token}" if _base else ''
 
         customer_msg = (
             f"【预约确认】{customer_name}，您在【{biz['name']}】的预约已确认。\n\n"
@@ -228,6 +230,7 @@ def create_booking():
             f"时间：{dt_display}\n"
             + (f"地址：{biz['address']}\n" if biz.get('address') else '')
             + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
+            + (f"\n如需取消：{cancel_url}" if cancel_url else '')
         )
         threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg), daemon=True).start()
 
