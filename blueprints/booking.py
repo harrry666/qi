@@ -219,7 +219,8 @@ def api_create(slug):
             f"电话：{phone}\n"
             f"服务：{svc['name']}\n"
             f"时间：{dt_display}\n"
-            + (f"备注：{comment}" if comment else '')
+            + (f"备注：{comment}\n" if comment else '')
+            + f"\n如需取消，回复「取消 {re.sub(r'[^0-9]', '', phone)[-4:]}」"
         )
         threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
@@ -233,51 +234,103 @@ def sms_incoming():
     from_phone = request.form.get('From', '')
 
     resp = MessagingResponse()
-    cancel_keywords = ['取消', 'cancel', 'c', 'quit', '1']
-    if any(k in body.lower() for k in cancel_keywords):
-        from_digits = re.sub(r'\D', '', from_phone)
-        ten = from_digits[-10:] if len(from_digits) >= 10 else from_digits
-        now_str = datetime.now(_LA).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M')
-        db = get_db()
-        try:
-            apt = db.execute(
-                "SELECT a.*, s.name as service_name, b.name as biz_name, b.phone as biz_phone "
-                "FROM appointments a "
-                "JOIN services s ON a.service_id=s.id "
-                "JOIN businesses b ON a.business_id=b.id "
-                "WHERE a.status='confirmed' AND a.appointment_dt >= %s "
-                "AND (REGEXP_REPLACE(a.phone,'[^0-9]','','g')=%s "
-                "     OR REGEXP_REPLACE(a.phone,'[^0-9]','','g')=%s) "
-                "ORDER BY a.appointment_dt ASC LIMIT 1",
-                (now_str, from_digits, ten)
-            ).fetchone()
-            if apt:
-                apt = dict(apt)
-                db.execute(
-                    "UPDATE appointments SET status='cancelled' WHERE id=%s AND status='confirmed'",
-                    (apt['id'],)
-                )
-                db.commit()
-                try:
-                    dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
-                    dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
-                except Exception:
-                    dt_display = apt['appointment_dt']
-                if apt.get('biz_phone'):
-                    owner_msg = (
-                        f"【预约取消】{apt['biz_name']}\n\n"
-                        f"客人：{apt['customer_name']}\n"
-                        f"服务：{apt['service_name']}\n"
-                        f"原定时间：{dt_display}"
+    from_digits = re.sub(r'\D', '', from_phone)
+    ten = from_digits[-10:] if len(from_digits) >= 10 else from_digits
+    now_str = datetime.now(_LA).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M')
+
+    db = get_db()
+    try:
+        # 先判断发信人是否是商家
+        merchant = db.execute(
+            "SELECT * FROM businesses WHERE "
+            "REGEXP_REPLACE(phone,'[^0-9]','','g')=%s "
+            "OR REGEXP_REPLACE(phone,'[^0-9]','','g')=%s",
+            (from_digits, ten)
+        ).fetchone()
+
+        if merchant:
+            merchant = dict(merchant)
+            import re as _re
+            m = _re.search(r'取消\s*(\d{4})', body)
+            if m:
+                last4 = m.group(1)
+                apt = db.execute(
+                    "SELECT a.*, s.name as service_name "
+                    "FROM appointments a "
+                    "JOIN services s ON a.service_id=s.id "
+                    "WHERE a.business_id=%s AND a.status='confirmed' AND a.appointment_dt >= %s "
+                    "AND RIGHT(REGEXP_REPLACE(a.phone,'[^0-9]','','g'),4)=%s "
+                    "ORDER BY a.appointment_dt ASC LIMIT 1",
+                    (merchant['id'], now_str, last4)
+                ).fetchone()
+                if apt:
+                    apt = dict(apt)
+                    db.execute(
+                        "UPDATE appointments SET status='cancelled' WHERE id=%s AND status='confirmed'",
+                        (apt['id'],)
                     )
-                    threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), owner_msg), daemon=True).start()
-                resp.message(f'已取消您在【{apt["biz_name"]}】的预约（{dt_display}）。如需重新预约，请打开哈瓜小约。')
+                    db.commit()
+                    try:
+                        dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
+                        dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+                    except Exception:
+                        dt_display = apt['appointment_dt']
+                    customer_msg = (
+                        f"【商家取消】{apt['customer_name']}，您在【{merchant['name']}】的预约已被商家取消。\n\n"
+                        f"服务：{apt['service_name']}\n"
+                        f"原定时间：{dt_display}\n"
+                        + (f"如有疑问请致电：{merchant['phone']}" if merchant.get('phone') else '')
+                    )
+                    threading.Thread(target=send_sms, args=(format_phone(apt['phone']), customer_msg), daemon=True).start()
+                    resp.message(f'已取消 {apt["customer_name"]}（尾号{last4}）的预约（{dt_display}）。')
+                else:
+                    resp.message(f'未找到手机尾号为 {last4} 的待取消预约。')
+            elif '取消' in body:
+                resp.message('请指定客人手机后4位，例如：取消 1234')
             else:
-                resp.message('未找到待取消的预约。如有问题，请直接联系商家。')
-        finally:
-            db.close()
-    else:
-        resp.message('回复「取消」可取消您最近的预约。如需帮助，请直接联系商家。')
+                resp.message('发送「取消 客人手机后4位」可取消该客人的预约。')
+        else:
+            # 客人取消流程
+            cancel_keywords = ['取消', 'cancel', 'c', 'quit', '1']
+            if any(k in body.lower() for k in cancel_keywords):
+                apt = db.execute(
+                    "SELECT a.*, s.name as service_name, b.name as biz_name, b.phone as biz_phone "
+                    "FROM appointments a "
+                    "JOIN services s ON a.service_id=s.id "
+                    "JOIN businesses b ON a.business_id=b.id "
+                    "WHERE a.status='confirmed' AND a.appointment_dt >= %s "
+                    "AND (REGEXP_REPLACE(a.phone,'[^0-9]','','g')=%s "
+                    "     OR REGEXP_REPLACE(a.phone,'[^0-9]','','g')=%s) "
+                    "ORDER BY a.appointment_dt ASC LIMIT 1",
+                    (now_str, from_digits, ten)
+                ).fetchone()
+                if apt:
+                    apt = dict(apt)
+                    db.execute(
+                        "UPDATE appointments SET status='cancelled' WHERE id=%s AND status='confirmed'",
+                        (apt['id'],)
+                    )
+                    db.commit()
+                    try:
+                        dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
+                        dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+                    except Exception:
+                        dt_display = apt['appointment_dt']
+                    if apt.get('biz_phone'):
+                        owner_msg = (
+                            f"【预约取消】{apt['biz_name']}\n\n"
+                            f"客人：{apt['customer_name']}\n"
+                            f"服务：{apt['service_name']}\n"
+                            f"原定时间：{dt_display}"
+                        )
+                        threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), owner_msg), daemon=True).start()
+                    resp.message(f'已取消您在【{apt["biz_name"]}】的预约（{dt_display}）。如需重新预约，请打开哈瓜小约。')
+                else:
+                    resp.message('未找到待取消的预约。如有问题，请直接联系商家。')
+            else:
+                resp.message('回复「取消」可取消您最近的预约。如需帮助，请直接联系商家。')
+    finally:
+        db.close()
 
     return str(resp), 200, {'Content-Type': 'text/xml'}
 

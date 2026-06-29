@@ -236,13 +236,16 @@ def create_booking():
         threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg), daemon=True).start()
 
         if biz_phone:
+            import re as _re
+            last4 = _re.sub(r'[^0-9]', '', phone)[-4:]
             owner_msg = (
                 f"【新预约】{biz['name']}\n\n"
                 f"客人：{customer_name}\n"
                 f"电话：{phone}\n"
                 f"服务：{svc['name']}\n"
                 f"时间：{dt_display}\n"
-                + (f"备注：{comment}" if comment else '')
+                + (f"备注：{comment}\n" if comment else '')
+                + f"\n如需取消，回复「取消 {last4}」"
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
