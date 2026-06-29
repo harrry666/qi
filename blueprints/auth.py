@@ -158,7 +158,7 @@ def forgot_password():
             reset_url = url_for('auth.reset_password', token=token, _external=True)
             send_email(
                 email,
-                '重置你的 Qi 密码',
+                '重置你的 Hastrid Booking 密码',
                 f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
             )
         db.close()

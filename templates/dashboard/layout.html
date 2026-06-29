@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}控制台{% endblock %} — Qi</title>
+  <title>{% block title %}控制台{% endblock %} — Hastrid Booking</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
@@ -40,7 +40,7 @@
 
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <img src="{{ url_for('static', filename='logo.png') }}" alt="Qi" class="sidebar-logo-img">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Hastrid Booking" class="sidebar-logo-img">
     </div>
     <div class="sidebar-biz" title="{{ current_user.name }}">{{ current_user.name }}</div>
     <nav class="sidebar-nav">

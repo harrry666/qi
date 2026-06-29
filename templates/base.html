@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Qi{% endblock %}</title>
+  <title>{% block title %}Hastrid Booking{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -13,7 +13,7 @@
 <nav class="public-nav">
   <a href="{{ url_for('auth.landing') }}" class="nav-logo">
     <img src="{{ url_for('static', filename='logo.png') }}" alt="" class="nav-logo-img">
-    Qi
+    Hastrid Booking
   </a>
   <div class="nav-links">
     <a href="{{ url_for('auth.explore') }}">浏览商家</a>
