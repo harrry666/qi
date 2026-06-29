@@ -47,6 +47,7 @@ app.register_blueprint(api_bp)
 app.register_blueprint(admin_bp)
 csrf.exempt(admin_bp)
 csrf.exempt(booking_bp)
+csrf.exempt(api_bp)
 
 from flask import send_from_directory
 

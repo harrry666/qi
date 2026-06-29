@@ -224,6 +224,62 @@ def api_create(slug):
     return jsonify({'success': True, 'service': svc['name']})
 
 
+@booking_bp.route('/sms/incoming', methods=['POST'])
+def sms_incoming():
+    from twilio.twiml.messaging_response import MessagingResponse
+    body = (request.form.get('Body') or '').strip()
+    from_phone = request.form.get('From', '')
+
+    resp = MessagingResponse()
+    cancel_keywords = ['取消', 'cancel', 'c', 'quit', '1']
+    if any(k in body.lower() for k in cancel_keywords):
+        from_digits = re.sub(r'\D', '', from_phone)
+        ten = from_digits[-10:] if len(from_digits) >= 10 else from_digits
+        now_str = datetime.now(_LA).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M')
+        db = get_db()
+        try:
+            apt = db.execute(
+                "SELECT a.*, s.name as service_name, b.name as biz_name, b.phone as biz_phone "
+                "FROM appointments a "
+                "JOIN services s ON a.service_id=s.id "
+                "JOIN businesses b ON a.business_id=b.id "
+                "WHERE a.status='confirmed' AND a.appointment_dt >= %s "
+                "AND (REGEXP_REPLACE(a.phone,'[^0-9]','','g')=%s "
+                "     OR REGEXP_REPLACE(a.phone,'[^0-9]','','g')=%s) "
+                "ORDER BY a.appointment_dt ASC LIMIT 1",
+                (now_str, from_digits, ten)
+            ).fetchone()
+            if apt:
+                apt = dict(apt)
+                db.execute(
+                    "UPDATE appointments SET status='cancelled' WHERE id=%s AND status='confirmed'",
+                    (apt['id'],)
+                )
+                db.commit()
+                try:
+                    dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
+                    dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+                except Exception:
+                    dt_display = apt['appointment_dt']
+                if apt.get('biz_phone'):
+                    owner_msg = (
+                        f"【预约取消】{apt['biz_name']}\n\n"
+                        f"客人：{apt['customer_name']}\n"
+                        f"服务：{apt['service_name']}\n"
+                        f"原定时间：{dt_display}"
+                    )
+                    threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), owner_msg), daemon=True).start()
+                resp.message(f'已取消您在【{apt["biz_name"]}】的预约（{dt_display}）。如需重新预约，请打开哈瓜小约。')
+            else:
+                resp.message('未找到待取消的预约。如有问题，请直接联系商家。')
+        finally:
+            db.close()
+    else:
+        resp.message('回复「取消」可取消您最近的预约。如需帮助，请直接联系商家。')
+
+    return str(resp), 200, {'Content-Type': 'text/xml'}
+
+
 @booking_bp.route('/cancel/<token>', methods=['GET', 'POST'])
 def cancel_by_token(token):
     db = get_db()

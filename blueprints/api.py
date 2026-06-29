@@ -12,6 +12,8 @@ from werkzeug.utils import secure_filename
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
+TWILIO_VERIFY_SID = os.environ.get('TWILIO_VERIFY_SID', '')
+
 
 def get_merchant_from_token():
     auth_header = request.headers.get('Authorization', '')
@@ -158,10 +160,26 @@ def create_booking():
     date = (data.get('date') or '').strip()
     time = (data.get('time') or '').strip()
     comment = (data.get('comment') or '').strip()
+    verify_code = (data.get('verify_code') or '').strip()
     subscribe_authed = 1 if data.get('subscribe_authed') in (1, '1', True) else 0
 
     if not all([slug, service_id, customer_name, phone, date, time]):
         return jsonify({'error': '缺少必填字段'}), 400
+
+    if TWILIO_VERIFY_SID:
+        if not verify_code:
+            return jsonify({'error': '请输入手机验证码'}), 400
+        try:
+            from twilio.rest import Client
+            from blueprints.booking import TWILIO_SID, TWILIO_TOKEN, format_phone
+            _client = Client(TWILIO_SID, TWILIO_TOKEN)
+            check = _client.verify.v2.services(TWILIO_VERIFY_SID).verification_checks.create(
+                to=format_phone(phone), code=verify_code
+            )
+            if check.status != 'approved':
+                return jsonify({'error': '验证码错误或已过期'}), 400
+        except Exception:
+            return jsonify({'error': '验证失败，请重新获取验证码'}), 400
 
     client = get_client_from_token()
     openid = client['openid'] if client else None
@@ -229,6 +247,26 @@ def create_booking():
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
+
+
+@api_bp.route('/verify/send', methods=['POST'])
+def verify_send():
+    from blueprints.booking import TWILIO_SID, TWILIO_TOKEN, format_phone
+    data = request.json or {}
+    phone = (data.get('phone') or '').strip()
+    if not phone:
+        return jsonify({'error': '请输入手机号'}), 400
+    if not TWILIO_VERIFY_SID:
+        return jsonify({'error': '验证服务未配置'}), 500
+    try:
+        from twilio.rest import Client
+        client = Client(TWILIO_SID, TWILIO_TOKEN)
+        client.verify.v2.services(TWILIO_VERIFY_SID).verifications.create(
+            to=format_phone(phone), channel='sms', locale='zh'
+        )
+        return jsonify({'sent': True})
+    except Exception as e:
+        return jsonify({'error': '发送失败，请检查手机号格式'}), 400
 
 
 @api_bp.route('/bookings/<cancel_token>/cancel', methods=['POST'])
