@@ -208,6 +208,7 @@ def api_create(slug):
         + (f"地址：{biz['address']}\n" if biz['address'] else '')
         + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
         + f"\n如需取消：{cancel_url}"
+        + "\n或直接回复本短信「取消」"
     )
     threading.Thread(target=send_sms, args=(formatted_phone, customer_msg), daemon=True).start()
 
