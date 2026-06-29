@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template, request, jsonify
 from db import get_db
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+_LA = ZoneInfo('America/Los_Angeles')
 import os
 import re
 import threading
@@ -66,9 +69,12 @@ def generate_slots(business_id, date_obj, duration_mins):
     current = datetime(date_obj.year, date_obj.month, date_obj.day, sh, sm)
     end = datetime(date_obj.year, date_obj.month, date_obj.day, eh, em)
 
+    now_la = datetime.now(_LA).replace(tzinfo=None)
+    is_today = (date_obj == now_la.date())
     slots = []
     while current + timedelta(minutes=duration_mins) <= end:
-        slots.append(current.strftime('%H:%M'))
+        if not is_today or current > now_la:
+            slots.append(current.strftime('%H:%M'))
         current += timedelta(minutes=SLOT_INTERVAL)
     return slots
 
@@ -163,7 +169,7 @@ def api_create(slug):
 
     try:
         apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
-        if apt_dt_obj < datetime.now():
+        if apt_dt_obj < datetime.now(_LA).replace(tzinfo=None):
             return jsonify({'error': '不能预约过去的时间'}), 400
         apt_dt = apt_dt_obj.strftime('%Y-%m-%d %H:%M')
     except ValueError:

@@ -110,6 +110,7 @@ def init_db():
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS openid TEXT',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS subscribe_authed INTEGER DEFAULT 0',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS wx_reminder_sent INTEGER DEFAULT 0',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS is_approved INTEGER DEFAULT 1',
     ]:
         db.execute(stmt)
     db.commit()

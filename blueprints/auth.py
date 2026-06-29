@@ -84,7 +84,7 @@ def register():
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
         db.execute(
-            'INSERT INTO businesses (name, slug, email, password_hash, phone, category) VALUES (%s,%s,%s,%s,%s,%s)',
+            'INSERT INTO businesses (name, slug, email, password_hash, phone, category, is_approved) VALUES (%s,%s,%s,%s,%s,%s,0)',
             (name, slug, email, generate_password_hash(password), phone, category)
         )
         db.commit()
@@ -102,7 +102,7 @@ def register():
         db.commit()
         db.close()
 
-        flash('账号已创建，请登录。', 'success')
+        flash('注册申请已提交，管理员审核通过后即可登录。', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html', form={}, categories=CATEGORIES)
@@ -122,6 +122,10 @@ def login():
 
         if not row or not check_password_hash(row['password_hash'], password):
             flash('邮箱或密码错误。', 'error')
+            return render_template('auth/login.html')
+
+        if not row.get('is_approved'):
+            flash('账号待审核，请联系管理员。', 'error')
             return render_template('auth/login.html')
 
         login_user(Business(row))

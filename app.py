@@ -38,11 +38,14 @@ from blueprints.auth import auth_bp
 from blueprints.dashboard import dashboard_bp
 from blueprints.booking import booking_bp
 from blueprints.api import api_bp
+from blueprints.admin import admin_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(booking_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(admin_bp)
+csrf.exempt(admin_bp)
 csrf.exempt(booking_bp)
 
 from flask import send_from_directory

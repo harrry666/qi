@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>哈瓜小约 · 管理后台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1120; color: #e8e0f0; font-family: system-ui, sans-serif; min-height: 100vh; padding: 2rem; }
+  h1 { color: #C9A84C; font-size: 1.5rem; margin-bottom: 1.5rem; }
+  .login-box { max-width: 360px; background: #241830; border-radius: 12px; padding: 2rem; }
+  .login-box input { width: 100%; padding: .7rem 1rem; border-radius: 8px; border: 1px solid #3d2d50; background: #1a1120; color: #e8e0f0; font-size: 1rem; margin-bottom: 1rem; }
+  .login-box button { width: 100%; padding: .75rem; background: #C9A84C; color: #1a1120; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+  .error { color: #ff6b6b; margin-bottom: 1rem; font-size: .9rem; }
+  table { width: 100%; border-collapse: collapse; background: #241830; border-radius: 12px; overflow: hidden; }
+  th { background: #3d2d50; color: #C9A84C; padding: .75rem 1rem; text-align: left; font-size: .85rem; }
+  td { padding: .75rem 1rem; border-bottom: 1px solid #2d1e3e; font-size: .9rem; }
+  tr:last-child td { border-bottom: none; }
+  .badge-pending { background: #7c5c20; color: #ffd875; padding: 2px 8px; border-radius: 20px; font-size: .75rem; }
+  .badge-approved { background: #1a4d2e; color: #5de88a; padding: 2px 8px; border-radius: 20px; font-size: .75rem; }
+  .badge-rejected { background: #4d1a1a; color: #ff8080; padding: 2px 8px; border-radius: 20px; font-size: .75rem; }
+  .btn-approve { background: #2a6040; color: #5de88a; border: 1px solid #2a6040; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: .8rem; margin-right: 4px; }
+  .btn-reject  { background: #602a2a; color: #ff8080; border: 1px solid #602a2a; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+  .logout { float: right; color: #7c6a90; font-size: .85rem; text-decoration: none; }
+  .logout:hover { color: #C9A84C; }
+  .meta { font-size: .8rem; color: #7c6a90; }
+</style>
+</head>
+<body>
+<h1>哈瓜小约 · 管理后台
+  {% if merchants is not none %}<a class="logout" href="/admin/logout">退出</a>{% endif %}
+</h1>
+
+{% if merchants is none %}
+<div class="login-box">
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <input type="password" name="secret" placeholder="管理员密码" autofocus>
+    <button type="submit">进入后台</button>
+  </form>
+</div>
+{% else %}
+<table>
+  <thead>
+    <tr>
+      <th>商家名称</th>
+      <th>邮箱</th>
+      <th>电话</th>
+      <th>分类</th>
+      <th>注册时间</th>
+      <th>状态</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for m in merchants %}
+    <tr>
+      <td>{{ m.name }}</td>
+      <td class="meta">{{ m.email }}</td>
+      <td class="meta">{{ m.phone }}</td>
+      <td class="meta">{{ m.category }}</td>
+      <td class="meta">{{ m.created_at.strftime('%Y-%m-%d') if m.created_at else '-' }}</td>
+      <td>
+        {% if m.is_approved == 1 %}
+          <span class="badge-approved">已批准</span>
+        {% elif m.is_approved == -1 %}
+          <span class="badge-rejected">已拒绝</span>
+        {% else %}
+          <span class="badge-pending">待审核</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.is_approved != 1 %}
+        <form method="POST" action="/admin/merchants/{{ m.id }}/approve" style="display:inline">
+          <button class="btn-approve" type="submit">批准</button>
+        </form>
+        {% endif %}
+        {% if m.is_approved != -1 %}
+        <form method="POST" action="/admin/merchants/{{ m.id }}/reject" style="display:inline">
+          <button class="btn-reject" type="submit">拒绝</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+</body>
+</html>

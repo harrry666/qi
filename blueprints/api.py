@@ -1,6 +1,9 @@
 from flask import Blueprint, jsonify, request, url_for
 from db import get_db
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+_LA = ZoneInfo('America/Los_Angeles')
 import os
 import uuid
 import threading
@@ -181,7 +184,7 @@ def create_booking():
         appointment_dt = f'{date} {time}'
         try:
             apt_dt_obj = datetime.strptime(appointment_dt, '%Y-%m-%d %H:%M')
-            if apt_dt_obj < datetime.now():
+            if apt_dt_obj < datetime.now(_LA).replace(tzinfo=None):
                 return jsonify({'error': '不能预约过去的时间'}), 400
         except ValueError:
             return jsonify({'error': '日期时间格式无效'}), 400
@@ -258,13 +261,21 @@ def cancel_booking(cancel_token):
             dt_display = row['appointment_dt']
 
         if row.get('biz_phone'):
-            msg = (
+            owner_msg = (
                 f"【预约取消】{row['biz_name']}\n\n"
                 f"客人：{row['customer_name']}\n"
                 f"服务：{row['service_name']}\n"
                 f"原定时间：{dt_display}"
             )
-            threading.Thread(target=send_sms, args=(format_phone(row['biz_phone']), msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(row['biz_phone']), owner_msg), daemon=True).start()
+
+        if row.get('phone'):
+            customer_msg = (
+                f"【取消确认】{row['customer_name']}，您在【{row['biz_name']}】的预约已成功取消。\n\n"
+                f"服务：{row['service_name']}\n"
+                f"原定时间：{dt_display}"
+            )
+            threading.Thread(target=send_sms, args=(format_phone(row['phone']), customer_msg), daemon=True).start()
 
         return jsonify({'success': True})
     except Exception as e:
@@ -286,6 +297,8 @@ def merchant_login():
         if not biz or not check_password_hash(biz['password_hash'], password):
             return jsonify({'error': '邮箱或密码错误'}), 401
         biz = dict(biz)
+        if not biz.get('is_approved'):
+            return jsonify({'error': '账号待审核，请联系管理员'}), 403
         token = str(uuid.uuid4())
         db.execute('UPDATE businesses SET api_token=%s WHERE id=%s', (token, biz['id']))
         db.commit()
@@ -711,7 +724,7 @@ def merchant_register():
             return jsonify({'error': '该邮箱已被注册'}), 400
         token = str(uuid.uuid4())
         cur = db.execute(
-            'INSERT INTO businesses (name, slug, email, password_hash, phone, category, api_token) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id',
+            'INSERT INTO businesses (name, slug, email, password_hash, phone, category, api_token, is_approved) VALUES (%s,%s,%s,%s,%s,%s,%s,0) RETURNING id',
             (name, slug, email, generate_password_hash(password), phone, category, token)
         )
         biz_id = cur.fetchone()['id']
@@ -725,7 +738,7 @@ def merchant_register():
                 (biz_id, wd, ot, ct, closed)
             )
         db.commit()
-        return jsonify({'token': token, 'business_name': name, 'id': biz_id})
+        return jsonify({'pending': True, 'message': '注册申请已提交，管理员审核通过后即可登录'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
