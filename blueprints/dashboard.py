@@ -545,6 +545,19 @@ def delete_staff(sid):
     flash('员工已删除。', 'success')
     return redirect(url_for('dashboard.staff'))
 
+@dashboard_bp.route('/staff/<int:sid>/toggle', methods=['POST'])
+@login_required
+def toggle_staff(sid):
+    db = get_db()
+    db.execute(
+        'UPDATE staff SET is_active = 1 - is_active WHERE id=%s AND business_id=%s',
+        (sid, current_user.id)
+    )
+    db.commit()
+    db.close()
+    flash('员工状态已更新。', 'success')
+    return redirect(url_for('dashboard.staff'))
+
 @dashboard_bp.route('/staff/<int:sid>/services', methods=['POST'])
 @login_required
 def staff_services(sid):

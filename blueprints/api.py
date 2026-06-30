@@ -1041,11 +1041,12 @@ def merchant_add_staff():
         return jsonify({'error': '员工姓名不能为空'}), 400
     emoji = (data.get('emoji') or '').strip()
     bio = (data.get('bio') or '').strip()
+    avatar_url = (data.get('avatar_url') or '').strip()
     db = get_db()
     try:
         row = db.execute(
-            'INSERT INTO staff (business_id, name, emoji, bio) VALUES (%s,%s,%s,%s) RETURNING id',
-            (biz['id'], name, emoji, bio)
+            'INSERT INTO staff (business_id, name, emoji, bio, avatar_url) VALUES (%s,%s,%s,%s,%s) RETURNING id',
+            (biz['id'], name, emoji, bio, avatar_url)
         ).fetchone()
         db.commit()
         return jsonify({'id': row['id']})

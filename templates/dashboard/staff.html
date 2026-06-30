@@ -62,8 +62,12 @@
       <button type="button" class="staff-tab-btn" onclick="staffPanel('edit-{{ s.id }}')">编辑资料</button>
       <button type="button" class="staff-tab-btn" onclick="staffPanel('svc-{{ s.id }}')">可做服务</button>
       <button type="button" class="staff-tab-btn" onclick="staffPanel('hours-{{ s.id }}')">排班</button>
+      <form method="POST" action="{{ url_for('dashboard.toggle_staff', sid=s.id) }}" style="margin-left:auto">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="staff-tab-btn">{% if s.is_active %}停用{% else %}启用{% endif %}</button>
+      </form>
       <form method="POST" action="{{ url_for('dashboard.delete_staff', sid=s.id) }}"
-            onsubmit="return confirm('确认删除该员工？其排班和服务设置会一并删除。')" style="margin-left:auto">
+            onsubmit="return confirm('确认删除该员工？其排班和服务设置会一并删除。')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn-delete">删除</button>
       </form>
