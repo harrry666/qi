@@ -49,12 +49,19 @@ def get_biz_by_slug(slug):
     db.close()
     return biz
 
-def generate_slots(business_id, date_obj, duration_mins):
+def generate_slots(business_id, date_obj, duration_mins, staff_id=None):
     db = get_db()
-    bh = db.execute(
-        'SELECT * FROM business_hours WHERE business_id=%s AND weekday=%s',
-        (business_id, date_obj.weekday())
-    ).fetchone()
+    bh = None
+    if staff_id:
+        bh = db.execute(
+            'SELECT * FROM staff_hours WHERE staff_id=%s AND weekday=%s',
+            (staff_id, date_obj.weekday())
+        ).fetchone()
+    if bh is None:
+        bh = db.execute(
+            'SELECT * FROM business_hours WHERE business_id=%s AND weekday=%s',
+            (business_id, date_obj.weekday())
+        ).fetchone()
     ds = date_obj.strftime('%Y-%m-%d')
     blacked = db.execute(
         'SELECT id FROM business_blackouts WHERE business_id=%s AND start_date<=%s AND end_date>=%s',
@@ -79,14 +86,22 @@ def generate_slots(business_id, date_obj, duration_mins):
         current += timedelta(minutes=SLOT_INTERVAL)
     return slots
 
-def filter_available(business_id, date_str, slots, duration_mins):
+def filter_available(business_id, date_str, slots, duration_mins, staff_id=None):
     db = get_db()
-    booked = db.execute(
-        "SELECT s.duration_mins, s.buffer_mins, a.appointment_dt FROM appointments a "
-        "JOIN services s ON a.service_id=s.id "
-        "WHERE a.business_id=%s AND a.appointment_dt LIKE %s AND a.status != 'cancelled'",
-        (business_id, f'{date_str}%')
-    ).fetchall()
+    if staff_id:
+        booked = db.execute(
+            "SELECT s.duration_mins, s.buffer_mins, a.appointment_dt FROM appointments a "
+            "JOIN services s ON a.service_id=s.id "
+            "WHERE a.business_id=%s AND a.staff_id=%s AND a.appointment_dt LIKE %s AND a.status != 'cancelled'",
+            (business_id, staff_id, f'{date_str}%')
+        ).fetchall()
+    else:
+        booked = db.execute(
+            "SELECT s.duration_mins, s.buffer_mins, a.appointment_dt FROM appointments a "
+            "JOIN services s ON a.service_id=s.id "
+            "WHERE a.business_id=%s AND a.appointment_dt LIKE %s AND a.status != 'cancelled'",
+            (business_id, f'{date_str}%')
+        ).fetchall()
     db.close()
 
     available = []

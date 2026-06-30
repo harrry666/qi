@@ -111,6 +111,32 @@ def init_db():
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS subscribe_authed INTEGER DEFAULT 0',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS wx_reminder_sent INTEGER DEFAULT 0',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS is_approved INTEGER DEFAULT 1',
+        '''CREATE TABLE IF NOT EXISTS staff (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            emoji TEXT DEFAULT '',
+            avatar_url TEXT DEFAULT '',
+            bio TEXT DEFAULT '',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            sort_order INTEGER NOT NULL DEFAULT 0
+        )''',
+        '''CREATE TABLE IF NOT EXISTS staff_hours (
+            id SERIAL PRIMARY KEY,
+            staff_id INTEGER NOT NULL,
+            weekday INTEGER NOT NULL,
+            open_time TEXT NOT NULL DEFAULT '09:00',
+            close_time TEXT NOT NULL DEFAULT '18:00',
+            is_closed INTEGER NOT NULL DEFAULT 0,
+            UNIQUE(staff_id, weekday)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS staff_services (
+            id SERIAL PRIMARY KEY,
+            staff_id INTEGER NOT NULL,
+            service_id INTEGER NOT NULL,
+            UNIQUE(staff_id, service_id)
+        )''',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS staff_id INTEGER',
     ]:
         db.execute(stmt)
     db.commit()
