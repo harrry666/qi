@@ -114,9 +114,10 @@ def get_business(slug):
 
 @api_bp.route('/businesses/<slug>/slots')
 def get_slots(slug):
-    from blueprints.booking import generate_slots, filter_available
+    from blueprints.booking import slots_for_service
     date_str = request.args.get('date', '')
     service_id = request.args.get('service_id')
+    staff_id = request.args.get('staff_id') or None
     db = get_db()
     try:
         biz = db.execute('SELECT * FROM businesses WHERE slug=%s', (slug,)).fetchone()
@@ -140,9 +141,32 @@ def get_slots(slug):
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
         except (ValueError, TypeError):
             return jsonify({'slots': []})
-        all_slots = generate_slots(biz['id'], date_obj, svc['duration_mins'])
-        available = filter_available(biz['id'], date_str, all_slots, svc['duration_mins'])
+        available = slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=staff_id)
         return jsonify({'slots': available})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/businesses/<slug>/staff')
+def get_business_staff(slug):
+    from blueprints.booking import get_active_staff_for_service
+    db = get_db()
+    try:
+        biz = db.execute('SELECT * FROM businesses WHERE slug=%s', (slug,)).fetchone()
+        if not biz:
+            return jsonify({'error': 'Not found'}), 404
+        biz = dict(biz)
+        try:
+            service_id = int(request.args.get('service_id', 0))
+        except (ValueError, TypeError):
+            return jsonify({'staff': []})
+        staff = get_active_staff_for_service(biz['id'], service_id)
+        return jsonify({'staff': [
+            {'id': s['id'], 'name': s['name'], 'emoji': s['emoji'], 'avatar_url': s['avatar_url']}
+            for s in staff
+        ]})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -207,10 +231,13 @@ def create_booking():
         except ValueError:
             return jsonify({'error': '日期时间格式无效'}), 400
 
+        from blueprints.booking import resolve_staff_id
+        staff_id = resolve_staff_id(biz['id'], service_id, date, time, svc['duration_mins'], data.get('staff_id') or None)
+
         cancel_token = str(uuid.uuid4())
         db.execute(
-            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid, subscribe_authed) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token, openid, subscribe_authed)
+            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid, subscribe_authed, staff_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token, openid, subscribe_authed, staff_id)
         )
         db.commit()
 
@@ -966,6 +993,172 @@ def merchant_delete_blackout(bo_id):
     db = get_db()
     try:
         db.execute('DELETE FROM business_blackouts WHERE id=%s AND business_id=%s', (bo_id, biz['id']))
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/staff', methods=['GET'])
+def merchant_staff():
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        rows = db.execute(
+            'SELECT * FROM staff WHERE business_id=%s ORDER BY sort_order, id',
+            (biz['id'],)
+        ).fetchall()
+        result = []
+        for r in rows:
+            s = dict(r)
+            svc_rows = db.execute('SELECT service_id FROM staff_services WHERE staff_id=%s', (s['id'],)).fetchall()
+            hour_rows = db.execute('SELECT weekday, open_time, close_time, is_closed FROM staff_hours WHERE staff_id=%s ORDER BY weekday', (s['id'],)).fetchall()
+            result.append({
+                'id': s['id'], 'name': s['name'], 'emoji': s['emoji'], 'avatar_url': s['avatar_url'],
+                'bio': s['bio'], 'is_active': s['is_active'],
+                'service_ids': [sr['service_id'] for sr in svc_rows],
+                'hours': [dict(h) for h in hour_rows],
+            })
+        return jsonify({'staff': result})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/staff', methods=['POST'])
+def merchant_add_staff():
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': '员工姓名不能为空'}), 400
+    emoji = (data.get('emoji') or '').strip()
+    bio = (data.get('bio') or '').strip()
+    db = get_db()
+    try:
+        row = db.execute(
+            'INSERT INTO staff (business_id, name, emoji, bio) VALUES (%s,%s,%s,%s) RETURNING id',
+            (biz['id'], name, emoji, bio)
+        ).fetchone()
+        db.commit()
+        return jsonify({'id': row['id']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/staff/<int:sid>', methods=['PUT'])
+def merchant_update_staff(sid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, biz['id'])).fetchone()
+        if not row:
+            return jsonify({'error': '员工不存在'}), 404
+        data = request.json or {}
+        fields = []
+        params = []
+        if 'name' in data:
+            fields.append('name=%s')
+            params.append((data.get('name') or '').strip())
+        if 'emoji' in data:
+            fields.append('emoji=%s')
+            params.append((data.get('emoji') or '').strip())
+        if 'bio' in data:
+            fields.append('bio=%s')
+            params.append((data.get('bio') or '').strip())
+        if 'avatar_url' in data:
+            fields.append('avatar_url=%s')
+            params.append((data.get('avatar_url') or '').strip())
+        if 'is_active' in data:
+            fields.append('is_active=%s')
+            params.append(1 if data.get('is_active') in (1, '1', True) else 0)
+        if fields:
+            params.extend([sid, biz['id']])
+            db.execute('UPDATE staff SET ' + ', '.join(fields) + ' WHERE id=%s AND business_id=%s', tuple(params))
+            db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/staff/<int:sid>', methods=['DELETE'])
+def merchant_delete_staff(sid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, biz['id'])).fetchone()
+        if not row:
+            return jsonify({'error': '员工不存在'}), 404
+        db.execute('DELETE FROM staff_hours WHERE staff_id=%s', (sid,))
+        db.execute('DELETE FROM staff_services WHERE staff_id=%s', (sid,))
+        db.execute('DELETE FROM staff WHERE id=%s AND business_id=%s', (sid, biz['id']))
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/staff/<int:sid>/services', methods=['PUT'])
+def merchant_staff_services(sid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, biz['id'])).fetchone()
+        if not row:
+            return jsonify({'error': '员工不存在'}), 404
+        data = request.json or {}
+        service_ids = data.get('service_ids') or []
+        db.execute('DELETE FROM staff_services WHERE staff_id=%s', (sid,))
+        for svc_id in service_ids:
+            valid = db.execute('SELECT id FROM services WHERE id=%s AND business_id=%s', (svc_id, biz['id'])).fetchone()
+            if valid:
+                db.execute('INSERT INTO staff_services (staff_id, service_id) VALUES (%s,%s) ON CONFLICT (staff_id, service_id) DO NOTHING', (sid, svc_id))
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/staff/<int:sid>/hours', methods=['PUT'])
+def merchant_staff_hours(sid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, biz['id'])).fetchone()
+        if not row:
+            return jsonify({'error': '员工不存在'}), 404
+        data = request.json or {}
+        for h in data.get('hours', []):
+            db.execute(
+                '''INSERT INTO staff_hours (staff_id, weekday, open_time, close_time, is_closed)
+                   VALUES (%s,%s,%s,%s,%s)
+                   ON CONFLICT (staff_id, weekday)
+                   DO UPDATE SET open_time=EXCLUDED.open_time, close_time=EXCLUDED.close_time, is_closed=EXCLUDED.is_closed''',
+                (sid, h['weekday'], h.get('open_time', '09:00'), h.get('close_time', '18:00'), 1 if h.get('is_closed') else 0)
+            )
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:

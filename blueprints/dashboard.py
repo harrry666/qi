@@ -453,3 +453,141 @@ def settings():
     from flask import url_for
     booking_url = url_for('booking.book_page', slug=biz['slug'], _external=True)
     return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url, categories=CATEGORIES)
+
+STAFF_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+STAFF_DAY_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+@dashboard_bp.route('/staff')
+@login_required
+def staff():
+    db = get_db()
+    rows = db.execute(
+        'SELECT * FROM staff WHERE business_id=%s ORDER BY sort_order, id',
+        (current_user.id,)
+    ).fetchall()
+    all_services = db.execute(
+        'SELECT * FROM services WHERE business_id=%s ORDER BY sort_order, id',
+        (current_user.id,)
+    ).fetchall()
+    staff_list = []
+    for r in rows:
+        s = dict(r)
+        svc_rows = db.execute(
+            'SELECT service_id FROM staff_services WHERE staff_id=%s', (s['id'],)
+        ).fetchall()
+        s['service_ids'] = [sr['service_id'] for sr in svc_rows]
+        hour_rows = db.execute(
+            'SELECT * FROM staff_hours WHERE staff_id=%s', (s['id'],)
+        ).fetchall()
+        s['hours_map'] = {hr['weekday']: dict(hr) for hr in hour_rows}
+        staff_list.append(s)
+    db.close()
+    days = [{'key': STAFF_DAY_KEYS[i], 'name': STAFF_DAY_NAMES[i], 'weekday': i} for i in range(7)]
+    return render_template('dashboard/staff.html', staff_list=staff_list, all_services=all_services, days=days)
+
+@dashboard_bp.route('/staff/add', methods=['POST'])
+@login_required
+def add_staff():
+    name = request.form.get('name', '').strip()
+    emoji = request.form.get('emoji', '').strip()
+    bio = request.form.get('bio', '').strip()
+    if not name:
+        flash('员工姓名为必填项。', 'error')
+        return redirect(url_for('dashboard.staff'))
+    avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/staff', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}]) or ''
+    db = get_db()
+    db.execute(
+        'INSERT INTO staff (business_id, name, emoji, avatar_url, bio) VALUES (%s,%s,%s,%s,%s)',
+        (current_user.id, name, emoji, avatar_url, bio)
+    )
+    db.commit()
+    db.close()
+    flash('员工已添加。', 'success')
+    return redirect(url_for('dashboard.staff'))
+
+@dashboard_bp.route('/staff/<int:sid>/edit', methods=['POST'])
+@login_required
+def edit_staff(sid):
+    name = request.form.get('name', '').strip()
+    emoji = request.form.get('emoji', '').strip()
+    bio = request.form.get('bio', '').strip()
+    if not name:
+        flash('员工姓名为必填项。', 'error')
+        return redirect(url_for('dashboard.staff'))
+    avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/staff', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
+    db = get_db()
+    if avatar_url:
+        db.execute(
+            'UPDATE staff SET name=%s, emoji=%s, bio=%s, avatar_url=%s WHERE id=%s AND business_id=%s',
+            (name, emoji, bio, avatar_url, sid, current_user.id)
+        )
+    else:
+        db.execute(
+            'UPDATE staff SET name=%s, emoji=%s, bio=%s WHERE id=%s AND business_id=%s',
+            (name, emoji, bio, sid, current_user.id)
+        )
+    db.commit()
+    db.close()
+    flash('员工信息已更新。', 'success')
+    return redirect(url_for('dashboard.staff'))
+
+@dashboard_bp.route('/staff/<int:sid>/delete', methods=['POST'])
+@login_required
+def delete_staff(sid):
+    db = get_db()
+    row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id)).fetchone()
+    if row:
+        db.execute('DELETE FROM staff_hours WHERE staff_id=%s', (sid,))
+        db.execute('DELETE FROM staff_services WHERE staff_id=%s', (sid,))
+        db.execute('DELETE FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id))
+        db.commit()
+    db.close()
+    flash('员工已删除。', 'success')
+    return redirect(url_for('dashboard.staff'))
+
+@dashboard_bp.route('/staff/<int:sid>/services', methods=['POST'])
+@login_required
+def staff_services(sid):
+    db = get_db()
+    row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id)).fetchone()
+    if not row:
+        db.close()
+        flash('员工不存在。', 'error')
+        return redirect(url_for('dashboard.staff'))
+    service_ids = request.form.getlist('service_ids')
+    db.execute('DELETE FROM staff_services WHERE staff_id=%s', (sid,))
+    for svc_id in service_ids:
+        valid = db.execute('SELECT id FROM services WHERE id=%s AND business_id=%s', (svc_id, current_user.id)).fetchone()
+        if valid:
+            db.execute('INSERT INTO staff_services (staff_id, service_id) VALUES (%s,%s) ON CONFLICT (staff_id, service_id) DO NOTHING', (sid, svc_id))
+    db.commit()
+    db.close()
+    flash('可做服务已更新。', 'success')
+    return redirect(url_for('dashboard.staff'))
+
+@dashboard_bp.route('/staff/<int:sid>/hours', methods=['POST'])
+@login_required
+def staff_hours(sid):
+    db = get_db()
+    row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id)).fetchone()
+    if not row:
+        db.close()
+        flash('员工不存在。', 'error')
+        return redirect(url_for('dashboard.staff'))
+    for i, key in enumerate(STAFF_DAY_KEYS):
+        open_t = request.form.get(f'{key}_open', '09:00')
+        close_t = request.form.get(f'{key}_close', '18:00')
+        closed = 1 if request.form.get(f'{key}_closed') else 0
+        db.execute(
+            '''INSERT INTO staff_hours (staff_id, weekday, open_time, close_time, is_closed)
+               VALUES (%s,%s,%s,%s,%s)
+               ON CONFLICT (staff_id, weekday)
+               DO UPDATE SET open_time=EXCLUDED.open_time,
+                             close_time=EXCLUDED.close_time,
+                             is_closed=EXCLUDED.is_closed''',
+            (sid, i, open_t, close_t, closed)
+        )
+    db.commit()
+    db.close()
+    flash('排班已保存。', 'success')
+    return redirect(url_for('dashboard.staff'))

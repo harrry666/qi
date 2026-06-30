@@ -119,6 +119,43 @@ def filter_available(business_id, date_str, slots, duration_mins, staff_id=None)
             available.append(slot)
     return available
 
+def get_active_staff_for_service(business_id, service_id):
+    db = get_db()
+    rows = db.execute(
+        "SELECT st.* FROM staff st JOIN staff_services ss ON st.id=ss.staff_id "
+        "WHERE st.business_id=%s AND st.is_active=1 AND ss.service_id=%s "
+        "ORDER BY st.sort_order, st.id",
+        (business_id, service_id)
+    ).fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+def slots_for_service(business_id, date_obj, duration_mins, service_id, staff_id=None):
+    ds = date_obj.strftime('%Y-%m-%d')
+    if staff_id:
+        sl = generate_slots(business_id, date_obj, duration_mins, staff_id=int(staff_id))
+        return filter_available(business_id, ds, sl, duration_mins, staff_id=int(staff_id))
+    candidates = get_active_staff_for_service(business_id, service_id)
+    if not candidates:
+        sl = generate_slots(business_id, date_obj, duration_mins)
+        return filter_available(business_id, ds, sl, duration_mins)
+    union = set()
+    for st in candidates:
+        sl = generate_slots(business_id, date_obj, duration_mins, staff_id=st['id'])
+        union |= set(filter_available(business_id, ds, sl, duration_mins, staff_id=st['id']))
+    return sorted(union)
+
+def resolve_staff_id(business_id, service_id, date_str, time_str, duration_mins, staff_id=None):
+    if staff_id:
+        return int(staff_id)
+    candidates = get_active_staff_for_service(business_id, service_id)
+    if not candidates:
+        return None
+    for st in candidates:
+        if filter_available(business_id, date_str, [time_str], duration_mins, staff_id=st['id']):
+            return st['id']
+    return candidates[0]['id']
+
 @booking_bp.route('/book/<slug>')
 def book_page(slug):
     biz = get_biz_by_slug(slug)
@@ -139,6 +176,21 @@ def api_services(slug):
     db.close()
     return jsonify([dict(s) for s in svcs])
 
+@booking_bp.route('/api/book/<slug>/staff')
+def api_staff(slug):
+    biz = get_biz_by_slug(slug)
+    if not biz:
+        return jsonify({'error': 'Not found'}), 404
+    try:
+        service_id = int(request.args.get('service_id', 0))
+    except (ValueError, TypeError):
+        return jsonify([])
+    staff = get_active_staff_for_service(biz['id'], service_id)
+    return jsonify([
+        {'id': s['id'], 'name': s['name'], 'emoji': s['emoji'], 'avatar_url': s['avatar_url']}
+        for s in staff
+    ])
+
 @booking_bp.route('/api/book/<slug>/week_slots')
 def api_week_slots(slug):
     biz = get_biz_by_slug(slug)
@@ -147,6 +199,7 @@ def api_week_slots(slug):
 
     start_str = request.args.get('start')
     service_id = int(request.args.get('service_id', 0))
+    staff_id = request.args.get('staff_id') or None
 
     db = get_db()
     svc = db.execute('SELECT * FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
@@ -160,8 +213,7 @@ def api_week_slots(slug):
     for i in range(7):
         d = start + timedelta(days=i)
         ds = d.strftime('%Y-%m-%d')
-        all_slots = generate_slots(biz['id'], d, duration)
-        result[ds] = filter_available(biz['id'], ds, all_slots, duration)
+        result[ds] = slots_for_service(biz['id'], d, duration, service_id, staff_id=staff_id)
 
     return jsonify(result)
 
@@ -212,10 +264,15 @@ def api_create(slug):
     if not svc:
         db.close()
         return jsonify({'error': 'Service not found'}), 404
+    db.close()
 
+    a_date, a_time = apt_dt.split(' ')
+    staff_id = resolve_staff_id(biz['id'], service_id, a_date, a_time, svc['duration_mins'], data.get('staff_id') or None)
+
+    db = get_db()
     db.execute(
-        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token) VALUES (%s,%s,%s,%s,%s,%s,%s)',
-        (biz['id'], service_id, name, phone, apt_dt, comment, cancel_token)
+        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
+        (biz['id'], service_id, name, phone, apt_dt, comment, cancel_token, staff_id)
     )
     db.commit()
     db.close()
