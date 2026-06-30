@@ -9,9 +9,12 @@ function esc(s) {
 
 let state = {
   services: [],
-  selected: { service: null, date: null, time: null, comment: '' },
+  staffList: [],
+  selected: { service: null, date: null, time: null, comment: '', staff: null },
   weekStart: null,
 };
+
+let hasStaffStep = false;
 
 let _codeCountdown = 0;
 let _codeTimer = null;
@@ -48,17 +51,34 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
   const stepsEl = document.querySelector('.booking-steps');
   if (!stepsEl) return;
-  const stepMap = { 'screen-services': 1, 'screen-slots': 2, 'screen-login': 3, 'screen-confirm': 4, 'screen-success': null };
-  const activeStep = stepMap[id];
-  if (activeStep === null) { stepsEl.style.display = 'none'; return; }
+  if (id === 'screen-success') { stepsEl.style.display = 'none'; return; }
   stepsEl.style.display = 'flex';
-  for (let i = 1; i <= 4; i++) {
-    const el = document.getElementById(`step-${i}`);
-    if (!el) continue;
+  const order = hasStaffStep
+    ? ['screen-services', 'screen-staff', 'screen-slots', 'screen-login', 'screen-confirm']
+    : ['screen-services', 'screen-slots', 'screen-login', 'screen-confirm'];
+  const stepIds = hasStaffStep
+    ? ['step-1', 'step-staff', 'step-2', 'step-3', 'step-4']
+    : ['step-1', 'step-2', 'step-3', 'step-4'];
+  const activeIdx = order.indexOf(id);
+  stepIds.forEach((sid, i) => {
+    const el = document.getElementById(sid);
+    if (!el) return;
     el.classList.remove('active', 'done');
-    if (i === activeStep) el.classList.add('active');
-    else if (i < activeStep) el.classList.add('done');
-  }
+    if (i === activeIdx) el.classList.add('active');
+    else if (activeIdx > -1 && i < activeIdx) el.classList.add('done');
+  });
+}
+
+function setStaffStepVisible(on) {
+  hasStaffStep = on;
+  const stepStaff = document.getElementById('step-staff');
+  const lineStaff = document.getElementById('line-staff');
+  if (stepStaff) stepStaff.style.display = on ? '' : 'none';
+  if (lineStaff) lineStaff.style.display = on ? '' : 'none';
+  if (stepStaff) stepStaff.textContent = '② 选员工';
+  document.getElementById('step-2').textContent = on ? '③ 选时间' : '② 选时间';
+  document.getElementById('step-3').textContent = on ? '④ 填信息' : '③ 填信息';
+  document.getElementById('step-4').textContent = on ? '⑤ 确认' : '④ 确认';
 }
 
 // ── Services ─────────────────────────────────────────────────────────────────
@@ -114,12 +134,35 @@ function animateServices() {
 
 // ── Slot Selection ────────────────────────────────────────────────────────────
 
-function selectService(id) {
+async function selectService(id) {
   const svc = state.services.find(s => s.id === id);
   if (!svc) return;
   state.selected.service = svc;
+  state.selected.staff = null;
   state.weekStart = getMonday(new Date());
+  renderServiceBar();
 
+  let staff = [];
+  try {
+    const res = await fetch(`/api/book/${SLUG}/staff?service_id=${svc.id}`);
+    staff = await res.json();
+  } catch { staff = []; }
+
+  if (Array.isArray(staff) && staff.length) {
+    state.staffList = staff;
+    setStaffStepVisible(true);
+    renderStaff();
+    showScreen('screen-staff');
+  } else {
+    state.staffList = [];
+    setStaffStepVisible(false);
+    showScreen('screen-slots');
+    loadWeekSlots();
+  }
+}
+
+function renderServiceBar() {
+  const svc = state.selected.service;
   const i = state.services.indexOf(svc);
   const barIconSrc = svc.icon_url && svc.icon_url.startsWith('http') ? svc.icon_url : null;
   const barIconHtml = barIconSrc
@@ -136,16 +179,51 @@ function selectService(id) {
       ${svc.price ? `<span>💰 $${svc.price}</span>` : ''}
     </div>
   `;
+}
 
+function renderStaff() {
+  const wrap = document.getElementById('staff-list');
+  const cards = state.staffList.map(s => {
+    const av = s.avatar_url && String(s.avatar_url).startsWith('http')
+      ? `<img class="staff-ava" src="${esc(s.avatar_url)}" alt="">`
+      : `<div class="staff-ava">${s.emoji ? esc(s.emoji) : esc(String(s.name).slice(0,1))}</div>`;
+    return `<div class="staff-card" data-id="${s.id}" onclick="selectStaff(${s.id})">${av}<div class="staff-name">${esc(s.name)}</div></div>`;
+  }).join('');
+  const anyCard = `<div class="staff-card staff-any selected" data-id="" onclick="selectStaff('')"><div class="staff-ava">✨</div><div class="staff-name">任意可用</div></div>`;
+  wrap.innerHTML = anyCard + cards;
+  state.selected.staff = null;
+}
+
+function selectStaff(id) {
+  state.selected.staff = (id === '' || id == null) ? null : id;
+  document.querySelectorAll('#staff-list .staff-card').forEach(c => c.classList.remove('selected'));
+  const sel = document.querySelector(`#staff-list .staff-card[data-id="${id}"]`);
+  if (sel) sel.classList.add('selected');
+}
+
+function selectedStaffName() {
+  if (state.selected.staff == null) return null;
+  const s = state.staffList.find(x => x.id == state.selected.staff);
+  return s ? s.name : null;
+}
+
+function proceedFromStaff() {
   showScreen('screen-slots');
   loadWeekSlots();
+}
+
+function backFromSlots() {
+  if (hasStaffStep) showScreen('screen-staff');
+  else showScreen('screen-services');
 }
 
 function backToServices() { showScreen('screen-services'); }
 
 async function loadWeekSlots() {
   const startStr = fmtDate(state.weekStart);
-  const res = await fetch(`/api/book/${SLUG}/week_slots?start=${startStr}&service_id=${state.selected.service.id}`);
+  let url = `/api/book/${SLUG}/week_slots?start=${startStr}&service_id=${state.selected.service.id}`;
+  if (state.selected.staff != null) url += `&staff_id=${state.selected.staff}`;
+  const res = await fetch(url);
   const slots = await res.json();
   renderCalendar(slots);
 }
@@ -322,13 +400,17 @@ function showConfirmScreen() {
 
   const svc = state.selected.service;
   const priceText = svc.price ? `$${svc.price % 1 === 0 ? svc.price|0 : svc.price}` : '价格面议';
+  const staffName = selectedStaffName();
   const rows = [
     { label: '服务', value: esc(svc.name) },
+  ];
+  if (staffName) rows.push({ label: '服务人员', value: esc(staffName) });
+  rows.push(
     { label: '日期时间', value: fmtDisplay(state.selected.date, state.selected.time) },
     { label: '价格', value: priceText },
     { label: '姓名', value: esc(name) },
     { label: '手机号', value: esc(phone) },
-  ];
+  );
   if (state.selected.comment) rows.push({ label: '备注', value: esc(state.selected.comment) });
 
   document.getElementById('confirm-rows').innerHTML = rows.map(r =>
@@ -353,6 +435,7 @@ async function submitBooking() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         service_id: state.selected.service.id,
+        staff_id: state.selected.staff != null ? state.selected.staff : null,
         customer_name: name,
         phone,
         appointment_dt: `${state.selected.date} ${state.selected.time}`,
@@ -367,6 +450,7 @@ async function submitBooking() {
       document.getElementById('success-details').innerHTML = `
         <p>👤 <strong>${esc(name)}</strong></p>
         <p>✂️ <strong>${esc(data.service)}</strong></p>
+        ${selectedStaffName() ? `<p>💈 <strong>${esc(selectedStaffName())}</strong></p>` : ''}
         <p>📅 <strong>${fmtDisplay(state.selected.date, state.selected.time)}</strong></p>
         ${state.selected.comment ? `<p>💬 ${esc(state.selected.comment)}</p>` : ''}
       `;
@@ -399,7 +483,9 @@ function launchConfetti() {
 }
 
 function resetBooking() {
-  state.selected = { service: null, date: null, time: null, comment: '' };
+  state.selected = { service: null, date: null, time: null, comment: '', staff: null };
+  state.staffList = [];
+  setStaffStepVisible(false);
   document.getElementById('cust-name').value = '';
   document.getElementById('cust-phone').value = '';
   document.getElementById('sms-consent').checked = false;

@@ -1,0 +1,163 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}员工管理{% endblock %}
+{% block content %}
+
+<div class="page-title">👥 员工管理</div>
+
+<div class="add-service-form">
+  <h2>添加员工</h2>
+  <form method="POST" action="{{ url_for('dashboard.add_staff') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="svc-form-grid">
+      <div class="svc-col-2">
+        <span class="btn-label">员工姓名 *</span>
+        <input class="dash-input" type="text" name="name" placeholder="例：Harry 发型师" required>
+      </div>
+      <div>
+        <span class="btn-label">图标 Emoji（选填）</span>
+        <input class="dash-input" type="text" name="emoji" placeholder="例：💈 💅 💆" style="font-size:20px">
+      </div>
+      <div>
+        <span class="btn-label">头像（选填）</span>
+        <input class="dash-input" type="file" name="avatar" accept="image/*" style="padding:6px"
+               data-crop data-crop-ratio="1" data-out-w="400" data-out-h="400">
+      </div>
+      <div class="svc-col-2">
+        <span class="btn-label">简介（选填）</span>
+        <input class="dash-input" type="text" name="bio" placeholder="例：10 年经验，擅长男士剪发">
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">+ 添加员工</button>
+    </div>
+  </form>
+</div>
+
+{% if staff_list %}
+<div class="staff-grid">
+  {% for s in staff_list %}
+  <div class="staff-card">
+    <div class="staff-head">
+      <div class="staff-avatar">
+        {% if s.avatar_url and s.avatar_url.startswith('http') %}
+          <img src="{{ s.avatar_url }}" alt="">
+        {% else %}
+          <span>{{ s.emoji or '👤' }}</span>
+        {% endif %}
+      </div>
+      <div class="staff-meta">
+        <div class="staff-name">
+          {{ s.name }}
+          {% if s.is_active %}
+            <span class="staff-badge staff-badge-on">启用中</span>
+          {% else %}
+            <span class="staff-badge staff-badge-off">已停用</span>
+          {% endif %}
+        </div>
+        {% if s.bio %}<div class="staff-bio">{{ s.bio }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="staff-actions">
+      <button type="button" class="staff-tab-btn" onclick="staffPanel('edit-{{ s.id }}')">编辑资料</button>
+      <button type="button" class="staff-tab-btn" onclick="staffPanel('svc-{{ s.id }}')">可做服务</button>
+      <button type="button" class="staff-tab-btn" onclick="staffPanel('hours-{{ s.id }}')">排班</button>
+      <form method="POST" action="{{ url_for('dashboard.delete_staff', sid=s.id) }}"
+            onsubmit="return confirm('确认删除该员工？其排班和服务设置会一并删除。')" style="margin-left:auto">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-delete">删除</button>
+      </form>
+    </div>
+
+    <div class="staff-panel" id="panel-edit-{{ s.id }}">
+      <form method="POST" action="{{ url_for('dashboard.edit_staff', sid=s.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="svc-form-grid">
+          <div class="svc-col-2">
+            <span class="btn-label">姓名 *</span>
+            <input class="dash-input" type="text" name="name" value="{{ s.name }}" required>
+          </div>
+          <div>
+            <span class="btn-label">Emoji</span>
+            <input class="dash-input" type="text" name="emoji" value="{{ s.emoji or '' }}" style="font-size:20px">
+          </div>
+          <div>
+            <span class="btn-label">更换头像</span>
+            <input class="dash-input" type="file" name="avatar" accept="image/*" style="padding:6px"
+                   data-crop data-crop-ratio="1" data-out-w="400" data-out-h="400">
+          </div>
+          <div class="svc-col-2">
+            <span class="btn-label">简介</span>
+            <input class="dash-input" type="text" name="bio" value="{{ s.bio or '' }}">
+          </div>
+        </div>
+        <button type="submit" class="btn-add" style="width:auto;padding:9px 24px;margin-top:12px">保存资料</button>
+      </form>
+    </div>
+
+    <div class="staff-panel" id="panel-svc-{{ s.id }}">
+      <form method="POST" action="{{ url_for('dashboard.staff_services', sid=s.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if all_services %}
+        <div class="staff-svc-list">
+          {% for svc in all_services %}
+          <label class="staff-svc-item">
+            <input type="checkbox" name="service_ids" value="{{ svc.id }}"
+                   {% if svc.id in s.service_ids %}checked{% endif %}>
+            <span>{{ svc.emoji or '✂️' }} {{ svc.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn-add" style="width:auto;padding:9px 24px;margin-top:12px">保存服务</button>
+        {% else %}
+        <div class="empty-msg">暂无服务，请先到「服务项目」页添加。</div>
+        {% endif %}
+      </form>
+    </div>
+
+    <div class="staff-panel" id="panel-hours-{{ s.id }}">
+      <form method="POST" action="{{ url_for('dashboard.staff_hours', sid=s.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% for day in days %}
+        {% set hd = s.hours_map.get(day.weekday, {}) %}
+        <div class="hours-row">
+          <div class="hours-day">{{ day.name }}</div>
+          <label class="hours-closed-wrap">
+            <input type="checkbox" name="{{ day.key }}_closed" {% if hd.get('is_closed') %}checked{% endif %}
+                   onchange="toggleStaffDay('{{ s.id }}-{{ day.key }}', this.checked)">
+            休息
+          </label>
+          <div class="time-range" id="range-{{ s.id }}-{{ day.key }}"
+               {% if hd.get('is_closed') %}style="opacity:0.3;pointer-events:none"{% endif %}>
+            <input class="dash-input" type="time" name="{{ day.key }}_open"
+                   value="{{ hd.get('open_time', '09:00') }}" style="width:120px">
+            <span>至</span>
+            <input class="dash-input" type="time" name="{{ day.key }}_close"
+                   value="{{ hd.get('close_time', '18:00') }}" style="width:120px">
+          </div>
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn-add" style="width:auto;padding:9px 24px;margin-top:14px">保存排班</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+  <div class="empty-msg">暂无员工。如果不需要指定员工预约，可保持空白，预约流程不受影响。</div>
+{% endif %}
+
+<script>
+function staffPanel(id) {
+  const el = document.getElementById('panel-' + id);
+  const open = el.classList.contains('open');
+  el.classList.toggle('open', !open);
+}
+function toggleStaffDay(key, closed) {
+  const el = document.getElementById('range-' + key);
+  el.style.opacity = closed ? '0.3' : '1';
+  el.style.pointerEvents = closed ? 'none' : '';
+}
+</script>
+
+{% endblock %}

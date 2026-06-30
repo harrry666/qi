@@ -11,6 +11,14 @@
     .btn-send-code { white-space:nowrap; padding:0 14px; height:46px; border:1.5px solid var(--accent,#C9A84C); background:transparent; color:var(--accent,#C9A84C); border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s,color .15s; }
     .btn-send-code:disabled { opacity:.55; cursor:not-allowed; }
     .btn-send-code:not(:disabled):hover { background:var(--accent,#C9A84C); color:#fff; }
+    .staff-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(98px,1fr)); gap:12px; margin:14px 0 20px; }
+    .staff-card { background:#fff; border:1.5px solid #EFE7D6; border-radius:14px; padding:16px 10px; text-align:center; cursor:pointer; transition:border-color .15s,box-shadow .15s,background .15s; }
+    .staff-card:hover { border-color:#C9A84C; }
+    .staff-card.selected { border-color:#C9A84C; background:#FBF4E3; box-shadow:0 0 0 2px rgba(201,168,76,.25); }
+    .staff-ava { width:54px; height:54px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:26px; background:#F3ECDD; color:#A8882A; overflow:hidden; }
+    img.staff-ava { object-fit:cover; }
+    .staff-card.staff-any .staff-ava { background:#FBF4E3; }
+    .staff-name { font-size:13px; font-weight:600; color:#1A1209; }
   </style>
 </head>
 <body class="book-body" data-slug="{{ biz.slug }}">
@@ -33,6 +41,8 @@
   <!-- Step progress indicator -->
   <div class="booking-steps">
     <div class="step active" id="step-1">① 选服务</div>
+    <div class="step-line" id="line-staff" style="display:none"></div>
+    <div class="step" id="step-staff" style="display:none">② 选员工</div>
     <div class="step-line"></div>
     <div class="step" id="step-2">② 选时间</div>
     <div class="step-line"></div>
@@ -47,9 +57,17 @@
     <div id="service-list"></div>
   </div>
 
+  <!-- Screen 1.5: Staff -->
+  <div id="screen-staff" class="screen">
+    <button class="btn-back" onclick="backToServices()">← 返回</button>
+    <div class="section-title">选择服务人员</div>
+    <div id="staff-list" class="staff-grid"></div>
+    <button class="btn-primary" onclick="proceedFromStaff()">下一步 →</button>
+  </div>
+
   <!-- Screen 2: Time Slots -->
   <div id="screen-slots" class="screen">
-    <button class="btn-back" onclick="backToServices()">← 返回</button>
+    <button class="btn-back" onclick="backFromSlots()">← 返回</button>
     <div id="service-bar" class="service-bar"></div>
     <div class="calendar-nav">
       <button class="btn-nav" onclick="prevWeek()">‹</button>
