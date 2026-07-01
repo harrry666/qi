@@ -1069,6 +1069,7 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 .staff-tab-btn:hover { border-color: var(--gold); color: var(--gold-h); background: var(--gold-light); }
+.staff-tab-btn.active { border-color: var(--gold); color: #1A1209; background: var(--gold); font-weight: 600; }
 .staff-panel { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--bg); }
 .staff-panel.open { display: block; }
 .staff-svc-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
