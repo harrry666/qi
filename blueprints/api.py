@@ -1001,6 +1001,79 @@ def merchant_delete_blackout(bo_id):
         db.close()
 
 
+@api_bp.route('/merchant/blocks', methods=['GET'])
+def merchant_get_blocks():
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        rows = db.execute(
+            'SELECT tb.*, st.name AS staff_name FROM time_blocks tb '
+            'LEFT JOIN staff st ON tb.staff_id=st.id '
+            'WHERE tb.business_id=%s ORDER BY tb.date, tb.start_time',
+            (biz['id'],)
+        ).fetchall()
+        return jsonify({'blocks': [dict(r) for r in rows]})
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/blocks', methods=['POST'])
+def merchant_add_block():
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    start_date = (data.get('start_date') or '').strip()
+    end_date = (data.get('end_date') or '').strip() or start_date
+    start_time = (data.get('start_time') or '').strip()
+    end_time = (data.get('end_time') or '').strip()
+    reason = (data.get('reason') or '').strip()
+    staff_id = data.get('staff_id') or None
+    if not start_date or not start_time or not end_time or end_time <= start_time or end_date < start_date:
+        return jsonify({'error': '日期或时间范围无效'}), 400
+    db = get_db()
+    try:
+        if staff_id:
+            own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, biz['id'])).fetchone()
+            if not own:
+                staff_id = None
+        d0 = datetime.strptime(start_date, '%Y-%m-%d').date()
+        d1 = datetime.strptime(end_date, '%Y-%m-%d').date()
+        if (d1 - d0).days > 60:
+            return jsonify({'error': '日期范围不能超过 60 天'}), 400
+        cur = d0
+        while cur <= d1:
+            db.execute(
+                'INSERT INTO time_blocks (business_id, staff_id, date, start_time, end_time, reason) VALUES (%s,%s,%s,%s,%s,%s)',
+                (biz['id'], staff_id, cur.strftime('%Y-%m-%d'), start_time, end_time, reason)
+            )
+            cur += timedelta(days=1)
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/blocks/<int:bid>', methods=['DELETE'])
+def merchant_delete_block(bid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        db.execute('DELETE FROM time_blocks WHERE id=%s AND business_id=%s', (bid, biz['id']))
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
 @api_bp.route('/merchant/staff', methods=['GET'])
 def merchant_staff():
     biz, err = require_merchant()

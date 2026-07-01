@@ -1,0 +1,84 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}时段锁定{% endblock %}
+{% block content %}
+
+<div class="page-title">🔒 时段锁定</div>
+<p style="color:#666;font-size:14px;margin-bottom:24px">锁定某天或某段日期内的具体时间段（例如电话预约已占用），客户在线预约时看不到这些时段。整段日期会按天锁定同一时间段。</p>
+
+<div class="settings-card settings-card-action" style="max-width:760px;margin-bottom:28px">
+  <h2>锁定时段</h2>
+  <form method="POST" action="{{ url_for('dashboard.add_block') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div>
+      <label class="field-label" style="font-size:13px;color:#888">开始日期</label>
+      <input class="dash-input" type="date" name="start_date" required min="{{ today }}" style="width:150px">
+    </div>
+    <div>
+      <label class="field-label" style="font-size:13px;color:#888">结束日期</label>
+      <input class="dash-input" type="date" name="end_date" min="{{ today }}" style="width:150px">
+    </div>
+    <div>
+      <label class="field-label" style="font-size:13px;color:#888">开始时间</label>
+      <input class="dash-input" type="time" name="start_time" required style="width:120px">
+    </div>
+    <div>
+      <label class="field-label" style="font-size:13px;color:#888">结束时间</label>
+      <input class="dash-input" type="time" name="end_time" required style="width:120px">
+    </div>
+    {% if staff %}
+    <div>
+      <label class="field-label" style="font-size:13px;color:#888">员工</label>
+      <select class="dash-input" name="staff_id" style="width:150px">
+        <option value="">整店</option>
+        {% for s in staff %}
+        <option value="{{ s.id }}">{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div style="flex:1;min-width:150px">
+      <label class="field-label" style="font-size:13px;color:#888">备注（选填）</label>
+      <input class="dash-input" type="text" name="reason" placeholder="例：电话预约" style="width:100%">
+    </div>
+    <button type="submit" class="btn-save" style="margin-top:0">锁定</button>
+  </form>
+  <p style="color:#999;font-size:12px;margin-top:10px">结束日期留空 = 只锁开始日期当天。不选员工 = 整店该时段都不可约。</p>
+</div>
+
+<div class="settings-card" style="max-width:760px">
+  <h2>已锁定时段</h2>
+  {% if blocks %}
+    <table class="apt-table blackout-table">
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>时间段</th>
+          <th>员工</th>
+          <th>备注</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in blocks %}
+        <tr>
+          <td style="font-weight:600;white-space:nowrap">{{ b.date_fmt }}</td>
+          <td style="white-space:nowrap">{{ b.start_time }} – {{ b.end_time }}</td>
+          <td style="color:#555;white-space:nowrap">{{ b.staff_name or '整店' }}</td>
+          <td style="color:#555">{{ b.reason or '—' }}</td>
+          <td style="text-align:right">
+            <form method="POST" action="{{ url_for('dashboard.delete_block', bid=b.id) }}"
+                  onsubmit="return confirm('确认解除此锁定？')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-cancel">解除</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:#555;font-size:14px;padding:8px 0">暂无锁定时段。</p>
+  {% endif %}
+</div>
+
+{% endblock %}

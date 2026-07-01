@@ -137,6 +137,15 @@ def init_db():
             UNIQUE(staff_id, service_id)
         )''',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS staff_id INTEGER',
+        '''CREATE TABLE IF NOT EXISTS time_blocks (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            staff_id INTEGER,
+            date TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            reason TEXT DEFAULT ''
+        )''',
     ]:
         db.execute(stmt)
     db.commit()

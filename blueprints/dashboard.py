@@ -394,6 +394,76 @@ def delete_blackout(bo_id):
     db.close()
     return redirect(url_for('dashboard.blackouts'))
 
+@dashboard_bp.route('/blocks')
+@login_required
+def blocks():
+    db = get_db()
+    rows = db.execute(
+        'SELECT tb.*, st.name AS staff_name FROM time_blocks tb '
+        'LEFT JOIN staff st ON tb.staff_id=st.id '
+        'WHERE tb.business_id=%s ORDER BY tb.date, tb.start_time',
+        (current_user.id,)
+    ).fetchall()
+    staff = db.execute(
+        'SELECT id, name FROM staff WHERE business_id=%s AND is_active=1 ORDER BY sort_order, id',
+        (current_user.id,)
+    ).fetchall()
+    db.close()
+    today = datetime.now().strftime('%Y-%m-%d')
+    block_list = []
+    for r in rows:
+        d = dict(r)
+        try:
+            d['date_fmt'] = datetime.strptime(d['date'], '%Y-%m-%d').strftime('%-m月%-d日')
+        except Exception:
+            d['date_fmt'] = d['date']
+        block_list.append(d)
+    return render_template('dashboard/blocks_time.html', blocks=block_list, staff=staff, today=today)
+
+@dashboard_bp.route('/blocks/add', methods=['POST'])
+@login_required
+def add_block():
+    start_date = request.form.get('start_date', '').strip()
+    end_date = request.form.get('end_date', '').strip() or start_date
+    start_time = request.form.get('start_time', '').strip()
+    end_time = request.form.get('end_time', '').strip()
+    reason = request.form.get('reason', '').strip()
+    staff_id = request.form.get('staff_id', '').strip() or None
+    if not start_date or not start_time or not end_time or end_time <= start_time or end_date < start_date:
+        flash('日期或时间范围无效。', 'error')
+        return redirect(url_for('dashboard.blocks'))
+    db = get_db()
+    if staff_id:
+        own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, current_user.id)).fetchone()
+        if not own:
+            staff_id = None
+    d0 = datetime.strptime(start_date, '%Y-%m-%d').date()
+    d1 = datetime.strptime(end_date, '%Y-%m-%d').date()
+    if (d1 - d0).days > 60:
+        db.close()
+        flash('日期范围不能超过 60 天。', 'error')
+        return redirect(url_for('dashboard.blocks'))
+    cur = d0
+    while cur <= d1:
+        db.execute(
+            'INSERT INTO time_blocks (business_id, staff_id, date, start_time, end_time, reason) VALUES (%s,%s,%s,%s,%s,%s)',
+            (current_user.id, staff_id, cur.strftime('%Y-%m-%d'), start_time, end_time, reason)
+        )
+        cur += timedelta(days=1)
+    db.commit()
+    db.close()
+    flash('时段已锁定。', 'success')
+    return redirect(url_for('dashboard.blocks'))
+
+@dashboard_bp.route('/blocks/<int:bid>/delete', methods=['POST'])
+@login_required
+def delete_block(bid):
+    db = get_db()
+    db.execute('DELETE FROM time_blocks WHERE id=%s AND business_id=%s', (bid, current_user.id))
+    db.commit()
+    db.close()
+    return redirect(url_for('dashboard.blocks'))
+
 @dashboard_bp.route('/customers')
 @login_required
 def customers():

@@ -52,6 +52,7 @@
       <a href="{{ url_for('dashboard.staff') }}"        class="nav-item {% if request.endpoint == 'dashboard.staff' %}active{% endif %}">👥 员工</a>
       <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">🕐 营业时间</a>
       <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">🚫 休业时期</a>
+      <a href="{{ url_for('dashboard.blocks') }}"       class="nav-item {% if request.endpoint == 'dashboard.blocks' %}active{% endif %}">🔒 时段锁定</a>
       <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">⚙️ 设置</a>
     </nav>
     <div class="sidebar-bottom">

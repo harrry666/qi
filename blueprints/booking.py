@@ -102,19 +102,33 @@ def filter_available(business_id, date_str, slots, duration_mins, staff_id=None)
             "WHERE a.business_id=%s AND a.appointment_dt LIKE %s AND a.status != 'cancelled'",
             (business_id, f'{date_str}%')
         ).fetchall()
+    if staff_id:
+        blocks = db.execute(
+            "SELECT start_time, end_time FROM time_blocks WHERE business_id=%s AND date=%s AND (staff_id=%s OR staff_id IS NULL)",
+            (business_id, date_str, staff_id)
+        ).fetchall()
+    else:
+        blocks = db.execute(
+            "SELECT start_time, end_time FROM time_blocks WHERE business_id=%s AND date=%s AND staff_id IS NULL",
+            (business_id, date_str)
+        ).fetchall()
     db.close()
+
+    occupied = []
+    for b in booked:
+        b_dt = datetime.strptime(b['appointment_dt'], '%Y-%m-%d %H:%M')
+        occupied.append((b_dt, b_dt + timedelta(minutes=b['duration_mins'] + b['buffer_mins'])))
+    for bl in blocks:
+        occupied.append((
+            datetime.strptime(f'{date_str} {bl["start_time"]}', '%Y-%m-%d %H:%M'),
+            datetime.strptime(f'{date_str} {bl["end_time"]}', '%Y-%m-%d %H:%M')
+        ))
 
     available = []
     for slot in slots:
         slot_dt = datetime.strptime(f'{date_str} {slot}', '%Y-%m-%d %H:%M')
         slot_end = slot_dt + timedelta(minutes=duration_mins)
-        conflict = False
-        for b in booked:
-            b_dt = datetime.strptime(b['appointment_dt'], '%Y-%m-%d %H:%M')
-            b_end = b_dt + timedelta(minutes=b['duration_mins'] + b['buffer_mins'])
-            if not (slot_end <= b_dt or slot_dt >= b_end):
-                conflict = True
-                break
+        conflict = any(not (slot_end <= o_start or slot_dt >= o_end) for o_start, o_end in occupied)
         if not conflict:
             available.append(slot)
     return available
