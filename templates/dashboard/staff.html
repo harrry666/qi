@@ -154,11 +154,15 @@
 <script>
 function staffPanel(id, btn) {
   const el = document.getElementById('panel-' + id);
-  const open = el.classList.contains('open');
-  el.classList.toggle('open', !open);
-  if (btn) {
-    btn.parentElement.querySelectorAll('.staff-tab-btn').forEach(b => b.classList.remove('active'));
-    if (!open) btn.classList.add('active');
+  const willOpen = !el.classList.contains('open');
+  const card = btn ? btn.closest('.staff-card') : el.closest('.staff-card');
+  if (card) {
+    card.querySelectorAll('.staff-panel').forEach(p => p.classList.remove('open'));
+    card.querySelectorAll('.staff-tab-btn').forEach(b => b.classList.remove('active'));
+  }
+  if (willOpen) {
+    el.classList.add('open');
+    if (btn) btn.classList.add('active');
   }
 }
 function toggleStaffDay(key, closed) {
