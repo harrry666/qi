@@ -146,6 +146,7 @@ def init_db():
             end_time TEXT NOT NULL,
             reason TEXT DEFAULT ''
         )''',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS color TEXT DEFAULT \'\'',
     ]:
         db.execute(stmt)
     db.commit()

@@ -204,6 +204,19 @@ def update_service_icon(svc_id):
         flash('请上传有效的图片文件（jpg/png/webp/gif）。', 'error')
     return redirect(url_for('dashboard.services'))
 
+@dashboard_bp.route('/services/<int:svc_id>/color', methods=['POST'])
+@login_required
+def update_service_color(svc_id):
+    color = request.form.get('color', '').strip()
+    db = get_db()
+    db.execute(
+        'UPDATE services SET color=%s WHERE id=%s AND business_id=%s',
+        (color, svc_id, current_user.id)
+    )
+    db.commit()
+    db.close()
+    return ('', 204)
+
 @dashboard_bp.route('/services/<int:svc_id>/delete', methods=['POST'])
 @login_required
 def delete_service(svc_id):
@@ -246,6 +259,65 @@ def hours():
     hours_map = {r['weekday']: dict(r) for r in rows}
     days = [{'key': day_keys[i], 'name': day_names[i], 'data': hours_map.get(i, {})} for i in range(7)]
     return render_template('dashboard/hours.html', days=days)
+
+PALETTE = ['#C9A84C', '#7A9E7E', '#B0785C', '#6E8CAE', '#A56CA8', '#C97A7A', '#7EA0A8', '#A89A5C']
+
+def _service_color(svc_id, svc_color):
+    if svc_color:
+        return svc_color
+    return PALETTE[svc_id % len(PALETTE)]
+
+@dashboard_bp.route('/calendar')
+@login_required
+def calendar():
+    db = get_db()
+    staff_rows = db.execute(
+        'SELECT id, name FROM staff WHERE business_id=%s AND is_active=1 ORDER BY sort_order, id',
+        (current_user.id,)
+    ).fetchall()
+    db.close()
+    return render_template('dashboard/calendar.html', staff=staff_rows)
+
+@dashboard_bp.route('/calendar/events')
+@login_required
+def calendar_events():
+    from flask import jsonify
+    db = get_db()
+    rows = db.execute(
+        "SELECT a.id, a.customer_name, a.appointment_dt, a.status, a.staff_id, "
+        "s.id as service_id, s.name as service_name, s.duration_mins, s.color as service_color, "
+        "st.name as staff_name "
+        "FROM appointments a JOIN services s ON a.service_id=s.id "
+        "LEFT JOIN staff st ON a.staff_id=st.id "
+        "WHERE a.business_id=%s AND a.status='confirmed'",
+        (current_user.id,)
+    ).fetchall()
+    db.close()
+
+    events = []
+    for r in rows:
+        try:
+            start = datetime.strptime(r['appointment_dt'], '%Y-%m-%d %H:%M')
+        except Exception:
+            continue
+        end = start + timedelta(minutes=r['duration_mins'] or 30)
+        color = _service_color(r['service_id'], r['service_color'])
+        title = r['service_name']
+        if r['staff_name']:
+            title += f" · {r['staff_name']}"
+        events.append({
+            'id': r['id'],
+            'title': title,
+            'start': start.strftime('%Y-%m-%dT%H:%M:00'),
+            'end': end.strftime('%Y-%m-%dT%H:%M:00'),
+            'color': color,
+            'extendedProps': {
+                'customer': r['customer_name'],
+                'service': r['service_name'],
+                'staff': r['staff_name'] or '不限员工',
+            }
+        })
+    return jsonify(events)
 
 @dashboard_bp.route('/appointments')
 @login_required
