@@ -55,6 +55,7 @@
       <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">🚫 休业时期</a>
       <a href="{{ url_for('dashboard.blocks') }}"       class="nav-item {% if request.endpoint == 'dashboard.blocks' %}active{% endif %}">🔒 时段锁定</a>
       <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">⚙️ 设置</a>
+      <a href="{{ url_for('dashboard.feedback') }}"     class="nav-item {% if request.endpoint == 'dashboard.feedback' %}active{% endif %}">💬 反馈问题</a>
     </nav>
     <div class="sidebar-bottom">
       <a href="/book/{{ current_user.slug }}" target="_blank" class="booking-link-btn">查看预约页面 ↗</a>

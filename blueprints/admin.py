@@ -57,6 +57,33 @@ def reject(biz_id):
         db.close()
     return redirect(url_for('admin.index'))
 
+@admin_bp.route('/feedback')
+def feedback_inbox():
+    if not _check_secret():
+        return redirect(url_for('admin.index'))
+    db = get_db()
+    try:
+        rows = db.execute(
+            "SELECT f.*, b.name as biz_name FROM platform_feedback f "
+            "LEFT JOIN businesses b ON f.business_id = b.id "
+            "ORDER BY (f.status = 'new') DESC, f.created_at DESC"
+        ).fetchall()
+        return render_template('admin/feedback.html', items=[dict(r) for r in rows])
+    finally:
+        db.close()
+
+@admin_bp.route('/feedback/<int:fid>/resolve', methods=['POST'])
+def feedback_resolve(fid):
+    if not _check_secret():
+        return redirect(url_for('admin.index'))
+    db = get_db()
+    try:
+        db.execute("UPDATE platform_feedback SET status='resolved' WHERE id=%s", (fid,))
+        db.commit()
+    finally:
+        db.close()
+    return redirect(url_for('admin.feedback_inbox'))
+
 @admin_bp.route('/logout')
 def logout():
     session.pop('admin_authed', None)

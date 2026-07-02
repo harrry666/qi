@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>意见反馈 · Hastrid Booking</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .cancel-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .cancel-card { background: var(--white); border-radius: 20px; padding: 40px 32px; max-width: 440px; width: 100%; border: 1px solid var(--border); box-shadow: 0 4px 32px rgba(26,18,9,0.07); text-align: center; }
+    .state-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px; }
+    .state-icon-gold { background: var(--gold-light); color: var(--gold-h); }
+    .state-icon-green { background: #DCFCE7; color: #166534; }
+    .cancel-card h1 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .cancel-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+    .fb-textarea { min-height: 100px; resize: vertical; }
+  </style>
+</head>
+<body class="book-body">
+<div class="cancel-wrap">
+<div class="cancel-card">
+
+{% if sent %}
+  <div class="state-icon state-icon-green">✓</div>
+  <h1>已收到</h1>
+  <p class="cancel-sub">感谢反馈，平台会尽快查看处理。</p>
+{% else %}
+  <div class="state-icon state-icon-gold">💬</div>
+  <h1>意见反馈</h1>
+  <p class="cancel-sub">对网站或小程序有什么不满意、想要的功能，直接告诉我们{% if biz %}（会一并标注你使用的商家：{{ biz.name }}）{% endif %}。</p>
+  <form method="POST">
+    <input type="text" id="hp_website" name="hp" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" autocomplete="off" aria-hidden="true">
+    {% if biz %}<input type="hidden" name="biz" value="{{ biz.slug }}">{% endif %}
+    <input class="book-input" type="text" name="name" placeholder="称呼（选填）" style="margin-bottom:12px">
+    <input class="book-input" type="text" name="contact" placeholder="手机号/微信（选填，方便我们回复你）" style="margin-bottom:12px">
+    <textarea class="book-input fb-textarea" name="message" placeholder="说说你遇到的问题或想要的功能" required style="margin-bottom:14px"></textarea>
+    <button type="submit" class="btn-primary" style="width:100%">提交反馈</button>
+  </form>
+{% endif %}
+
+<p class="qi-brand">由 <strong>Hastrid Booking</strong> 提供服务</p>
+</div>
+</div>
+</body>
+</html>

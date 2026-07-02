@@ -495,6 +495,31 @@ def cancel_by_token(token):
     return render_template('cancel.html', apt=apt)
 
 
+@booking_bp.route('/feedback', methods=['GET', 'POST'])
+def public_feedback():
+    slug = request.values.get('biz', '').strip()
+    biz = get_biz_by_slug(slug) if slug else None
+
+    sent = False
+    if request.method == 'POST':
+        if request.form.get('hp'):
+            return render_template('feedback.html', biz=biz, sent=True)
+        name = request.form.get('name', '').strip()
+        contact = request.form.get('contact', '').strip()
+        message = request.form.get('message', '').strip()
+        if message:
+            db = get_db()
+            db.execute(
+                "INSERT INTO platform_feedback (source, business_id, name, contact, message) VALUES ('customer',%s,%s,%s,%s)",
+                (biz['id'] if biz else None, name, contact, message)
+            )
+            db.commit()
+            db.close()
+            sent = True
+
+    return render_template('feedback.html', biz=biz, sent=sent)
+
+
 @booking_bp.route('/book/<slug>/my', methods=['GET', 'POST'])
 def my_request(slug):
     biz = get_biz_by_slug(slug)

@@ -195,6 +195,16 @@ def init_db():
         )''',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_id INTEGER',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS support_contact TEXT DEFAULT \'\'',
+        '''CREATE TABLE IF NOT EXISTS platform_feedback (
+            id SERIAL PRIMARY KEY,
+            source TEXT NOT NULL DEFAULT 'customer',
+            business_id INTEGER,
+            name TEXT DEFAULT '',
+            contact TEXT DEFAULT '',
+            message TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'new',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )''',
     ]:
         db.execute(stmt)
     db.commit()

@@ -39,6 +39,7 @@
     <div style="margin-top:8px;font-size:12.5px;color:var(--muted)">
       {% if biz.support_contact %}💬 客服：{{ biz.support_contact }} · {% endif %}
       <a href="{{ url_for('booking.my_request', slug=biz.slug) }}" style="color:var(--gold-h)">👤 我的档案</a>
+      · <a href="{{ url_for('booking.public_feedback', biz=biz.slug) }}" style="color:var(--gold-h)">📝 意见反馈</a>
     </div>
   </div>
 

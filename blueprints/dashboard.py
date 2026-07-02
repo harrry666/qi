@@ -690,6 +690,23 @@ def settings():
     booking_url = url_for('booking.book_page', slug=biz['slug'], _external=True)
     return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url, categories=CATEGORIES)
 
+@dashboard_bp.route('/feedback', methods=['GET', 'POST'])
+@login_required
+def feedback():
+    if request.method == 'POST':
+        message = request.form.get('message', '').strip()
+        if message:
+            db = get_db()
+            db.execute(
+                "INSERT INTO platform_feedback (source, business_id, name, contact, message) VALUES ('merchant',%s,%s,%s,%s)",
+                (current_user.id, current_user.name, current_user.email, message)
+            )
+            db.commit()
+            db.close()
+            flash('反馈已提交，平台会尽快处理。', 'success')
+        return redirect(url_for('dashboard.feedback'))
+    return render_template('dashboard/feedback.html')
+
 STAFF_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 STAFF_DAY_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 

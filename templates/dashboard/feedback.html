@@ -1,0 +1,19 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}反馈问题{% endblock %}
+{% block content %}
+
+<div class="page-title">💬 反馈问题</div>
+<p style="color:var(--muted);font-size:14px;margin-top:-12px;margin-bottom:24px">
+  对网站或小程序有什么不满意、想要的功能，直接告诉平台，我们会尽快处理。
+</p>
+
+<div class="add-service-form" style="max-width:560px">
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <span class="btn-label">你的反馈 *</span>
+    <textarea class="dash-input" name="message" rows="5" placeholder="例：希望日历能支持月视图 / 小程序取消预约老是失败 / ……" required></textarea>
+    <button type="submit" class="btn-add" style="width:auto;padding:10px 28px;margin-top:14px">提交反馈</button>
+  </form>
+</div>
+
+{% endblock %}

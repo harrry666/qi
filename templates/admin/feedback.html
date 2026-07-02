@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>意见反馈 · 管理后台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1120; color: #e8e0f0; font-family: system-ui, sans-serif; min-height: 100vh; padding: 2rem; }
+  h1 { color: #C9A84C; font-size: 1.5rem; margin-bottom: 1.5rem; }
+  .back { color: #7c6a90; font-size: .85rem; text-decoration: none; float: right; }
+  .back:hover { color: #C9A84C; }
+  .fb-card { background: #241830; border-radius: 12px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+  .fb-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .fb-source { font-size: .75rem; padding: 2px 8px; border-radius: 20px; }
+  .fb-source-merchant { background: #7c5c20; color: #ffd875; }
+  .fb-source-customer { background: #1a4d6a; color: #7dd3fc; }
+  .fb-meta { font-size: .8rem; color: #7c6a90; margin-top: 4px; }
+  .fb-msg { margin-top: .6rem; font-size: .95rem; line-height: 1.5; white-space: pre-wrap; }
+  .fb-status-new { color: #ffd875; }
+  .fb-status-resolved { color: #5de88a; }
+  .btn-resolve { background: #2a6040; color: #5de88a; border: 1px solid #2a6040; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: .8rem; white-space: nowrap; }
+  .empty { color: #7c6a90; text-align: center; padding: 3rem 0; }
+</style>
+</head>
+<body>
+<h1>意见反馈 <a class="back" href="/admin">← 返回商家审核</a></h1>
+
+{% if items %}
+  {% for f in items %}
+  <div class="fb-card">
+    <div class="fb-top">
+      <div>
+        <span class="fb-source fb-source-{{ f.source }}">{{ '商家' if f.source == 'merchant' else '客户' }}</span>
+        <span class="{% if f.status == 'new' %}fb-status-new{% else %}fb-status-resolved{% endif %}" style="font-size:.8rem;margin-left:6px">
+          {{ '待处理' if f.status == 'new' else '已处理' }}
+        </span>
+        <div class="fb-meta">
+          {{ f.name or '匿名' }}{% if f.contact %} · {{ f.contact }}{% endif %}{% if f.biz_name %} · 来自商家：{{ f.biz_name }}{% endif %}
+          · {{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}
+        </div>
+      </div>
+      {% if f.status != 'resolved' %}
+      <form method="POST" action="/admin/feedback/{{ f.id }}/resolve">
+        <button class="btn-resolve" type="submit">标记已处理</button>
+      </form>
+      {% endif %}
+    </div>
+    <div class="fb-msg">{{ f.message }}</div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty">暂无反馈</div>
+{% endif %}
+</body>
+</html>

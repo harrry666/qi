@@ -28,7 +28,10 @@
 </head>
 <body>
 <h1>哈瓜小约 · 管理后台
-  {% if merchants is not none %}<a class="logout" href="/admin/logout">退出</a>{% endif %}
+  {% if merchants is not none %}
+  <a class="logout" href="/admin/logout">退出</a>
+  <a class="logout" href="/admin/feedback" style="margin-right:16px">意见反馈 →</a>
+  {% endif %}
 </h1>
 
 {% if merchants is none %}
