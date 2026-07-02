@@ -31,6 +31,23 @@ def get_db():
     return _DB(conn)
 
 
+def upsert_customer(db, business_id, phone, name):
+    import uuid
+    row = db.execute(
+        'SELECT id FROM customers WHERE business_id=%s AND phone=%s',
+        (business_id, phone)
+    ).fetchone()
+    if row:
+        if name:
+            db.execute('UPDATE customers SET name=%s WHERE id=%s', (name, row['id']))
+        return row['id']
+    cur = db.execute(
+        'INSERT INTO customers (business_id, phone, name, profile_token) VALUES (%s,%s,%s,%s) RETURNING id',
+        (business_id, phone, name, str(uuid.uuid4()))
+    )
+    return cur.fetchone()['id']
+
+
 def init_db():
     db = get_db()
     for stmt in [
@@ -147,6 +164,37 @@ def init_db():
             reason TEXT DEFAULT ''
         )''',
         'ALTER TABLE services ADD COLUMN IF NOT EXISTS color TEXT DEFAULT \'\'',
+        '''CREATE TABLE IF NOT EXISTS customers (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            phone TEXT NOT NULL,
+            name TEXT DEFAULT '',
+            avatar_url TEXT DEFAULT '',
+            preferences TEXT DEFAULT '',
+            private_note TEXT DEFAULT '',
+            balance INTEGER NOT NULL DEFAULT 0,
+            profile_token TEXT UNIQUE,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(business_id, phone)
+        )''',
+        '''CREATE TABLE IF NOT EXISTS customer_photos (
+            id SERIAL PRIMARY KEY,
+            customer_id INTEGER NOT NULL,
+            appointment_id INTEGER,
+            photo_url TEXT NOT NULL,
+            note TEXT DEFAULT '',
+            uploaded_by TEXT NOT NULL DEFAULT 'merchant',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )''',
+        '''CREATE TABLE IF NOT EXISTS balance_transactions (
+            id SERIAL PRIMARY KEY,
+            customer_id INTEGER NOT NULL,
+            delta INTEGER NOT NULL,
+            reason TEXT DEFAULT '',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )''',
+        'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_id INTEGER',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS support_contact TEXT DEFAULT \'\'',
     ]:
         db.execute(stmt)
     db.commit()

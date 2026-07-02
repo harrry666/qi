@@ -6,15 +6,7 @@ import threading
 import os
 from blueprints.booking import send_sms, format_phone
 from blueprints.auth import CATEGORIES
-import cloudinary
-import cloudinary.uploader
-
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
-    api_key=os.environ.get('CLOUDINARY_API_KEY', ''),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET', ''),
-    secure=True
-)
+from cloud import upload_to_cloudinary as _upload_to_cloudinary
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -151,15 +143,6 @@ def services():
     ).fetchall()
     db.close()
     return render_template('dashboard/services.html', services=svcs)
-
-def _upload_to_cloudinary(file_storage, folder='qi/services', **kwargs):
-    if not file_storage or not file_storage.filename:
-        return None
-    try:
-        result = cloudinary.uploader.upload(file_storage, folder=folder, **kwargs)
-        return result['secure_url']
-    except Exception as e:
-        return None
 
 @dashboard_bp.route('/services/add', methods=['POST'])
 @login_required
@@ -541,16 +524,126 @@ def delete_block(bid):
 def customers():
     db = get_db()
     rows = db.execute(
-        "SELECT customer_name, phone, COUNT(*) as visit_count, "
-        "MAX(appointment_dt) as last_visit, MIN(appointment_dt) as first_visit "
-        "FROM appointments "
-        "WHERE business_id=%s AND status='confirmed' "
-        "GROUP BY phone, customer_name "
-        "ORDER BY visit_count DESC, last_visit DESC",
+        "SELECT c.id, c.name, c.phone, c.avatar_url, c.balance, "
+        "COUNT(a.id) as visit_count, MAX(a.appointment_dt) as last_visit, MIN(a.appointment_dt) as first_visit "
+        "FROM customers c "
+        "LEFT JOIN appointments a ON a.customer_id = c.id AND a.status='confirmed' "
+        "WHERE c.business_id=%s "
+        "GROUP BY c.id "
+        "ORDER BY visit_count DESC, last_visit DESC NULLS LAST",
         (current_user.id,)
     ).fetchall()
     db.close()
     return render_template('dashboard/customers.html', customers=rows)
+
+@dashboard_bp.route('/customers/<int:cid>')
+@login_required
+def customer_detail(cid):
+    db = get_db()
+    cust = db.execute('SELECT * FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+    if not cust:
+        db.close()
+        flash('未找到该客户。', 'error')
+        return redirect(url_for('dashboard.customers'))
+    visits = db.execute(
+        "SELECT a.*, s.name as service_name FROM appointments a JOIN services s ON a.service_id=s.id "
+        "WHERE a.customer_id=%s ORDER BY a.appointment_dt DESC LIMIT 20",
+        (cid,)
+    ).fetchall()
+    photos = db.execute(
+        "SELECT * FROM customer_photos WHERE customer_id=%s ORDER BY created_at DESC",
+        (cid,)
+    ).fetchall()
+    transactions = db.execute(
+        "SELECT * FROM balance_transactions WHERE customer_id=%s ORDER BY created_at DESC LIMIT 20",
+        (cid,)
+    ).fetchall()
+    db.close()
+    return render_template('dashboard/customer_detail.html', c=cust, visits=visits, photos=photos, transactions=transactions)
+
+@dashboard_bp.route('/customers/<int:cid>/profile', methods=['POST'])
+@login_required
+def customer_update_profile(cid):
+    preferences = request.form.get('preferences', '').strip()
+    private_note = request.form.get('private_note', '').strip()
+    db = get_db()
+    db.execute(
+        'UPDATE customers SET preferences=%s, private_note=%s WHERE id=%s AND business_id=%s',
+        (preferences, private_note, cid, current_user.id)
+    )
+    db.commit()
+    db.close()
+    flash('客户档案已保存。', 'success')
+    return redirect(url_for('dashboard.customer_detail', cid=cid))
+
+@dashboard_bp.route('/customers/<int:cid>/avatar', methods=['POST'])
+@login_required
+def customer_update_avatar(cid):
+    avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/customers', transformation=[{'width': 300, 'height': 300, 'crop': 'fill'}])
+    if avatar_url:
+        db = get_db()
+        db.execute('UPDATE customers SET avatar_url=%s WHERE id=%s AND business_id=%s', (avatar_url, cid, current_user.id))
+        db.commit()
+        db.close()
+        flash('头像已更新。', 'success')
+    else:
+        flash('请上传有效的图片文件。', 'error')
+    return redirect(url_for('dashboard.customer_detail', cid=cid))
+
+@dashboard_bp.route('/customers/<int:cid>/photo', methods=['POST'])
+@login_required
+def customer_add_photo(cid):
+    photo_url = _upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos')
+    note = request.form.get('note', '').strip()
+    if photo_url:
+        db = get_db()
+        cust = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+        if cust:
+            db.execute(
+                "INSERT INTO customer_photos (customer_id, photo_url, note, uploaded_by) VALUES (%s,%s,%s,'merchant')",
+                (cid, photo_url, note)
+            )
+            db.commit()
+            flash('照片已添加。', 'success')
+        db.close()
+    else:
+        flash('请上传有效的图片文件。', 'error')
+    return redirect(url_for('dashboard.customer_detail', cid=cid))
+
+@dashboard_bp.route('/customers/<int:cid>/photo/<int:pid>/delete', methods=['POST'])
+@login_required
+def customer_delete_photo(cid, pid):
+    db = get_db()
+    db.execute(
+        "DELETE FROM customer_photos WHERE id=%s AND customer_id=%s "
+        "AND customer_id IN (SELECT id FROM customers WHERE business_id=%s)",
+        (pid, cid, current_user.id)
+    )
+    db.commit()
+    db.close()
+    return redirect(url_for('dashboard.customer_detail', cid=cid))
+
+@dashboard_bp.route('/customers/<int:cid>/balance', methods=['POST'])
+@login_required
+def customer_adjust_balance(cid):
+    try:
+        delta = int(request.form.get('delta', '0'))
+    except ValueError:
+        delta = 0
+    reason = request.form.get('reason', '').strip()
+    if delta:
+        db = get_db()
+        cust = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+        if cust:
+            db.execute('UPDATE customers SET balance = balance + %s WHERE id=%s', (delta, cid))
+            db.execute(
+                'INSERT INTO balance_transactions (customer_id, delta, reason) VALUES (%s,%s,%s)',
+                (cid, delta, reason)
+            )
+            db.commit()
+            flash('余额已更新。', 'success')
+        db.close()
+    return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -562,6 +655,7 @@ def settings():
         phone = request.form.get('phone', '').strip()
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
+        support_contact = request.form.get('support_contact', '').strip()
 
         avatar_url = current_user.avatar_url or ''
         cover_url = current_user.cover_url or ''
@@ -584,8 +678,8 @@ def settings():
 
         if name:
             db.execute(
-                'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s, avatar_url=%s, cover_url=%s WHERE id=%s',
-                (name, address, phone, description, category, avatar_url, cover_url, current_user.id)
+                'UPDATE businesses SET name=%s, address=%s, phone=%s, description=%s, category=%s, avatar_url=%s, cover_url=%s, support_contact=%s WHERE id=%s',
+                (name, address, phone, description, category, avatar_url, cover_url, support_contact, current_user.id)
             )
             db.commit()
             flash('设置已保存。', 'success')

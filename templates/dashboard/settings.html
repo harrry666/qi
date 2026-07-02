@@ -26,6 +26,9 @@
     <label class="dash-label">简介</label>
     <textarea class="dash-input dash-textarea" name="description" placeholder="在预约页面显示的简介">{{ biz.description or '' }}</textarea>
 
+    <label class="dash-label">客服联系方式 <span style="color:#555;font-weight:400;font-size:12px">（微信号/电话，客户预约页会显示）</span></label>
+    <input class="dash-input" type="text" name="support_contact" value="{{ biz.support_contact or '' }}" placeholder="例：微信 hastrid_help 或 (555) 000-0000">
+
     <label class="dash-label" style="margin-top:20px;display:block">头像 <span style="color:#555;font-weight:400;font-size:12px">（正方形，显示在浏览页）</span></label>
     {% if biz.avatar_url %}
     <img src="{{ biz.avatar_url }}" style="width:72px;height:72px;border-radius:12px;object-fit:cover;margin-bottom:8px;display:block">

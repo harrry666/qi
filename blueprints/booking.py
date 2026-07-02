@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from db import get_db
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -284,9 +284,12 @@ def api_create(slug):
     staff_id = resolve_staff_id(biz['id'], service_id, a_date, a_time, svc['duration_mins'], data.get('staff_id') or None)
 
     db = get_db()
+    from db import upsert_customer
+    customer_id = upsert_customer(db, biz['id'], phone, name)
     db.execute(
-        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-        (biz['id'], service_id, name, phone, apt_dt, comment, cancel_token, staff_id)
+        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id, customer_id) '
+        'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+        (biz['id'], service_id, name, phone, apt_dt, comment, cancel_token, staff_id, customer_id)
     )
     db.commit()
     db.close()
@@ -490,3 +493,103 @@ def cancel_by_token(token):
 
     db.close()
     return render_template('cancel.html', apt=apt)
+
+
+@booking_bp.route('/book/<slug>/my', methods=['GET', 'POST'])
+def my_request(slug):
+    biz = get_biz_by_slug(slug)
+    if not biz:
+        return render_template('cancel.html', error=True)
+
+    sent = False
+    error = None
+    if request.method == 'POST':
+        phone = request.form.get('phone', '').strip()
+        db = get_db()
+        cust = db.execute(
+            'SELECT * FROM customers WHERE business_id=%s AND phone=%s',
+            (biz['id'], phone)
+        ).fetchone()
+        db.close()
+        if cust:
+            base_url = os.environ.get('BASE_URL', '').rstrip('/')
+            link = f"{base_url}/my/{cust['profile_token']}"
+            msg = f"【{biz['name']}】你的专属客户档案链接：\n{link}\n\n可以设置偏好、上传照片。请勿转发给他人。"
+            threading.Thread(target=send_sms, args=(format_phone(phone), msg), daemon=True).start()
+            sent = True
+        else:
+            error = '未找到你的预约记录，请先完成一次预约后再来设置档案。'
+
+    return render_template('my_request.html', biz=biz, sent=sent, error=error)
+
+
+@booking_bp.route('/my/<token>')
+def my_profile(token):
+    db = get_db()
+    cust = db.execute(
+        'SELECT c.*, b.name as biz_name, b.slug as biz_slug FROM customers c '
+        'JOIN businesses b ON c.business_id = b.id WHERE c.profile_token=%s',
+        (token,)
+    ).fetchone()
+    if not cust:
+        db.close()
+        return render_template('cancel.html', error=True)
+    visits = db.execute(
+        "SELECT a.appointment_dt, a.status, s.name as service_name FROM appointments a "
+        "JOIN services s ON a.service_id=s.id WHERE a.customer_id=%s ORDER BY a.appointment_dt DESC LIMIT 10",
+        (cust['id'],)
+    ).fetchall()
+    photos = db.execute(
+        "SELECT * FROM customer_photos WHERE customer_id=%s ORDER BY created_at DESC",
+        (cust['id'],)
+    ).fetchall()
+    db.close()
+    return render_template('my_profile.html', c=cust, visits=visits, photos=photos)
+
+
+@booking_bp.route('/my/<token>/update', methods=['POST'])
+def my_profile_update(token):
+    db = get_db()
+    cust = db.execute('SELECT id FROM customers WHERE profile_token=%s', (token,)).fetchone()
+    if cust:
+        name = request.form.get('name', '').strip()
+        preferences = request.form.get('preferences', '').strip()
+        db.execute('UPDATE customers SET name=%s, preferences=%s WHERE id=%s', (name, preferences, cust['id']))
+        db.commit()
+    db.close()
+    return redirect(url_for('booking.my_profile', token=token))
+
+
+@booking_bp.route('/my/<token>/avatar', methods=['POST'])
+def my_profile_avatar(token):
+    from cloud import upload_to_cloudinary
+    db = get_db()
+    cust = db.execute('SELECT id FROM customers WHERE profile_token=%s', (token,)).fetchone()
+    if cust:
+        avatar_url = upload_to_cloudinary(
+            request.files.get('avatar'), folder='qi/customers',
+            transformation=[{'width': 300, 'height': 300, 'crop': 'fill'}]
+        )
+        if avatar_url:
+            db.execute('UPDATE customers SET avatar_url=%s WHERE id=%s', (avatar_url, cust['id']))
+            db.commit()
+    db.close()
+    return redirect(url_for('booking.my_profile', token=token))
+
+
+@booking_bp.route('/my/<token>/photo', methods=['POST'])
+def my_profile_photo(token):
+    from cloud import upload_to_cloudinary
+    db = get_db()
+    cust = db.execute('SELECT id FROM customers WHERE profile_token=%s', (token,)).fetchone()
+    if cust:
+        photo_url = upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos')
+        note = request.form.get('note', '').strip()
+        if photo_url:
+            db.execute(
+                "INSERT INTO customer_photos (customer_id, photo_url, note, uploaded_by) VALUES (%s,%s,%s,'customer')",
+                (cust['id'], photo_url, note)
+            )
+            db.commit()
+    db.close()
+    return redirect(url_for('booking.my_profile', token=token))

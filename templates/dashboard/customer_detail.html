@@ -1,0 +1,118 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}{{ c.name or '客户' }} — 客户档案{% endblock %}
+{% block content %}
+
+<a href="{{ url_for('dashboard.customers') }}" style="color:var(--muted);font-size:13px;text-decoration:none">← 返回客户列表</a>
+
+<div class="cust-head" style="display:flex;align-items:center;gap:16px;margin:14px 0 24px">
+  {% if c.avatar_url %}
+    <img src="{{ c.avatar_url }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover">
+  {% else %}
+    <span style="width:64px;height:64px;border-radius:50%;background:var(--gold-light);color:var(--gold-h);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px">{{ (c.name or '?')[:1] }}</span>
+  {% endif %}
+  <div>
+    <div style="font-size:22px;font-weight:800;color:var(--text)">{{ c.name or '未命名客户' }}</div>
+    <div style="color:#A78BFA;font-size:14px">{{ c.phone }}</div>
+  </div>
+  <div style="margin-left:auto;text-align:right">
+    <div style="font-size:12px;color:var(--muted)">储值余额</div>
+    <div style="font-size:26px;font-weight:800;color:var(--gold-h)">${{ c.balance }}</div>
+  </div>
+</div>
+
+<div class="cust-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+  <!-- Profile -->
+  <div class="add-service-form">
+    <h2>客户档案</h2>
+    <form method="POST" action="{{ url_for('dashboard.customer_update_profile', cid=c.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <span class="btn-label">客户可见偏好（客户自己也能看到/编辑）</span>
+      <textarea class="dash-input" name="preferences" rows="2" placeholder="例：37分/6度发色，喜欢偏软的烫发">{{ c.preferences or '' }}</textarea>
+      <span class="btn-label" style="margin-top:10px;display:block">隐形备注（仅商家可见，客户看不到）</span>
+      <textarea class="dash-input" name="private_note" rows="2" placeholder="例：容易爽约，建议提前一天电话确认">{{ c.private_note or '' }}</textarea>
+      <button type="submit" class="btn-add" style="width:auto;padding:9px 24px;margin-top:12px">保存档案</button>
+    </form>
+
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+      <span class="btn-label">更换头像</span>
+      <form method="POST" action="{{ url_for('dashboard.customer_update_avatar', cid=c.id) }}" enctype="multipart/form-data" style="display:flex;gap:8px;margin-top:6px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="dash-input" type="file" name="avatar" accept="image/*" style="padding:6px" data-crop data-crop-ratio="1" data-out-w="300" data-out-h="300">
+        <button type="submit" class="btn-add" style="width:auto;padding:8px 18px;white-space:nowrap">上传</button>
+      </form>
+    </div>
+
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+      <span class="btn-label">储值余额调整</span>
+      <form method="POST" action="{{ url_for('dashboard.customer_adjust_balance', cid=c.id) }}" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="dash-input" type="number" name="delta" placeholder="+100 充值 / -50 扣费" style="width:180px">
+        <input class="dash-input" type="text" name="reason" placeholder="备注，如：充值 / 核销一次美发" style="flex:1;min-width:160px">
+        <button type="submit" class="btn-add" style="width:auto;padding:8px 18px">提交</button>
+      </form>
+      {% if transactions %}
+      <div style="margin-top:10px;font-size:13px;color:var(--muted)">
+        {% for t in transactions[:6] %}
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--border)">
+          <span>{{ t.reason or '—' }}</span>
+          <span style="color:{% if t.delta > 0 %}var(--green){% else %}var(--red){% endif %};font-weight:600">{{ '+' if t.delta > 0 }}{{ t.delta }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Photos -->
+  <div class="add-service-form">
+    <h2>服务照片档案</h2>
+    <form method="POST" action="{{ url_for('dashboard.customer_add_photo', cid=c.id) }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="dash-input" type="file" name="photo" accept="image/*" style="padding:6px">
+      <input class="dash-input" type="text" name="note" placeholder="备注，如：37分/6度发色" style="margin-top:8px">
+      <button type="submit" class="btn-add" style="width:auto;padding:9px 24px;margin-top:10px">+ 添加照片</button>
+    </form>
+    {% if photos %}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px">
+      {% for p in photos %}
+      <div style="position:relative">
+        <img src="{{ p.photo_url }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px">
+        {% if p.note %}<div style="font-size:11px;color:var(--muted);margin-top:2px">{{ p.note }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('dashboard.customer_delete_photo', cid=c.id, pid=p.id) }}" onsubmit="return confirm('删除这张照片？')" style="position:absolute;top:4px;right:4px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" style="background:rgba(0,0,0,0.55);color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1">×</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-msg" style="margin-top:14px">暂无照片，服务完成后可以在这里存档发型/发色，方便下次参考。</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Visit history -->
+<div style="margin-top:24px">
+  <h2 style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:10px">预约历史</h2>
+  {% if visits %}
+  <table class="apt-table">
+    <thead><tr><th>时间</th><th>服务</th><th>状态</th><th>备注</th></tr></thead>
+    <tbody>
+      {% for v in visits %}
+      <tr>
+        <td>{{ v.appointment_dt }}</td>
+        <td>{{ v.service_name }}</td>
+        <td>{% if v.status == 'confirmed' %}<span class="badge" style="background:var(--green);color:white">已确认</span>{% else %}<span class="badge" style="background:#eee;color:#888">已取消</span>{% endif %}</td>
+        <td style="color:#555;font-size:13px">{{ v.comment or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-table">暂无预约记录</div>
+  {% endif %}
+</div>
+
+{% endblock %}

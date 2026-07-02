@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的档案 · {{ biz.name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .cancel-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .cancel-card { background: var(--white); border-radius: 20px; padding: 40px 32px; max-width: 440px; width: 100%; border: 1px solid var(--border); box-shadow: 0 4px 32px rgba(26,18,9,0.07); text-align: center; }
+    .state-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px; }
+    .state-icon-gold { background: var(--gold-light); color: var(--gold-h); }
+    .state-icon-green { background: #DCFCE7; color: #166534; }
+    .cancel-card h1 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .cancel-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+  </style>
+</head>
+<body class="book-body">
+<div class="cancel-wrap">
+<div class="cancel-card">
+
+{% if sent %}
+  <div class="state-icon state-icon-green">✓</div>
+  <h1>已发送</h1>
+  <p class="cancel-sub">短信已发送到你的手机，点击其中的链接即可设置你的个人档案。</p>
+{% else %}
+  <div class="state-icon state-icon-gold">👤</div>
+  <h1>我的档案</h1>
+  <p class="cancel-sub">输入预约时使用的手机号，我们会发短信给你一个专属链接，用来设置你的偏好、上传照片。</p>
+  {% if error %}<p style="color:#EF4444;font-size:13px;margin-bottom:12px">{{ error }}</p>{% endif %}
+  <form method="POST">
+    <input class="book-input" type="tel" name="phone" placeholder="手机号码" required style="margin-bottom:14px">
+    <button type="submit" class="btn-primary" style="width:100%">获取我的档案链接</button>
+  </form>
+{% endif %}
+
+<p class="qi-brand">由 <strong>Hastrid Booking</strong> 提供服务</p>
+</div>
+</div>
+</body>
+</html>

@@ -50,6 +50,7 @@
     <tr>
       <th>图标</th>
       <th>服务</th>
+      <th>日历颜色</th>
       <th>时长</th>
       <th>缓冲</th>
       <th>价格</th>
@@ -58,6 +59,7 @@
   </thead>
   <tbody>
     {% for s in services %}
+    {% set palette = ['#C9A84C', '#7A9E7E', '#B0785C', '#6E8CAE', '#A56CA8', '#C97A7A', '#7EA0A8', '#A89A5C'] %}
     <tr>
       <td class="svc-emoji-cell">
         {% if s.icon_url and s.icon_url.startswith('http') %}
@@ -75,6 +77,15 @@
           <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">上传</button>
         </form>
       </td>
+      <td>
+        <div class="color-swatches" data-svc="{{ s.id }}" style="display:flex;gap:5px;flex-wrap:wrap;max-width:130px">
+          {% for col in palette %}
+          <button type="button" class="color-swatch {% if (s.color or palette[s.id % 8]) == col %}active{% endif %}"
+                  style="width:18px;height:18px;border-radius:50%;background:{{ col }};border:2px solid {% if (s.color or palette[s.id % 8]) == col %}var(--text){% else %}transparent{% endif %};cursor:pointer;padding:0"
+                  onclick="setServiceColor({{ s.id }}, '{{ col }}', this)"></button>
+          {% endfor %}
+        </div>
+      </td>
       <td>{{ s.duration_mins }} 分钟</td>
       <td>{% if s.buffer_mins %}{{ s.buffer_mins }} 分{% else %}—{% endif %}</td>
       <td>{% if s.price %}${{ s.price|int }}{% else %}—{% endif %}</td>
@@ -91,5 +102,21 @@
 {% else %}
   <div class="empty-msg">暂无服务，请在上方添加。</div>
 {% endif %}
+
+<script>
+function setServiceColor(svcId, color, btn) {
+  const fd = new FormData();
+  fd.append('color', color);
+  fetch('/dashboard/services/' + svcId + '/color', { method: 'POST', body: fd })
+    .then(function() {
+      btn.closest('.color-swatches').querySelectorAll('.color-swatch').forEach(function(b) {
+        b.classList.remove('active');
+        b.style.borderColor = 'transparent';
+      });
+      btn.classList.add('active');
+      btn.style.borderColor = 'var(--text)';
+    });
+}
+</script>
 
 {% endblock %}
