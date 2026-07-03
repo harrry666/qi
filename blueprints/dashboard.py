@@ -1,14 +1,29 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from db import get_db
 from datetime import datetime, timedelta
 import threading
 import os
+import uuid
+import csv
+import io
 from blueprints.booking import send_sms, format_phone
 from blueprints.auth import CATEGORIES
 from cloud import upload_to_cloudinary as _upload_to_cloudinary
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
+
+_WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+@dashboard_bp.app_template_filter('fmt_dt')
+def fmt_dt(value):
+    if not value:
+        return '—'
+    try:
+        dt = datetime.strptime(value[:16], '%Y-%m-%d %H:%M')
+    except (ValueError, TypeError):
+        return value
+    return f"{dt.month}月{dt.day}日 {_WEEKDAYS[dt.weekday()]} {dt.hour:02d}:{dt.minute:02d}"
 
 @dashboard_bp.route('/')
 @login_required
@@ -40,10 +55,39 @@ def index():
         (current_user.id,)
     ).fetchone()['count']
 
+    last_week_start = (now - timedelta(days=now.weekday() + 7)).strftime('%Y-%m-%d')
+    last_week_end = (now - timedelta(days=now.weekday() + 1)).strftime('%Y-%m-%d')
+    last_week_count = db.execute(
+        "SELECT COUNT(*) FROM appointments WHERE business_id=%s AND status='confirmed' "
+        "AND appointment_dt >= %s AND appointment_dt <= %s",
+        (current_user.id, last_week_start, last_week_end + ' 23:59')
+    ).fetchone()['count']
+
+    peak = db.execute(
+        "SELECT SUBSTRING(appointment_dt, 12, 2) AS hh, COUNT(*) AS c "
+        "FROM appointments WHERE business_id=%s AND status='confirmed' "
+        "GROUP BY hh ORDER BY c DESC LIMIT 1",
+        (current_user.id,)
+    ).fetchone()
     db.close()
+
+    delta = week_count - last_week_count
+    if week_count == 0:
+        insight = '本周还没有预约，分享你的预约页拉几个客人吧。'
+    elif last_week_count == 0:
+        insight = f'本周已经有 {week_count} 个预约。'
+    elif delta > 0:
+        insight = f'本周比上周多了 {delta} 个预约，势头不错。'
+    elif delta < 0:
+        insight = f'本周比上周少了 {-delta} 个预约，可以推一波老客户。'
+    else:
+        insight = f'本周和上周一样都是 {week_count} 个预约，很稳。'
+    if peak and peak['hh'] is not None:
+        insight += f" 你的高峰时段在 {int(peak['hh'])} 点。"
+
     return render_template('dashboard/index.html',
         today_apts=today_apts, today_count=len(today_apts),
-        week_count=week_count, total=total, greeting=greeting, now=now)
+        week_count=week_count, total=total, greeting=greeting, now=now, insight=insight)
 
 @dashboard_bp.route('/analytics')
 @login_required
@@ -144,12 +188,27 @@ def services():
     db.close()
     return render_template('dashboard/services.html', services=svcs)
 
+def _parse_duration_range(form):
+    """返回 (blocking_mins, display_min)。最长为主用于排档，最短仅用于显示。"""
+    try:
+        short = int(form.get('duration', 30) or 30)
+    except ValueError:
+        short = 30
+    long_str = (form.get('duration_max', '') or '').strip()
+    try:
+        long_v = int(long_str) if long_str else None
+    except ValueError:
+        long_v = None
+    if long_v and long_v > short:
+        return long_v, short
+    return short, None
+
 @dashboard_bp.route('/services/add', methods=['POST'])
 @login_required
 def add_service():
     name = request.form.get('name', '').strip()
     name_sub = request.form.get('name_sub', '').strip()
-    duration = int(request.form.get('duration', 30))
+    dur_mins, dur_min = _parse_duration_range(request.form)
     price_str = request.form.get('price', '').strip()
     price = float(price_str) if price_str else None
     emoji = request.form.get('emoji', '').strip()
@@ -162,8 +221,8 @@ def add_service():
 
     db = get_db()
     db.execute(
-        'INSERT INTO services (business_id, name, name_sub, duration_mins, price, emoji, buffer_mins, icon_url) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-        (current_user.id, name, name_sub, duration, price, emoji, buffer_mins, icon_url)
+        'INSERT INTO services (business_id, name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins, icon_url) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+        (current_user.id, name, name_sub, dur_mins, dur_min, price, emoji, buffer_mins, icon_url)
     )
     db.commit()
     db.close()
@@ -200,6 +259,30 @@ def update_service_color(svc_id):
     db.close()
     return ('', 204)
 
+@dashboard_bp.route('/services/<int:svc_id>/edit', methods=['POST'])
+@login_required
+def edit_service(svc_id):
+    name = request.form.get('name', '').strip()
+    name_sub = request.form.get('name_sub', '').strip()
+    dur_mins, dur_min = _parse_duration_range(request.form)
+    price_str = request.form.get('price', '').strip()
+    price = float(price_str) if price_str else None
+    emoji = request.form.get('emoji', '').strip()
+    buffer_mins = int(request.form.get('buffer_mins', 0) or 0)
+    if not name:
+        flash('服务名称为必填项。', 'error')
+        return redirect(url_for('dashboard.services'))
+    db = get_db()
+    db.execute(
+        'UPDATE services SET name=%s, name_sub=%s, duration_mins=%s, duration_min_mins=%s, price=%s, emoji=%s, buffer_mins=%s '
+        'WHERE id=%s AND business_id=%s',
+        (name, name_sub, dur_mins, dur_min, price, emoji, buffer_mins, svc_id, current_user.id)
+    )
+    db.commit()
+    db.close()
+    flash('服务已更新。', 'success')
+    return redirect(url_for('dashboard.services'))
+
 @dashboard_bp.route('/services/<int:svc_id>/delete', methods=['POST'])
 @login_required
 def delete_service(svc_id):
@@ -220,7 +303,7 @@ def hours():
         for i, key in enumerate(day_keys):
             open_t = request.form.get(f'{key}_open', '09:00')
             close_t = request.form.get(f'{key}_close', '18:00')
-            closed = 1 if request.form.get(f'{key}_closed') else 0
+            closed = 0 if request.form.get(f'{key}_active') else 1
             db.execute(
                 '''INSERT INTO business_hours (business_id, weekday, open_time, close_time, is_closed)
                    VALUES (%s,%s,%s,%s,%s)
@@ -243,7 +326,8 @@ def hours():
     days = [{'key': day_keys[i], 'name': day_names[i], 'data': hours_map.get(i, {})} for i in range(7)]
     return render_template('dashboard/hours.html', days=days)
 
-PALETTE = ['#C9A84C', '#7A9E7E', '#B0785C', '#6E8CAE', '#A56CA8', '#C97A7A', '#7EA0A8', '#A89A5C']
+PALETTE = ['#C9A84C', '#7A9E7E', '#B0785C', '#6E8CAE', '#A56CA8', '#C97A7A', '#7EA0A8', '#A89A5C',
+           '#D48A4A', '#5C8A6E', '#8A6CA0', '#B85C7A', '#4A7A8A', '#A8785C', '#6E7AA8', '#8AA85C']
 
 def _service_color(svc_id, svc_color):
     if svc_color:
@@ -258,13 +342,16 @@ def calendar():
         'SELECT id, name FROM staff WHERE business_id=%s AND is_active=1 ORDER BY sort_order, id',
         (current_user.id,)
     ).fetchall()
+    service_rows = db.execute(
+        'SELECT id, name, duration_mins FROM services WHERE business_id=%s AND is_active=1 ORDER BY sort_order, id',
+        (current_user.id,)
+    ).fetchall()
     db.close()
-    return render_template('dashboard/calendar.html', staff=staff_rows)
+    return render_template('dashboard/calendar.html', staff=staff_rows, services=service_rows)
 
 @dashboard_bp.route('/calendar/events')
 @login_required
 def calendar_events():
-    from flask import jsonify
     db = get_db()
     rows = db.execute(
         "SELECT a.id, a.customer_name, a.appointment_dt, a.status, a.staff_id, "
@@ -273,6 +360,16 @@ def calendar_events():
         "FROM appointments a JOIN services s ON a.service_id=s.id "
         "LEFT JOIN staff st ON a.staff_id=st.id "
         "WHERE a.business_id=%s AND a.status='confirmed'",
+        (current_user.id,)
+    ).fetchall()
+    blocks = db.execute(
+        "SELECT tb.id, tb.date, tb.start_time, tb.end_time, tb.reason, st.name AS staff_name "
+        "FROM time_blocks tb LEFT JOIN staff st ON tb.staff_id=st.id "
+        "WHERE tb.business_id=%s",
+        (current_user.id,)
+    ).fetchall()
+    blackouts = db.execute(
+        "SELECT start_date, end_date, reason FROM business_blackouts WHERE business_id=%s",
         (current_user.id,)
     ).fetchall()
     db.close()
@@ -285,9 +382,7 @@ def calendar_events():
             continue
         end = start + timedelta(minutes=r['duration_mins'] or 30)
         color = _service_color(r['service_id'], r['service_color'])
-        title = r['service_name']
-        if r['staff_name']:
-            title += f" · {r['staff_name']}"
+        title = r['customer_name'] or '未知客人'
         events.append({
             'id': r['id'],
             'title': title,
@@ -295,12 +390,119 @@ def calendar_events():
             'end': end.strftime('%Y-%m-%dT%H:%M:00'),
             'color': color,
             'extendedProps': {
+                'type': 'appointment',
                 'customer': r['customer_name'],
                 'service': r['service_name'],
                 'staff': r['staff_name'] or '不限员工',
             }
         })
+
+    for b in blocks:
+        label = '🔒 ' + (b['reason'] or '已锁定')
+        if b['staff_name']:
+            label += f"（{b['staff_name']}）"
+        events.append({
+            'id': f"block-{b['id']}",
+            'start': f"{b['date']}T{b['start_time']}:00",
+            'end': f"{b['date']}T{b['end_time']}:00",
+            'color': 'transparent',
+            'textColor': '#5A4E42',
+            'editable': False,
+            'title': label,
+            'extendedProps': {'type': 'block', 'blockId': b['id']},
+        })
+
+    for bo in blackouts:
+        try:
+            end_excl = (datetime.strptime(bo['end_date'], '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+        except Exception:
+            end_excl = bo['end_date']
+        events.append({
+            'start': bo['start_date'],
+            'end': end_excl,
+            'allDay': True,
+            'display': 'background',
+            'color': 'transparent',
+            'title': '🔒 休业 ' + (bo['reason'] or ''),
+            'extendedProps': {'type': 'blackout'},
+        })
+
     return jsonify(events)
+
+@dashboard_bp.route('/calendar/quick_block', methods=['POST'])
+@login_required
+def calendar_quick_block():
+    date = request.form.get('date', '').strip()
+    start_time = request.form.get('start_time', '').strip()
+    end_time = request.form.get('end_time', '').strip()
+    staff_id = request.form.get('staff_id', '').strip() or None
+    reason = request.form.get('reason', '').strip()
+    if not date or not start_time or not end_time or end_time <= start_time:
+        return jsonify({'error': '时间范围无效'}), 400
+    db = get_db()
+    if staff_id:
+        own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, current_user.id)).fetchone()
+        if not own:
+            staff_id = None
+    db.execute(
+        'INSERT INTO time_blocks (business_id, staff_id, date, start_time, end_time, reason) VALUES (%s,%s,%s,%s,%s,%s)',
+        (current_user.id, staff_id, date, start_time, end_time, reason)
+    )
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+@dashboard_bp.route('/calendar/quick_appointment', methods=['POST'])
+@login_required
+def calendar_quick_appointment():
+    service_id = request.form.get('service_id', '').strip()
+    staff_id = request.form.get('staff_id', '').strip() or None
+    name = request.form.get('customer_name', '').strip()
+    phone = request.form.get('phone', '').strip()
+    date = request.form.get('date', '').strip()
+    time_ = request.form.get('time', '').strip()
+    comment = request.form.get('comment', '').strip()
+    if not all([service_id, name, phone, date, time_]):
+        return jsonify({'error': '请填写完整信息'}), 400
+    db = get_db()
+    svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s', (service_id, current_user.id)).fetchone()
+    if not svc:
+        db.close()
+        return jsonify({'error': '服务不存在'}), 404
+    if staff_id:
+        own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, current_user.id)).fetchone()
+        if not own:
+            staff_id = None
+    apt_dt = f'{date} {time_}'
+    from db import upsert_customer
+    customer_id = upsert_customer(db, current_user.id, phone, name)
+    cancel_token = str(uuid.uuid4())
+    db.execute(
+        'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id, customer_id) '
+        'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+        (current_user.id, service_id, name, phone, apt_dt, comment, cancel_token, staff_id, customer_id)
+    )
+    db.commit()
+    db.close()
+
+    try:
+        dt_display = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M').strftime('%Y年%-m月%-d日 %-H:%M')
+    except ValueError:
+        dt_display = apt_dt
+    _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+    cancel_url = f"{_base}/cancel/{cancel_token}"
+    biz_phone = current_user.phone or ''
+    customer_msg = (
+        f"【预约确认】{name}，您在【{current_user.name}】的预约已确认。\n\n"
+        f"服务：{svc['name']}\n"
+        f"时间：{dt_display}\n"
+        + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
+        + f"\n如需取消：{cancel_url}"
+        + "\n或直接回复本短信「取消」"
+    )
+    threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
+
+    return jsonify({'success': True})
 
 @dashboard_bp.route('/appointments')
 @login_required
@@ -372,9 +574,6 @@ def reschedule_appointment(apt_id):
         new_dt = datetime.strptime(new_dt_raw, '%Y-%m-%dT%H:%M')
     except ValueError:
         flash('日期格式无效。', 'error')
-        return redirect(url_for('dashboard.appointments'))
-    if new_dt <= datetime.now():
-        flash('改期时间不能是过去时间。', 'error')
         return redirect(url_for('dashboard.appointments'))
     new_dt_str = new_dt.strftime('%Y-%m-%d %H:%M')
     db = get_db()
@@ -536,6 +735,89 @@ def customers():
     db.close()
     return render_template('dashboard/customers.html', customers=rows)
 
+@dashboard_bp.route('/customers/add', methods=['POST'])
+@login_required
+def add_customer():
+    from db import upsert_customer
+    name = request.form.get('name', '').strip()
+    phone = request.form.get('phone', '').strip()
+    preferences = request.form.get('preferences', '').strip()
+    private_note = request.form.get('private_note', '').strip()
+    balance = request.form.get('balance', '').strip()
+    if not name or not phone:
+        flash('姓名和手机号必填。', 'error')
+        return redirect(url_for('dashboard.customers'))
+    db = get_db()
+    existing = db.execute('SELECT id FROM customers WHERE business_id=%s AND phone=%s', (current_user.id, phone)).fetchone()
+    if existing:
+        db.close()
+        flash('该手机号已有客户档案。', 'error')
+        return redirect(url_for('dashboard.customer_detail', cid=existing['id']))
+    cid = upsert_customer(db, current_user.id, phone, name)
+    try:
+        balance_val = int(balance) if balance else 0
+    except ValueError:
+        balance_val = 0
+    db.execute(
+        'UPDATE customers SET preferences=%s, private_note=%s, balance=%s WHERE id=%s',
+        (preferences, private_note, balance_val, cid)
+    )
+    if balance_val:
+        db.execute('INSERT INTO balance_transactions (customer_id, delta, reason) VALUES (%s,%s,%s)',
+                   (cid, balance_val, '建档初始余额'))
+    db.commit()
+    db.close()
+    flash('客户已添加。', 'success')
+    return redirect(url_for('dashboard.customer_detail', cid=cid))
+
+@dashboard_bp.route('/customers/import', methods=['POST'])
+@login_required
+def import_customers():
+    from db import upsert_customer
+    file = request.files.get('csv_file')
+    if not file or not file.filename:
+        flash('请选择要上传的 CSV 文件。', 'error')
+        return redirect(url_for('dashboard.customers'))
+    try:
+        content = file.stream.read().decode('utf-8-sig')
+    except UnicodeDecodeError:
+        flash('文件编码无法识别，请存成 UTF-8 格式的 CSV。', 'error')
+        return redirect(url_for('dashboard.customers'))
+    rows = list(csv.reader(io.StringIO(content)))
+    if rows and rows[0] and not any(ch.isdigit() for ch in rows[0][1] if len(rows[0]) > 1):
+        rows = rows[1:]
+    db = get_db()
+    added, updated, skipped = 0, 0, 0
+    for row in rows:
+        row = [c.strip() for c in row]
+        if len(row) < 2 or not row[1]:
+            skipped += 1
+            continue
+        name = row[0]
+        phone = row[1]
+        preferences = row[2] if len(row) > 2 else ''
+        try:
+            balance_val = int(row[3]) if len(row) > 3 and row[3] else 0
+        except ValueError:
+            balance_val = 0
+        existing = db.execute('SELECT id FROM customers WHERE business_id=%s AND phone=%s', (current_user.id, phone)).fetchone()
+        cid = upsert_customer(db, current_user.id, phone, name)
+        db.execute(
+            'UPDATE customers SET preferences=%s, balance=%s WHERE id=%s',
+            (preferences, balance_val, cid)
+        )
+        if existing:
+            updated += 1
+        else:
+            added += 1
+            if balance_val:
+                db.execute('INSERT INTO balance_transactions (customer_id, delta, reason) VALUES (%s,%s,%s)',
+                           (cid, balance_val, '导入建档初始余额'))
+    db.commit()
+    db.close()
+    flash(f'导入完成：新增 {added} 位，更新 {updated} 位，跳过 {skipped} 行无效数据。', 'success')
+    return redirect(url_for('dashboard.customers'))
+
 @dashboard_bp.route('/customers/<int:cid>')
 @login_required
 def customer_detail(cid):
@@ -564,17 +846,46 @@ def customer_detail(cid):
 @dashboard_bp.route('/customers/<int:cid>/profile', methods=['POST'])
 @login_required
 def customer_update_profile(cid):
+    name = request.form.get('name', '').strip()
+    phone = request.form.get('phone', '').strip()
     preferences = request.form.get('preferences', '').strip()
     private_note = request.form.get('private_note', '').strip()
     db = get_db()
+    if phone:
+        clash = db.execute(
+            'SELECT id FROM customers WHERE business_id=%s AND phone=%s AND id!=%s',
+            (current_user.id, phone, cid)
+        ).fetchone()
+        if clash:
+            db.close()
+            flash('该手机号已被其他客户占用。', 'error')
+            return redirect(url_for('dashboard.customer_detail', cid=cid))
     db.execute(
-        'UPDATE customers SET preferences=%s, private_note=%s WHERE id=%s AND business_id=%s',
-        (preferences, private_note, cid, current_user.id)
+        'UPDATE customers SET name=%s, phone=%s, preferences=%s, private_note=%s WHERE id=%s AND business_id=%s',
+        (name, phone, preferences, private_note, cid, current_user.id)
     )
     db.commit()
     db.close()
     flash('客户档案已保存。', 'success')
     return redirect(url_for('dashboard.customer_detail', cid=cid))
+
+@dashboard_bp.route('/customers/<int:cid>/delete', methods=['POST'])
+@login_required
+def customer_delete(cid):
+    db = get_db()
+    own = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+    if not own:
+        db.close()
+        flash('未找到该客户。', 'error')
+        return redirect(url_for('dashboard.customers'))
+    db.execute('DELETE FROM customer_photos WHERE customer_id=%s', (cid,))
+    db.execute('DELETE FROM balance_transactions WHERE customer_id=%s', (cid,))
+    db.execute('UPDATE appointments SET customer_id=NULL WHERE customer_id=%s AND business_id=%s', (cid, current_user.id))
+    db.execute('DELETE FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id))
+    db.commit()
+    db.close()
+    flash('客户档案已删除。', 'success')
+    return redirect(url_for('dashboard.customers'))
 
 @dashboard_bp.route('/customers/<int:cid>/avatar', methods=['POST'])
 @login_required
@@ -685,10 +996,26 @@ def settings():
             flash('设置已保存。', 'success')
 
     biz = db.execute('SELECT * FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
+    if not biz['calendar_token']:
+        token = uuid.uuid4().hex
+        db.execute('UPDATE businesses SET calendar_token=%s WHERE id=%s', (token, current_user.id))
+        db.commit()
+        biz = db.execute('SELECT * FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
     db.close()
     from flask import url_for
     booking_url = url_for('booking.book_page', slug=biz['slug'], _external=True)
-    return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url, categories=CATEGORIES)
+    calendar_url = url_for('booking.calendar_feed', token=biz['calendar_token'], _external=True)
+    return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url, calendar_url=calendar_url, categories=CATEGORIES)
+
+@dashboard_bp.route('/settings/calendar_token/regenerate', methods=['POST'])
+@login_required
+def regenerate_calendar_token():
+    db = get_db()
+    db.execute('UPDATE businesses SET calendar_token=%s WHERE id=%s', (uuid.uuid4().hex, current_user.id))
+    db.commit()
+    db.close()
+    flash('订阅链接已重新生成，之前的链接会失效。', 'success')
+    return redirect(url_for('dashboard.settings'))
 
 @dashboard_bp.route('/feedback', methods=['GET', 'POST'])
 @login_required
@@ -843,7 +1170,7 @@ def staff_hours(sid):
     for i, key in enumerate(STAFF_DAY_KEYS):
         open_t = request.form.get(f'{key}_open', '09:00')
         close_t = request.form.get(f'{key}_close', '18:00')
-        closed = 1 if request.form.get(f'{key}_closed') else 0
+        closed = 0 if request.form.get(f'{key}_active') else 1
         db.execute(
             '''INSERT INTO staff_hours (staff_id, weekday, open_time, close_time, is_closed)
                VALUES (%s,%s,%s,%s,%s)

@@ -2,7 +2,13 @@
 {% block title %}{{ c.name or '客户' }} — 客户档案{% endblock %}
 {% block content %}
 
-<a href="{{ url_for('dashboard.customers') }}" style="color:var(--muted);font-size:13px;text-decoration:none">← 返回客户列表</a>
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <a href="{{ url_for('dashboard.customers') }}" style="color:var(--muted);font-size:13px;text-decoration:none">← 返回客户列表</a>
+  <form method="POST" action="{{ url_for('dashboard.customer_delete', cid=c.id) }}" onsubmit="return confirm('确认删除该客户档案？照片、储值流水会一并删除，历史预约会保留但不再关联此客户。')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer">删除客户</button>
+  </form>
+</div>
 
 <div class="cust-head" style="display:flex;align-items:center;gap:16px;margin:14px 0 24px">
   {% if c.avatar_url %}
@@ -20,13 +26,23 @@
   </div>
 </div>
 
-<div class="cust-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div class="cust-grid">
 
   <!-- Profile -->
   <div class="add-service-form">
     <h2>客户档案</h2>
     <form method="POST" action="{{ url_for('dashboard.customer_update_profile', cid=c.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div style="flex:1">
+          <span class="btn-label">姓名</span>
+          <input class="dash-input" type="text" name="name" value="{{ c.name or '' }}" placeholder="客人姓名">
+        </div>
+        <div style="flex:1">
+          <span class="btn-label">手机号</span>
+          <input class="dash-input" type="text" name="phone" value="{{ c.phone or '' }}" placeholder="手机号">
+        </div>
+      </div>
       <span class="btn-label">客户可见偏好（客户自己也能看到/编辑）</span>
       <textarea class="dash-input" name="preferences" rows="2" placeholder="例：37分/6度发色，喜欢偏软的烫发">{{ c.preferences or '' }}</textarea>
       <span class="btn-label" style="margin-top:10px;display:block">隐形备注（仅商家可见，客户看不到）</span>
@@ -102,7 +118,7 @@
     <tbody>
       {% for v in visits %}
       <tr>
-        <td>{{ v.appointment_dt }}</td>
+        <td style="white-space:nowrap">{{ v.appointment_dt|fmt_dt }}</td>
         <td>{{ v.service_name }}</td>
         <td>{% if v.status == 'confirmed' %}<span class="badge" style="background:var(--green);color:white">已确认</span>{% else %}<span class="badge" style="background:#eee;color:#888">已取消</span>{% endif %}</td>
         <td style="color:#555;font-size:13px">{{ v.comment or '—' }}</td>

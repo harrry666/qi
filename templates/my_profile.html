@@ -43,9 +43,11 @@
   </div>
 
   <div class="my-card">
-    <h2>我的偏好</h2>
+    <h2>我的资料</h2>
     <form method="POST" action="{{ url_for('booking.my_profile_update', token=c.profile_token) }}">
-      <input class="book-input" type="text" name="name" value="{{ c.name or '' }}" placeholder="你的称呼" style="margin-bottom:10px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">称呼</label>
+      <input class="book-input" type="text" name="name" value="{{ c.name or '' }}" placeholder="你的称呼" style="margin-bottom:12px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">偏好备注</label>
       <textarea class="book-input" name="preferences" rows="3" placeholder="例：37分/6度发色，喜欢偏软的烫发">{{ c.preferences or '' }}</textarea>
       <button type="submit" class="btn-primary" style="width:auto;padding:9px 22px;margin-top:8px">保存</button>
     </form>

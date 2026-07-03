@@ -127,9 +127,9 @@
         <div class="hours-row">
           <div class="hours-day">{{ day.name }}</div>
           <label class="hours-closed-wrap">
-            <input type="checkbox" name="{{ day.key }}_closed" {% if hd.get('is_closed') %}checked{% endif %}
+            <input type="checkbox" name="{{ day.key }}_active" {% if not hd.get('is_closed') %}checked{% endif %}
                    onchange="toggleStaffDay('{{ s.id }}-{{ day.key }}', this.checked)">
-            休息
+            营业
           </label>
           <div class="time-range" id="range-{{ s.id }}-{{ day.key }}"
                {% if hd.get('is_closed') %}style="opacity:0.3;pointer-events:none"{% endif %}>
@@ -165,10 +165,10 @@ function staffPanel(id, btn) {
     if (btn) btn.classList.add('active');
   }
 }
-function toggleStaffDay(key, closed) {
+function toggleStaffDay(key, isOpen) {
   const el = document.getElementById('range-' + key);
-  el.style.opacity = closed ? '0.3' : '1';
-  el.style.pointerEvents = closed ? 'none' : '';
+  el.style.opacity = isOpen ? '1' : '0.3';
+  el.style.pointerEvents = isOpen ? '' : 'none';
 }
 </script>
 

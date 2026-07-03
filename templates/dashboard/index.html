@@ -25,6 +25,10 @@
   </div>
 </div>
 
+{% if insight %}
+<div class="dash-insight">💡 {{ insight }}</div>
+{% endif %}
+
 <div class="quick-actions">
   <a href="{{ url_for('booking.book_page', slug=current_user.slug) }}" target="_blank" class="quick-btn">👀 查看我的预约页</a>
   <a href="{{ url_for('dashboard.appointments') }}" class="quick-btn quick-btn-outline">📋 全部预约</a>

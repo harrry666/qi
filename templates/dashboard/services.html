@@ -22,6 +22,10 @@
         <input class="dash-input" type="number" name="duration" value="30" min="5" step="5">
       </div>
       <div>
+        <span class="btn-label">最长耗时（分钟，选填）</span>
+        <input class="dash-input" type="number" name="duration_max" placeholder="如 50" min="5" step="5">
+      </div>
+      <div>
         <span class="btn-label">价格（$，选填）</span>
         <input class="dash-input" type="number" name="price" placeholder="例：20" min="0" step="0.01">
       </div>
@@ -59,7 +63,8 @@
   </thead>
   <tbody>
     {% for s in services %}
-    {% set palette = ['#C9A84C', '#7A9E7E', '#B0785C', '#6E8CAE', '#A56CA8', '#C97A7A', '#7EA0A8', '#A89A5C'] %}
+    {% set palette = ['#C9A84C', '#7A9E7E', '#B0785C', '#6E8CAE', '#A56CA8', '#C97A7A', '#7EA0A8', '#A89A5C',
+                      '#D48A4A', '#5C8A6E', '#8A6CA0', '#B85C7A', '#4A7A8A', '#A8785C', '#6E7AA8', '#8AA85C'] %}
     <tr>
       <td class="svc-emoji-cell">
         {% if s.icon_url and s.icon_url.startswith('http') %}
@@ -71,28 +76,82 @@
       <td>
         <div class="svc-name">{{ s.name }}</div>
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}
-        <form method="POST" action="{{ url_for('dashboard.update_service_icon', svc_id=s.id) }}" enctype="multipart/form-data" style="margin-top:6px;display:flex;align-items:center;gap:6px">
+        <form method="POST" action="{{ url_for('dashboard.update_service_icon', svc_id=s.id) }}" enctype="multipart/form-data" style="margin-top:8px">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="file" name="icon_image" accept="image/*" style="font-size:11px;max-width:140px" data-crop data-crop-ratio="1" data-out-w="200" data-out-h="200">
-          <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">上传</button>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">自定义图标（选填，替换左侧「图标」列）</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="file" name="icon_image" accept="image/*" style="font-size:11px;max-width:140px" data-crop data-crop-ratio="1" data-out-w="200" data-out-h="200">
+            <button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">上传</button>
+          </div>
         </form>
       </td>
       <td>
         <div class="color-swatches" data-svc="{{ s.id }}" style="display:flex;gap:5px;flex-wrap:wrap;max-width:130px">
           {% for col in palette %}
-          <button type="button" class="color-swatch {% if (s.color or palette[s.id % 8]) == col %}active{% endif %}"
-                  style="width:18px;height:18px;border-radius:50%;background:{{ col }};border:2px solid {% if (s.color or palette[s.id % 8]) == col %}var(--text){% else %}transparent{% endif %};cursor:pointer;padding:0"
+          <button type="button" class="color-swatch {% if (s.color or palette[s.id % palette|length]) == col %}active{% endif %}"
+                  style="width:18px;height:18px;border-radius:50%;background:{{ col }};border:2px solid {% if (s.color or palette[s.id % palette|length]) == col %}var(--text){% else %}transparent{% endif %};cursor:pointer;padding:0"
                   onclick="setServiceColor({{ s.id }}, '{{ col }}', this)"></button>
           {% endfor %}
+          <span class="color-swatch-custom-wrap" style="position:relative;width:18px;height:18px;border-radius:50%;display:inline-block;cursor:pointer;
+                background-image:linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%);
+                background-size:6px 6px;background-position:0 0,0 3px,3px -3px,-3px 0px;background-color:#fff">
+            <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;pointer-events:none">✏️</span>
+            <input type="color" class="color-swatch-custom" title="自定义颜色"
+                   value="{{ s.color or palette[s.id % palette|length] }}"
+                   style="position:absolute;inset:0;width:100%;height:100%;border:2px solid transparent;border-radius:50%;padding:0;cursor:pointer;opacity:0"
+                   oninput="setServiceColor({{ s.id }}, this.value, this, true)">
+          </span>
         </div>
       </td>
-      <td>{{ s.duration_mins }} 分钟</td>
+      <td style="white-space:nowrap">{% if s.duration_min_mins %}{{ s.duration_min_mins }}-{{ s.duration_mins }}{% else %}{{ s.duration_mins }}{% endif %} 分钟</td>
       <td>{% if s.buffer_mins %}{{ s.buffer_mins }} 分{% else %}—{% endif %}</td>
       <td>{% if s.price %}${{ s.price|int }}{% else %}—{% endif %}</td>
-      <td>
-        <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('确认删除此服务？')">
+      <td style="white-space:nowrap">
+        <button type="button" class="btn-reschedule" onclick="toggleSvcEdit({{ s.id }})">编辑</button>
+        <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('确认删除此服务？')" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn-delete">删除</button>
+        </form>
+      </td>
+    </tr>
+    <tr id="svc-edit-{{ s.id }}" class="expand-row" style="display:none">
+      <td colspan="7">
+        <form method="POST" action="{{ url_for('dashboard.edit_service', svc_id=s.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="svc-form-grid">
+            <div class="svc-col-2">
+              <span class="btn-label">服务名称 *</span>
+              <input class="dash-input" type="text" name="name" value="{{ s.name }}" required>
+            </div>
+            <div class="svc-col-2">
+              <span class="btn-label">副标题</span>
+              <input class="dash-input" type="text" name="name_sub" value="{{ s.name_sub or '' }}">
+            </div>
+            <div>
+              <span class="btn-label">时长（分钟）</span>
+              <input class="dash-input" type="number" name="duration" value="{{ s.duration_min_mins or s.duration_mins }}" min="5" step="5">
+            </div>
+            <div>
+              <span class="btn-label">最长耗时（分钟，选填）</span>
+              <input class="dash-input" type="number" name="duration_max" value="{{ s.duration_mins if s.duration_min_mins else '' }}" placeholder="如 50" min="5" step="5">
+            </div>
+            <div>
+              <span class="btn-label">价格（$）</span>
+              <input class="dash-input" type="number" name="price" value="{{ s.price|int if s.price else '' }}" min="0" step="0.01">
+            </div>
+            <div>
+              <span class="btn-label">缓冲（分钟）</span>
+              <input class="dash-input" type="number" name="buffer_mins" value="{{ s.buffer_mins }}" min="0" step="5">
+            </div>
+            <div>
+              <span class="btn-label">图标 Emoji</span>
+              <input class="dash-input" type="text" name="emoji" value="{{ s.emoji or '' }}" style="font-size:20px">
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button type="submit" class="btn-add" style="width:auto;padding:9px 24px">保存修改</button>
+            <button type="button" onclick="toggleSvcEdit({{ s.id }})" style="padding:9px 20px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer">取消</button>
+          </div>
         </form>
       </td>
     </tr>
@@ -104,17 +163,27 @@
 {% endif %}
 
 <script>
-function setServiceColor(svcId, color, btn) {
+function toggleSvcEdit(id) {
+  var row = document.getElementById('svc-edit-' + id);
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+function setServiceColor(svcId, color, el, isCustom) {
   const fd = new FormData();
   fd.append('color', color);
   fetch('/dashboard/services/' + svcId + '/color', { method: 'POST', body: fd })
     .then(function() {
-      btn.closest('.color-swatches').querySelectorAll('.color-swatch').forEach(function(b) {
+      const wrap = el.closest('.color-swatches');
+      wrap.querySelectorAll('.color-swatch').forEach(function(b) {
         b.classList.remove('active');
         b.style.borderColor = 'transparent';
       });
-      btn.classList.add('active');
-      btn.style.borderColor = 'var(--text)';
+      wrap.querySelector('.color-swatch-custom-wrap').style.outline = 'none';
+      if (isCustom) {
+        el.closest('.color-swatch-custom-wrap').style.outline = '2px solid var(--text)';
+      } else {
+        el.classList.add('active');
+        el.style.borderColor = 'var(--text)';
+      }
     });
 }
 </script>

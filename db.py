@@ -164,6 +164,7 @@ def init_db():
             reason TEXT DEFAULT ''
         )''',
         'ALTER TABLE services ADD COLUMN IF NOT EXISTS color TEXT DEFAULT \'\'',
+        'ALTER TABLE services ADD COLUMN IF NOT EXISTS duration_min_mins INTEGER',
         '''CREATE TABLE IF NOT EXISTS customers (
             id SERIAL PRIMARY KEY,
             business_id INTEGER NOT NULL,
@@ -195,6 +196,7 @@ def init_db():
         )''',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_id INTEGER',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS support_contact TEXT DEFAULT \'\'',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS calendar_token TEXT',
         '''CREATE TABLE IF NOT EXISTS platform_feedback (
             id SERIAL PRIMARY KEY,
             source TEXT NOT NULL DEFAULT 'customer',

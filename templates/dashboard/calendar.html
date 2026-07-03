@@ -1,10 +1,25 @@
 {% extends 'dashboard/layout.html' %}
 {% block title %}日程日历{% endblock %}
 {% block content %}
+<style>
+  /* 时段锁定 + 休业：透明底 + 深棕斜线，商家主动标记不可用 */
+  .fc-event.fc-block-locked,
+  .fc-bg-event.fc-blackout {
+    background: repeating-linear-gradient(45deg, rgba(139,122,106,0.12), rgba(139,122,106,0.12) 5px, rgba(139,122,106,0.42) 5px, rgba(139,122,106,0.42) 10px) !important;
+    border: 1px solid rgba(139,122,106,0.55) !important; opacity: 1;
+  }
+  .fc-block-locked .fc-event-main,
+  .fc-block-locked .fc-event-title,
+  .fc-block-locked .fc-event-time { color: #5A4E42 !important; font-weight: 700; }
+  .fc-bg-event.fc-blackout .fc-event-title { color: #5A4E42; font-weight: 700; padding: 4px 6px; }
+  .fc-legend-chip { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); }
+  /* "今天"高亮：默认刺眼黄，换成淡暖金 */
+  .fc .fc-day-today { background: rgba(201, 168, 76, 0.07) !important; }
+</style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
   <div>
     <h1 style="font-size:24px;font-weight:800;color:var(--text);margin:0">🗓️ 日程日历</h1>
-    <p style="color:var(--muted);font-size:14px;margin:4px 0 0">按周查看预约，颜色对应服务项目</p>
+    <p style="color:var(--muted);font-size:14px;margin:4px 0 0">按周查看预约，颜色对应服务项目。深棕斜纹=已锁定/休业（点它可解锁）。点空白时段可锁定或加预约，点预约可取消/改期。</p>
   </div>
   <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap" id="legend"></div>
 </div>
@@ -18,30 +33,183 @@
   <div style="background:white;border-radius:16px;padding:24px;width:90%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
     <div id="apt-modal-title" style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:12px"></div>
     <div id="apt-modal-body" style="font-size:14px;color:var(--muted);line-height:1.9"></div>
-    <div style="text-align:right;margin-top:16px">
+
+    <div id="apt-reschedule-box" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">新时间</label>
+      <input type="datetime-local" id="apt-new-dt" class="dash-input" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button onclick="document.getElementById('apt-reschedule-box').style.display='none'" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:13px">取消</button>
+        <button id="apt-reschedule-save-btn" style="padding:6px 14px;border:none;border-radius:8px;background:var(--gold);color:white;cursor:pointer;font-size:13px;font-weight:600">保存新时间</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
+      <button id="apt-modal-reschedule-btn" style="padding:8px 18px;border:1px solid var(--gold-border);color:var(--gold-h);border-radius:8px;background:white;cursor:pointer;font-size:14px">✏️ 改期</button>
+      <button id="apt-modal-cancel-btn" style="padding:8px 18px;border:1px solid var(--red);color:var(--red);border-radius:8px;background:white;cursor:pointer;font-size:14px">取消预约</button>
       <button onclick="document.getElementById('apt-modal').style.display='none'" style="padding:8px 18px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">关闭</button>
     </div>
   </div>
 </div>
 
+<!-- Empty slot modal -->
+<div id="slot-modal" style="display:none;position:fixed;inset:0;background:rgba(26,18,9,0.45);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:24px;width:90%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div id="slot-modal-title" style="font-size:17px;font-weight:800;color:var(--text)"></div>
+      <button onclick="closeSlotModal()" style="border:none;background:none;cursor:pointer;font-size:20px;color:var(--muted);line-height:1;padding:0 2px">×</button>
+    </div>
+
+    <div id="slot-actions" style="display:flex;gap:10px">
+      <button onclick="showSlotForm('block')" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:14px;font-weight:600">🚫 标记不可用</button>
+      <button onclick="showSlotForm('appointment')" style="flex:1;padding:12px;border:1px solid var(--gold-border);border-radius:10px;background:var(--gold-light);cursor:pointer;font-size:14px;font-weight:600;color:var(--gold-h)">➕ 添加预约</button>
+    </div>
+
+    <form id="slot-block-form" style="display:none;margin-top:4px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">结束时间</label>
+      <input type="time" id="block-end-time" class="dash-input" style="margin-bottom:10px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">员工（不选=整店锁定）</label>
+      <select id="block-staff" class="dash-input" style="margin-bottom:10px">
+        <option value="">整店</option>
+        {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
+      </select>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">原因（选填）</label>
+      <input type="text" id="block-reason" class="dash-input" placeholder="例：休息、外出" style="margin-bottom:14px">
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" onclick="closeSlotModal()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">取消</button>
+        <button type="button" onclick="submitBlock()" style="padding:8px 16px;border:none;border-radius:8px;background:var(--gold);color:white;cursor:pointer;font-size:14px;font-weight:600">确认锁定</button>
+      </div>
+    </form>
+
+    <form id="slot-appointment-form" style="display:none;margin-top:4px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">服务</label>
+      <select id="apt-service" class="dash-input" style="margin-bottom:10px">
+        {% for sv in services %}<option value="{{ sv.id }}">{{ sv.name }}</option>{% endfor %}
+      </select>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">员工（不选=自动分配）</label>
+      <select id="apt-staff" class="dash-input" style="margin-bottom:10px">
+        <option value="">不限</option>
+        {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
+      </select>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">客人姓名</label>
+      <input type="text" id="apt-name" class="dash-input" style="margin-bottom:10px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">手机号</label>
+      <input type="text" id="apt-phone" class="dash-input" style="margin-bottom:10px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">备注（选填）</label>
+      <input type="text" id="apt-comment" class="dash-input" style="margin-bottom:14px">
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" onclick="closeSlotModal()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">取消</button>
+        <button type="button" onclick="submitAppointment()" style="padding:8px 16px;border:none;border-radius:8px;background:var(--gold);color:white;cursor:pointer;font-size:14px;font-weight:600">确认添加</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='vendor/fullcalendar.min.js') }}"></script>
 <script>
+var calendar;
+var slotState = { date: '', time: '' };
+var activeAptId = null;
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function toLocalInputValue(d) {
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+
+function rescheduleAppointment(id, newDtValue, onDone, onFail) {
+  var fd = new FormData();
+  fd.append('new_dt', newDtValue);
+  fetch('/dashboard/appointments/' + id + '/reschedule', { method: 'POST', body: fd })
+    .then(function(r) { if (onDone) onDone(r); })
+    .catch(function() { if (onFail) onFail(); });
+}
+
+function closeSlotModal() {
+  document.getElementById('slot-modal').style.display = 'none';
+  document.getElementById('slot-actions').style.display = 'flex';
+  document.getElementById('slot-block-form').style.display = 'none';
+  document.getElementById('slot-appointment-form').style.display = 'none';
+}
+
+function showSlotForm(kind) {
+  document.getElementById('slot-actions').style.display = 'none';
+  if (kind === 'block') {
+    var end = new Date(slotState.date + 'T' + slotState.time);
+    end.setMinutes(end.getMinutes() + 30);
+    document.getElementById('block-end-time').value = end.toTimeString().slice(0, 5);
+    document.getElementById('slot-block-form').style.display = 'block';
+  } else {
+    document.getElementById('slot-appointment-form').style.display = 'block';
+  }
+}
+
+function submitBlock() {
+  var fd = new FormData();
+  fd.append('date', slotState.date);
+  fd.append('start_time', slotState.time);
+  fd.append('end_time', document.getElementById('block-end-time').value);
+  fd.append('staff_id', document.getElementById('block-staff').value);
+  fd.append('reason', document.getElementById('block-reason').value);
+  fetch('{{ url_for("dashboard.calendar_quick_block") }}', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { alert(data.error); return; }
+      closeSlotModal();
+      calendar.refetchEvents();
+    });
+}
+
+function submitAppointment() {
+  var name = document.getElementById('apt-name').value.trim();
+  var phone = document.getElementById('apt-phone').value.trim();
+  if (!name || !phone) { alert('请填写客人姓名和手机号'); return; }
+  var fd = new FormData();
+  fd.append('service_id', document.getElementById('apt-service').value);
+  fd.append('staff_id', document.getElementById('apt-staff').value);
+  fd.append('customer_name', name);
+  fd.append('phone', phone);
+  fd.append('date', slotState.date);
+  fd.append('time', slotState.time);
+  fd.append('comment', document.getElementById('apt-comment').value);
+  fetch('{{ url_for("dashboard.calendar_quick_appointment") }}', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { alert(data.error); return; }
+      closeSlotModal();
+      document.getElementById('apt-name').value = '';
+      document.getElementById('apt-phone').value = '';
+      document.getElementById('apt-comment').value = '';
+      calendar.refetchEvents();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   var calEl = document.getElementById('cal');
-  var calendar = new FullCalendar.Calendar(calEl, {
-    initialView: 'timeGridWeek',
+  var isMobile = window.matchMedia('(max-width: 768px)').matches;
+  calendar = new FullCalendar.Calendar(calEl, {
+    initialView: isMobile ? 'timeGridDay' : 'timeGridWeek',
     height: 'auto',
     locale: 'zh-cn',
     firstDay: 1,
     slotMinTime: '08:00:00',
     slotMaxTime: '21:00:00',
     nowIndicator: true,
-    headerToolbar: {
+    selectable: true,
+    headerToolbar: isMobile ? {
+      left: 'prev,next',
+      center: 'title',
+      right: 'timeGridDay,timeGridWeek'
+    } : {
       left: 'prev,next today',
       center: 'title',
       right: 'timeGridWeek,timeGridDay,dayGridMonth'
     },
     buttonText: { today: '今天', week: '周', day: '日', month: '月' },
+    eventClassNames: function(arg) {
+      var t = arg.event.extendedProps.type;
+      if (t === 'block') return ['fc-block-locked'];
+      if (t === 'blackout') return ['fc-blackout'];
+      return [];
+    },
     events: '{{ url_for("dashboard.calendar_events") }}',
     eventDidMount: function(info) {
       var legend = document.getElementById('legend');
@@ -54,17 +222,70 @@ document.addEventListener('DOMContentLoaded', function() {
         legend.appendChild(chip);
       }
     },
+    editable: true,
+    eventStartEditable: true,
+    eventDurationEditable: false,
+    eventDrop: function(info) {
+      rescheduleAppointment(info.event.id, toLocalInputValue(info.event.start), function(r) {
+        if (!r.ok) { info.revert(); alert('改期失败，请重试。'); }
+      }, function() { info.revert(); alert('改期失败，请重试。'); });
+    },
     eventClick: function(info) {
       var p = info.event.extendedProps;
+      if (p.type === 'block') {
+        if (confirm('解锁这个时段？解锁后客人又可以预约了。')) {
+          fetch('/dashboard/blocks/' + p.blockId + '/delete', { method: 'POST' })
+            .then(function() { calendar.refetchEvents(); });
+        }
+        return;
+      }
+      if (p.type !== 'appointment') return;
+      activeAptId = info.event.id;
+      document.getElementById('apt-reschedule-box').style.display = 'none';
+      document.getElementById('apt-new-dt').value = toLocalInputValue(info.event.start);
       document.getElementById('apt-modal-title').textContent = p.customer;
       document.getElementById('apt-modal-body').innerHTML =
         '服务：' + p.service + '<br>' +
         '员工：' + p.staff + '<br>' +
         '时间：' + info.event.start.toLocaleString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
       document.getElementById('apt-modal').style.display = 'flex';
+    },
+    dateClick: function(info) {
+      var d = info.date;
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      slotState.date = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      slotState.time = pad(d.getHours()) + ':' + pad(d.getMinutes());
+      document.getElementById('slot-modal-title').textContent =
+        d.toLocaleDateString('zh-CN', {month:'numeric', day:'numeric', weekday:'short'}) + ' ' + slotState.time;
+      document.getElementById('slot-modal').style.display = 'flex';
     }
   });
   calendar.render();
+
+  document.getElementById('apt-modal-cancel-btn').addEventListener('click', function() {
+    if (!activeAptId) return;
+    if (!confirm('确认取消这条预约？会通知客人。')) return;
+    fetch('/dashboard/appointments/' + activeAptId + '/cancel', { method: 'POST' })
+      .then(function() {
+        document.getElementById('apt-modal').style.display = 'none';
+        calendar.refetchEvents();
+      });
+  });
+
+  document.getElementById('apt-modal-reschedule-btn').addEventListener('click', function() {
+    document.getElementById('apt-reschedule-box').style.display = 'block';
+  });
+
+  document.getElementById('apt-reschedule-save-btn').addEventListener('click', function() {
+    if (!activeAptId) return;
+    var newDt = document.getElementById('apt-new-dt').value;
+    if (!newDt) { alert('请选择新时间'); return; }
+    rescheduleAppointment(activeAptId, newDt, function(r) {
+      if (!r.ok) { alert('改期失败，请重试。'); return; }
+      document.getElementById('apt-modal').style.display = 'none';
+      calendar.refetchEvents();
+    }, function() { alert('改期失败，请重试。'); });
+  });
 });
 </script>
 {% endblock %}

@@ -11,9 +11,9 @@
     <div class="hours-row">
       <div class="hours-day">{{ day.name }}</div>
       <label class="hours-closed-wrap">
-        <input type="checkbox" name="{{ day.key }}_closed" {% if day.data.get('is_closed') %}checked{% endif %}
+        <input type="checkbox" name="{{ day.key }}_active" {% if not day.data.get('is_closed') %}checked{% endif %}
                onchange="toggleDay('{{ day.key }}', this.checked)">
-        休息
+        营业
       </label>
       <div class="time-range" id="range-{{ day.key }}" {% if day.data.get('is_closed') %}style="opacity:0.3;pointer-events:none"{% endif %}>
         <input class="dash-input" type="time" name="{{ day.key }}_open"
@@ -29,10 +29,10 @@
 </div>
 
 <script>
-function toggleDay(key, closed) {
+function toggleDay(key, isOpen) {
   const el = document.getElementById('range-' + key);
-  el.style.opacity = closed ? '0.3' : '1';
-  el.style.pointerEvents = closed ? 'none' : '';
+  el.style.opacity = isOpen ? '1' : '0.3';
+  el.style.pointerEvents = isOpen ? '' : 'none';
 }
 </script>
 

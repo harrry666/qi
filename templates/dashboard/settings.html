@@ -26,7 +26,7 @@
     <label class="dash-label">简介</label>
     <textarea class="dash-input dash-textarea" name="description" placeholder="在预约页面显示的简介">{{ biz.description or '' }}</textarea>
 
-    <label class="dash-label">客服联系方式 <span style="color:#555;font-weight:400;font-size:12px">（微信号/电话，客户预约页会显示）</span></label>
+    <label class="dash-label">有什么反馈？请发送至 <span style="color:#555;font-weight:400;font-size:12px">（微信号/电话，客户预约页会显示）</span></label>
     <input class="dash-input" type="text" name="support_contact" value="{{ biz.support_contact or '' }}" placeholder="例：微信 hastrid_help 或 (555) 000-0000">
 
     <label class="dash-label" style="margin-top:20px;display:block">头像 <span style="color:#555;font-weight:400;font-size:12px">（正方形，显示在浏览页）</span></label>
@@ -51,6 +51,20 @@
   <button id="copy-link-btn" data-url="{{ booking_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">复制链接</button>
   <script>document.getElementById('copy-link-btn').onclick=function(){navigator.clipboard.writeText(this.dataset.url);};</script>
   <p style="font-size:13px;color:#555;margin-top:8px">将此链接分享给你的客户。</p>
+</div>
+
+<div class="settings-card" style="margin-top:20px">
+  <h2>日历订阅</h2>
+  <p style="font-size:13px;color:#555;margin-bottom:8px">
+    把下面这个链接添加到 Google Calendar / Apple 日历 / Outlook 的"订阅日历"里，预约会自动同步显示（大约每 15 分钟刷新一次，只读，不能在外部日历里改）。
+  </p>
+  <div class="slug-display">{{ calendar_url }}</div>
+  <button id="copy-cal-btn" data-url="{{ calendar_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">复制链接</button>
+  <script>document.getElementById('copy-cal-btn').onclick=function(){navigator.clipboard.writeText(this.dataset.url);};</script>
+  <form method="POST" action="{{ url_for('dashboard.regenerate_calendar_token') }}" onsubmit="return confirm('确认重新生成？之前的订阅链接会失效，已订阅的外部日历需要重新添加。')" style="margin-top:8px;display:inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" style="padding:6px 14px;font-size:13px;border:1px solid var(--red);color:var(--red);border-radius:6px;cursor:pointer;background:transparent">重新生成链接</button>
+  </form>
 </div>
 
 {% endblock %}

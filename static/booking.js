@@ -45,6 +45,10 @@ function fmtDuration(mins) {
   const h = Math.floor(mins/60), m = mins % 60;
   return m ? `${h}小时${m}分钟` : `${h}小时`;
 }
+function fmtSvcDuration(s) {
+  if (s.duration_min_mins) return `${s.duration_min_mins}-${s.duration_mins}分钟`;
+  return fmtDuration(s.duration_mins);
+}
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -115,7 +119,7 @@ function renderServices() {
         ${priceHtml}
       </div>
       <div class="svc-meta">
-        ${s.duration_mins ? `<div class="svc-duration">${fmtDuration(s.duration_mins)}</div>` : ''}
+        ${s.duration_mins ? `<div class="svc-duration">${fmtSvcDuration(s)}</div>` : ''}
       </div>
     </div>
   `;
@@ -175,7 +179,7 @@ function renderServiceBar() {
       ${svc.name_sub ? `<div class="svc-name-sub">${svc.name_sub}</div>` : ''}
     </div>
     <div class="svc-meta">
-      <span>⏱ ${fmtDuration(svc.duration_mins)}</span>
+      <span>⏱ ${fmtSvcDuration(svc)}</span>
       ${svc.price ? `<span>💰 $${svc.price}</span>` : ''}
     </div>
   `;

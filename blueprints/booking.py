@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, Response
 from db import get_db
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -600,6 +600,64 @@ def my_profile_avatar(token):
             db.commit()
     db.close()
     return redirect(url_for('booking.my_profile', token=token))
+
+
+def _ical_escape(text):
+    return (text or '').replace('\\', '\\\\').replace(';', '\\;').replace(',', '\\,').replace('\n', '\\n')
+
+
+@booking_bp.route('/ical/<token>.ics')
+def calendar_feed(token):
+    db = get_db()
+    biz = db.execute('SELECT * FROM businesses WHERE calendar_token=%s', (token,)).fetchone()
+    if not biz:
+        db.close()
+        return Response('Not found', status=404)
+    rows = db.execute(
+        "SELECT a.id, a.customer_name, a.appointment_dt, a.comment, "
+        "s.name as service_name, s.duration_mins, st.name as staff_name "
+        "FROM appointments a JOIN services s ON a.service_id=s.id "
+        "LEFT JOIN staff st ON a.staff_id=st.id "
+        "WHERE a.business_id=%s AND a.status='confirmed' "
+        "AND a.appointment_dt >= %s "
+        "ORDER BY a.appointment_dt",
+        (biz['id'], (datetime.now(_LA) - timedelta(days=7)).strftime('%Y-%m-%d %H:%M'))
+    ).fetchall()
+    db.close()
+
+    lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Hastrid Booking//' + biz['slug'] + '//EN',
+        'CALSCALE:GREGORIAN',
+        'X-WR-CALNAME:' + _ical_escape(biz['name'] + ' 预约日历'),
+        'REFRESH-INTERVAL;VALUE=DURATION:PT15M',
+    ]
+    now_utc = datetime.now(ZoneInfo('UTC')).strftime('%Y%m%dT%H%M%SZ')
+    for r in rows:
+        try:
+            start_local = datetime.strptime(r['appointment_dt'], '%Y-%m-%d %H:%M').replace(tzinfo=_LA)
+        except ValueError:
+            continue
+        end_local = start_local + timedelta(minutes=r['duration_mins'] or 30)
+        start_utc = start_local.astimezone(ZoneInfo('UTC')).strftime('%Y%m%dT%H%M%SZ')
+        end_utc = end_local.astimezone(ZoneInfo('UTC')).strftime('%Y%m%dT%H%M%SZ')
+        summary = f"{r['customer_name']} · {r['service_name']}"
+        if r['staff_name']:
+            summary += f"（{r['staff_name']}）"
+        lines += [
+            'BEGIN:VEVENT',
+            'UID:apt-' + str(r['id']) + '@hastridbooking',
+            'DTSTAMP:' + now_utc,
+            'DTSTART:' + start_utc,
+            'DTEND:' + end_utc,
+            'SUMMARY:' + _ical_escape(summary),
+            'DESCRIPTION:' + _ical_escape(r['comment'] or ''),
+            'END:VEVENT',
+        ]
+    lines.append('END:VCALENDAR')
+    body = '\r\n'.join(lines) + '\r\n'
+    return Response(body, mimetype='text/calendar', headers={'Content-Disposition': 'inline; filename="hastrid.ics"'})
 
 
 @booking_bp.route('/my/<token>/photo', methods=['POST'])
