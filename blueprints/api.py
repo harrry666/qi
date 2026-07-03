@@ -426,8 +426,9 @@ def merchant_appointments_list():
     db = get_db()
     try:
         sql = (
-            "SELECT a.*, s.name as service_name, s.duration_mins, s.price "
+            "SELECT a.*, s.name as service_name, s.duration_mins, s.price, st.name as staff_name "
             "FROM appointments a JOIN services s ON a.service_id=s.id "
+            "LEFT JOIN staff st ON a.staff_id=st.id "
             "WHERE a.business_id=%s"
         )
         params = [biz['id']]
@@ -539,6 +540,22 @@ def merchant_services():
         db.close()
 
 
+def _parse_duration_range(data):
+    """返回 (blocking_mins, display_min)。最长用于排档，最短仅用于显示。"""
+    try:
+        short = int(data.get('duration', data.get('duration_mins', 30)) or 30)
+    except (ValueError, TypeError):
+        short = 30
+    long_raw = data.get('duration_max')
+    try:
+        long_v = int(long_raw) if long_raw not in (None, '') else None
+    except (ValueError, TypeError):
+        long_v = None
+    if long_v and long_v > short:
+        return long_v, short
+    return short, None
+
+
 @api_bp.route('/merchant/services', methods=['POST'])
 def merchant_add_service():
     biz, err = require_merchant()
@@ -549,16 +566,20 @@ def merchant_add_service():
     if not name:
         return jsonify({'error': '服务名称不能为空'}), 400
     name_sub = (data.get('name_sub') or '').strip()
-    duration_mins = int(data.get('duration_mins', 30))
+    duration_mins, duration_min_mins = _parse_duration_range(data)
     price = data.get('price')
     if price is not None:
         price = float(price)
     emoji = (data.get('emoji') or '').strip()
+    try:
+        buffer_mins = int(data.get('buffer_mins') or 0)
+    except (ValueError, TypeError):
+        buffer_mins = 0
     db = get_db()
     try:
         cur = db.execute(
-            'INSERT INTO services (business_id, name, name_sub, duration_mins, price, emoji, is_active, sort_order) VALUES (%s,%s,%s,%s,%s,%s,1,0) RETURNING id',
-            (biz['id'], name, name_sub, duration_mins, price, emoji)
+            'INSERT INTO services (business_id, name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins, is_active, sort_order) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,1,0) RETURNING id',
+            (biz['id'], name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins)
         )
         new_id = cur.fetchone()['id']
         db.commit()
@@ -617,15 +638,25 @@ def merchant_update_service(service_id):
             price = data.get('price')
             fields.append('price=%s')
             params.append(float(price) if price is not None else None)
-        if 'duration' in data:
+        if 'duration' in data or 'duration_mins' in data:
+            dur_mins, dur_min = _parse_duration_range(data)
             fields.append('duration_mins=%s')
-            params.append(int(data.get('duration')))
+            params.append(dur_mins)
+            fields.append('duration_min_mins=%s')
+            params.append(dur_min)
         if 'emoji' in data:
             fields.append('emoji=%s')
             params.append((data.get('emoji') or '').strip())
-        if 'description' in data:
+        if 'buffer_mins' in data:
+            try:
+                bm = int(data.get('buffer_mins') or 0)
+            except (ValueError, TypeError):
+                bm = 0
+            fields.append('buffer_mins=%s')
+            params.append(bm)
+        if 'name_sub' in data or 'description' in data:
             fields.append('name_sub=%s')
-            params.append((data.get('description') or '').strip())
+            params.append((data.get('name_sub') or data.get('description') or '').strip())
         if fields:
             params.extend([service_id, biz['id']])
             db.execute(
@@ -831,6 +862,8 @@ def save_upload(file, kind):
         )
         if kind == 'cover':
             folder, trans = 'qi/covers', [{'width': 1200, 'height': 400, 'crop': 'fill'}]
+        elif kind == 'photo':
+            folder, trans = 'qi/customer_photos', [{'width': 1200, 'height': 1200, 'crop': 'limit'}]
         else:
             folder, trans = 'qi/avatars', [{'width': 400, 'height': 400, 'crop': 'fill'}]
         result = cloudinary.uploader.upload(file, folder=folder, transformation=trans)
@@ -852,7 +885,7 @@ def merchant_upload():
     if not file or not file.filename:
         return jsonify({'error': '缺少文件'}), 400
     kind = (request.values.get('type') or 'avatar').strip()
-    if kind not in ('avatar', 'cover'):
+    if kind not in ('avatar', 'cover', 'photo'):
         kind = 'avatar'
     if file.mimetype not in ALLOWED_IMG:
         return jsonify({'error': '仅支持图片格式'}), 400
@@ -1235,6 +1268,338 @@ def merchant_staff_hours(sid):
             )
         db.commit()
         return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/customers', methods=['GET'])
+def merchant_customers():
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        rows = db.execute(
+            "SELECT c.id, c.name, c.phone, c.avatar_url, c.balance, "
+            "COUNT(a.id) as visit_count, MAX(a.appointment_dt) as last_visit "
+            "FROM customers c "
+            "LEFT JOIN appointments a ON a.customer_id = c.id AND a.status='confirmed' "
+            "WHERE c.business_id=%s "
+            "GROUP BY c.id "
+            "ORDER BY visit_count DESC, last_visit DESC NULLS LAST",
+            (biz['id'],)
+        ).fetchall()
+        return jsonify({'customers': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/customers', methods=['POST'])
+def merchant_add_customer():
+    from db import upsert_customer
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    phone = (data.get('phone') or '').strip()
+    preferences = (data.get('preferences') or '').strip()
+    private_note = (data.get('private_note') or '').strip()
+    balance = data.get('balance')
+    if not name or not phone:
+        return jsonify({'error': '姓名和手机号必填'}), 400
+    db = get_db()
+    try:
+        existing = db.execute('SELECT id FROM customers WHERE business_id=%s AND phone=%s', (biz['id'], phone)).fetchone()
+        if existing:
+            return jsonify({'error': '该手机号已有客户档案'}), 400
+        cid = upsert_customer(db, biz['id'], phone, name)
+        try:
+            balance_val = int(balance) if balance not in (None, '') else 0
+        except (ValueError, TypeError):
+            balance_val = 0
+        db.execute(
+            'UPDATE customers SET preferences=%s, private_note=%s, balance=%s WHERE id=%s',
+            (preferences, private_note, balance_val, cid)
+        )
+        if balance_val:
+            db.execute('INSERT INTO balance_transactions (customer_id, delta, reason) VALUES (%s,%s,%s)',
+                       (cid, balance_val, '建档初始余额'))
+        db.commit()
+        return jsonify({'success': True, 'customer_id': cid})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/customers/<int:cid>', methods=['GET'])
+def merchant_customer_detail(cid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        cust = db.execute('SELECT * FROM customers WHERE id=%s AND business_id=%s', (cid, biz['id'])).fetchone()
+        if not cust:
+            return jsonify({'error': '未找到该客户'}), 404
+        cust = dict(cust)
+        visits = db.execute(
+            "SELECT a.appointment_dt, s.name as service_name, a.status, a.comment "
+            "FROM appointments a JOIN services s ON a.service_id=s.id "
+            "WHERE a.customer_id=%s ORDER BY a.appointment_dt DESC LIMIT 20",
+            (cid,)
+        ).fetchall()
+        photos = db.execute(
+            "SELECT id, photo_url, note FROM customer_photos WHERE customer_id=%s ORDER BY created_at DESC",
+            (cid,)
+        ).fetchall()
+        transactions = db.execute(
+            "SELECT delta, reason, created_at FROM balance_transactions WHERE customer_id=%s ORDER BY created_at DESC LIMIT 20",
+            (cid,)
+        ).fetchall()
+        return jsonify({
+            'customer': {
+                'id': cust['id'], 'name': cust['name'], 'phone': cust['phone'],
+                'avatar_url': cust.get('avatar_url'), 'balance': cust.get('balance'),
+                'preferences': cust.get('preferences'), 'private_note': cust.get('private_note'),
+            },
+            'visits': [dict(v) for v in visits],
+            'photos': [dict(p) for p in photos],
+            'transactions': [dict(t) for t in transactions],
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/customers/<int:cid>', methods=['PUT'])
+def merchant_customer_update(cid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    phone = (data.get('phone') or '').strip()
+    preferences = (data.get('preferences') or '').strip()
+    private_note = (data.get('private_note') or '').strip()
+    db = get_db()
+    try:
+        own = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, biz['id'])).fetchone()
+        if not own:
+            return jsonify({'error': '未找到该客户'}), 404
+        if phone:
+            clash = db.execute(
+                'SELECT id FROM customers WHERE business_id=%s AND phone=%s AND id!=%s',
+                (biz['id'], phone, cid)
+            ).fetchone()
+            if clash:
+                return jsonify({'error': '该手机号已被其他客户占用'}), 400
+        db.execute(
+            'UPDATE customers SET name=%s, phone=%s, preferences=%s, private_note=%s WHERE id=%s AND business_id=%s',
+            (name, phone, preferences, private_note, cid, biz['id'])
+        )
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/customers/<int:cid>/balance', methods=['POST'])
+def merchant_customer_adjust_balance(cid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    try:
+        delta = int(data.get('delta', 0))
+    except (ValueError, TypeError):
+        delta = 0
+    reason = (data.get('reason') or '').strip()
+    db = get_db()
+    try:
+        cust = db.execute('SELECT id, balance FROM customers WHERE id=%s AND business_id=%s', (cid, biz['id'])).fetchone()
+        if not cust:
+            return jsonify({'error': '未找到该客户'}), 404
+        if delta:
+            db.execute('UPDATE customers SET balance = balance + %s WHERE id=%s', (delta, cid))
+            db.execute(
+                'INSERT INTO balance_transactions (customer_id, delta, reason) VALUES (%s,%s,%s)',
+                (cid, delta, reason)
+            )
+            db.commit()
+        row = db.execute('SELECT balance FROM customers WHERE id=%s', (cid,)).fetchone()
+        return jsonify({'success': True, 'balance': row['balance']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/customers/<int:cid>/photo', methods=['POST'])
+def merchant_customer_add_photo(cid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    photo_url = (data.get('photo_url') or '').strip()
+    note = (data.get('note') or '').strip()
+    if not photo_url:
+        return jsonify({'error': '缺少图片'}), 400
+    db = get_db()
+    try:
+        cust = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, biz['id'])).fetchone()
+        if not cust:
+            return jsonify({'error': '未找到该客户'}), 404
+        db.execute(
+            "INSERT INTO customer_photos (customer_id, photo_url, note, uploaded_by) VALUES (%s,%s,%s,'merchant')",
+            (cid, photo_url, note)
+        )
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/customers/<int:cid>', methods=['DELETE'])
+def merchant_customer_delete(cid):
+    biz, err = require_merchant()
+    if err:
+        return err
+    db = get_db()
+    try:
+        own = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, biz['id'])).fetchone()
+        if not own:
+            return jsonify({'error': '未找到该客户'}), 404
+        db.execute('DELETE FROM customer_photos WHERE customer_id=%s', (cid,))
+        db.execute('DELETE FROM balance_transactions WHERE customer_id=%s', (cid,))
+        db.execute('UPDATE appointments SET customer_id=NULL WHERE customer_id=%s AND business_id=%s', (cid, biz['id']))
+        db.execute('DELETE FROM customers WHERE id=%s AND business_id=%s', (cid, biz['id']))
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/feedback', methods=['POST'])
+def merchant_feedback():
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    message = (data.get('message') or '').strip()
+    if not message:
+        return jsonify({'error': '反馈内容不能为空'}), 400
+    db = get_db()
+    try:
+        db.execute(
+            "INSERT INTO platform_feedback (source, business_id, name, contact, message) VALUES ('merchant',%s,%s,%s,%s)",
+            (biz['id'], biz['name'], biz.get('email'), message)
+        )
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/merchant/appointments', methods=['POST'])
+def merchant_create_appointment():
+    from db import upsert_customer
+    from blueprints.booking import send_sms, format_phone
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    service_id = (str(data.get('service_id') or '')).strip()
+    staff_id = data.get('staff_id') or None
+    name = (data.get('customer_name') or '').strip()
+    phone = (data.get('phone') or '').strip()
+    date = (data.get('date') or '').strip()
+    time_ = (data.get('time') or '').strip()
+    comment = (data.get('comment') or '').strip()
+    if not all([service_id, name, phone, date, time_]):
+        return jsonify({'error': '请填写完整信息'}), 400
+    db = get_db()
+    try:
+        svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
+        if not svc:
+            return jsonify({'error': '服务不存在'}), 404
+        svc = dict(svc)
+        if staff_id:
+            own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, biz['id'])).fetchone()
+            if not own:
+                staff_id = None
+        apt_dt = f'{date} {time_}'
+        customer_id = upsert_customer(db, biz['id'], phone, name)
+        cancel_token = str(uuid.uuid4())
+        db.execute(
+            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id, customer_id) '
+            'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+            (biz['id'], service_id, name, phone, apt_dt, comment, cancel_token, staff_id, customer_id)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+    try:
+        dt_display = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M').strftime('%Y年%-m月%-d日 %-H:%M')
+    except ValueError:
+        dt_display = apt_dt
+    _base = os.environ.get('BASE_URL', '').rstrip('/')
+    cancel_url = f"{_base}/cancel/{cancel_token}" if _base else ''
+    biz_phone = biz.get('phone') or ''
+    customer_msg = (
+        f"【预约确认】{name}，您在【{biz['name']}】的预约已确认。\n\n"
+        f"服务：{svc['name']}\n"
+        f"时间：{dt_display}\n"
+        + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
+        + (f"\n如需取消：{cancel_url}" if cancel_url else '')
+        + "\n或直接回复本短信「取消」"
+    )
+    threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
+    return jsonify({'success': True})
+
+
+@api_bp.route('/merchant/appointments/<int:apt_id>/reschedule', methods=['POST'])
+def merchant_reschedule_appointment(apt_id):
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    new_dt_raw = (data.get('new_dt') or '').strip()
+    if not new_dt_raw:
+        return jsonify({'error': '请选择新的日期和时间'}), 400
+    try:
+        new_dt = datetime.strptime(new_dt_raw, '%Y-%m-%dT%H:%M')
+    except ValueError:
+        return jsonify({'error': '日期格式无效'}), 400
+    new_dt_str = new_dt.strftime('%Y-%m-%d %H:%M')
+    db = get_db()
+    try:
+        own = db.execute('SELECT id FROM appointments WHERE id=%s AND business_id=%s', (apt_id, biz['id'])).fetchone()
+        if not own:
+            return jsonify({'error': '预约不存在'}), 404
+        db.execute(
+            'UPDATE appointments SET appointment_dt=%s WHERE id=%s AND business_id=%s',
+            (new_dt_str, apt_id, biz['id'])
+        )
+        db.commit()
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
