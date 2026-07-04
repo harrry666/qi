@@ -1,12 +1,22 @@
 {% extends "dashboard/layout.html" %}
 {% block title %}{{ c.name or '客户' }} — 客户档案{% endblock %}
 {% block content %}
+<style>
+@media (max-width: 768px) {
+  .cd-topbar { flex-wrap: wrap; gap: 10px; }
+  .cust-head { flex-wrap: wrap; }
+  .cust-head .cust-balance { margin-left: 0 !important; text-align: left !important; }
+  .cd-profile-row { flex-wrap: wrap; }
+  .cd-profile-row > div { min-width: 140px; }
+}
+.cust-head .cust-name { overflow-wrap: anywhere; }
+</style>
 
-<div style="display:flex;justify-content:space-between;align-items:center">
+<div class="cd-topbar" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
   <a href="{{ url_for('dashboard.customers') }}" style="color:var(--muted);font-size:13px;text-decoration:none">← 返回客户列表</a>
   <form method="POST" action="{{ url_for('dashboard.customer_delete', cid=c.id) }}" onsubmit="return confirm('确认删除该客户档案？照片、储值流水会一并删除，历史预约会保留但不再关联此客户。')">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer">删除客户</button>
+    <button type="submit" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:8px;padding:9px 16px;min-height:44px;font-size:13px;cursor:pointer">删除客户</button>
   </form>
 </div>
 
@@ -16,11 +26,11 @@
   {% else %}
     <span style="width:64px;height:64px;border-radius:50%;background:var(--gold-light);color:var(--gold-h);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px">{{ (c.name or '?')[:1] }}</span>
   {% endif %}
-  <div>
-    <div style="font-size:22px;font-weight:800;color:var(--text)">{{ c.name or '未命名客户' }}</div>
+  <div style="min-width:0;flex:1">
+    <div class="cust-name" style="font-size:22px;font-weight:800;color:var(--text)">{{ c.name or '未命名客户' }}</div>
     <div style="color:#A78BFA;font-size:14px">{{ c.phone }}</div>
   </div>
-  <div style="margin-left:auto;text-align:right">
+  <div class="cust-balance" style="margin-left:auto;text-align:right">
     <div style="font-size:12px;color:var(--muted)">储值余额</div>
     <div style="font-size:26px;font-weight:800;color:var(--gold-h)">${{ c.balance }}</div>
   </div>
@@ -33,7 +43,7 @@
     <h2>客户档案</h2>
     <form method="POST" action="{{ url_for('dashboard.customer_update_profile', cid=c.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div class="cd-profile-row" style="display:flex;gap:8px;margin-bottom:10px">
         <div style="flex:1">
           <span class="btn-label">姓名</span>
           <input class="dash-input" type="text" name="name" value="{{ c.name or '' }}" placeholder="客人姓名">
@@ -47,15 +57,15 @@
       <textarea class="dash-input" name="preferences" rows="2" placeholder="例：37分/6度发色，喜欢偏软的烫发">{{ c.preferences or '' }}</textarea>
       <span class="btn-label" style="margin-top:10px;display:block">隐形备注（仅商家可见，客户看不到）</span>
       <textarea class="dash-input" name="private_note" rows="2" placeholder="例：容易爽约，建议提前一天电话确认">{{ c.private_note or '' }}</textarea>
-      <button type="submit" class="btn-add" style="width:auto;padding:9px 24px;margin-top:12px">保存档案</button>
+      <button type="submit" class="btn-add" style="width:auto;padding:10px 24px;min-height:44px;margin-top:12px">保存档案</button>
     </form>
 
     <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
       <span class="btn-label">更换头像</span>
-      <form method="POST" action="{{ url_for('dashboard.customer_update_avatar', cid=c.id) }}" enctype="multipart/form-data" style="display:flex;gap:8px;margin-top:6px">
+      <form method="POST" action="{{ url_for('dashboard.customer_update_avatar', cid=c.id) }}" enctype="multipart/form-data" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input class="dash-input" type="file" name="avatar" accept="image/*" style="padding:6px" data-crop data-crop-ratio="1" data-out-w="300" data-out-h="300">
-        <button type="submit" class="btn-add" style="width:auto;padding:8px 18px;white-space:nowrap">上传</button>
+        <input class="dash-input" type="file" name="avatar" accept="image/*" style="padding:6px;flex:1;min-width:180px" data-crop data-crop-ratio="1" data-out-w="300" data-out-h="300">
+        <button type="submit" class="btn-add" style="width:auto;padding:10px 18px;min-height:44px;white-space:nowrap">上传</button>
       </form>
     </div>
 
@@ -63,9 +73,9 @@
       <span class="btn-label">储值余额调整</span>
       <form method="POST" action="{{ url_for('dashboard.customer_adjust_balance', cid=c.id) }}" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input class="dash-input" type="number" name="delta" placeholder="+100 充值 / -50 扣费" style="width:180px">
-        <input class="dash-input" type="text" name="reason" placeholder="备注，如：充值 / 核销一次美发" style="flex:1;min-width:160px">
-        <button type="submit" class="btn-add" style="width:auto;padding:8px 18px">提交</button>
+        <input class="dash-input" type="number" name="delta" placeholder="+100 充值 / -50 扣费" style="flex:1;min-width:140px;max-width:100%">
+        <input class="dash-input" type="text" name="reason" placeholder="备注，如：充值 / 核销一次美发" style="flex:2;min-width:160px">
+        <button type="submit" class="btn-add" style="width:auto;padding:10px 18px;min-height:44px">提交</button>
       </form>
       {% if transactions %}
       <div style="margin-top:10px;font-size:13px;color:var(--muted)">
@@ -85,9 +95,10 @@
     <h2>服务照片档案</h2>
     <form method="POST" action="{{ url_for('dashboard.customer_add_photo', cid=c.id) }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <span class="btn-label">选择照片（发型/发色等），上传后存入该客户档案</span>
       <input class="dash-input" type="file" name="photo" accept="image/*" style="padding:6px">
       <input class="dash-input" type="text" name="note" placeholder="备注，如：37分/6度发色" style="margin-top:8px">
-      <button type="submit" class="btn-add" style="width:auto;padding:9px 24px;margin-top:10px">+ 添加照片</button>
+      <button type="submit" class="btn-add" style="width:auto;padding:10px 24px;min-height:44px;margin-top:10px">+ 添加照片</button>
     </form>
     {% if photos %}
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px">
@@ -97,7 +108,7 @@
         {% if p.note %}<div style="font-size:11px;color:var(--muted);margin-top:2px">{{ p.note }}</div>{% endif %}
         <form method="POST" action="{{ url_for('dashboard.customer_delete_photo', cid=c.id, pid=p.id) }}" onsubmit="return confirm('删除这张照片？')" style="position:absolute;top:4px;right:4px">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" style="background:rgba(0,0,0,0.55);color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1">×</button>
+          <button type="submit" style="background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;line-height:1">×</button>
         </form>
       </div>
       {% endfor %}

@@ -2,6 +2,14 @@
 {% block title %}休业时期{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width:600px){
+  .settings-card-action form > div{flex:1 1 100%;min-width:0}
+  .settings-card-action .dash-input{width:100% !important}
+  .settings-card-action .btn-save{width:100%;margin-top:6px}
+}
+</style>
+
 <div class="page-title">🚫 休业时期</div>
 <p style="color:#666;font-size:14px;margin-bottom:24px">设定休业期间后，客户将看不到该段时间内的可预约时间段。</p>
 

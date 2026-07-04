@@ -2,6 +2,15 @@
 {% block title %}预约记录{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width: 768px) {
+  .filter-tabs { flex-wrap: wrap; }
+  .tab-btn { padding: 9px 16px; }
+  .apt-table th, .apt-table td { white-space: nowrap; }
+  .reschedule-form input[type="datetime-local"] { min-height: 40px; }
+}
+</style>
+
 <div class="page-title">📋 预约记录</div>
 
 <div class="filter-tabs">
@@ -33,9 +42,7 @@
       </td>
       <td>
         {{ a.customer_name }}
-        {% if a.merchant_note %}
-          <span class="note-badge" onclick="toggleNote({{ a.id }})" title="查看商家备注">📝</span>
-        {% endif %}
+        <span class="note-badge" data-note-badge="{{ a.id }}" onclick="toggleNote({{ a.id }})" title="查看商家备注"{% if not a.merchant_note %} style="display:none"{% endif %}>📝</span>
       </td>
       <td style="color:var(--gold-h)">{{ a.phone }}</td>
       <td style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>

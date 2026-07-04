@@ -1,5 +1,21 @@
 {% extends "base.html" %}
 {% block title %}浏览商家 — Hastrid Booking{% endblock %}
+{% block head %}
+<style>
+  @media (max-width: 600px) {
+    .explore-header { padding: 40px 20px 22px; }
+    .explore-header h1 { font-size: 24px; }
+    .explore-filters {
+      flex-wrap: nowrap; justify-content: flex-start;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px 16px 18px; scrollbar-width: none;
+    }
+    .explore-filters::-webkit-scrollbar { display: none; }
+    .filter-chip { flex-shrink: 0; white-space: nowrap; }
+    .explore-grid { grid-template-columns: 1fr; gap: 12px; padding: 0 16px 56px; }
+  }
+</style>
+{% endblock %}
 {% block content %}
 
 <div class="explore-header">

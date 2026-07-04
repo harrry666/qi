@@ -2,6 +2,17 @@
 {% block title %}营业时间{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width:600px){
+  .hours-form{padding:18px 16px}
+  .hours-row{align-items:flex-start}
+  .hours-day{width:100%}
+  .time-range{width:100%}
+  .time-range input[type=time]{flex:1;width:auto !important;min-width:0}
+  .hours-form .btn-save{width:100%}
+}
+</style>
+
 <div class="page-title">🕐 营业时间</div>
 
 <div class="hours-form">

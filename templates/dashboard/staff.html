@@ -2,6 +2,19 @@
 {% block title %}员工管理{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width:600px){
+  .staff-card{padding:16px}
+  .staff-actions{gap:6px}
+  .staff-tab-btn{min-height:40px}
+  .staff-actions form{margin-left:0 !important}
+  .staff-panel .hours-row{align-items:flex-start}
+  .staff-panel .hours-day{width:100%}
+  .staff-panel .time-range{width:100%}
+  .staff-panel .time-range input[type=time]{flex:1;width:auto !important;min-width:0}
+}
+</style>
+
 <div class="page-title">👥 员工管理</div>
 
 <div class="add-service-form">

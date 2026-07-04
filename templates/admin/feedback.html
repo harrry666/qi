@@ -21,6 +21,14 @@
   .fb-status-resolved { color: #5de88a; }
   .btn-resolve { background: #2a6040; color: #5de88a; border: 1px solid #2a6040; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: .8rem; white-space: nowrap; }
   .empty { color: #7c6a90; text-align: center; padding: 3rem 0; }
+  @media (max-width: 600px) {
+    body { padding: 1rem; overflow-x: hidden; }
+    h1 { font-size: 1.2rem; }
+    .fb-card { padding: 1rem 1.1rem; }
+    .fb-top { flex-wrap: wrap; }
+    .fb-msg { word-break: break-word; }
+    .btn-resolve { min-height: 32px; }
+  }
 </style>
 </head>
 <body>

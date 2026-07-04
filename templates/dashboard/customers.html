@@ -31,7 +31,7 @@
       </div>
     </div>
     <div style="margin-top:14px">
-      <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">+ 添加客户</button>
+      <button type="submit" class="btn-add" style="width:auto;padding:12px 28px;min-height:44px">+ 添加客户</button>
     </div>
   </form>
 </div>
@@ -44,8 +44,9 @@
   </p>
   <form method="POST" action="{{ url_for('dashboard.import_customers') }}" enctype="multipart/form-data" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input class="dash-input" type="file" name="csv_file" accept=".csv" required style="max-width:320px">
-    <button type="submit" class="btn-add" style="width:auto;padding:10px 24px">导入</button>
+    <span class="btn-label" style="width:100%;margin-bottom:0">选择 CSV 文件（.csv），导入后加入下方客户列表</span>
+    <input class="dash-input" type="file" name="csv_file" accept=".csv" required style="max-width:100%;flex:1;min-width:200px">
+    <button type="submit" class="btn-add" style="width:auto;padding:10px 24px;min-height:44px">导入</button>
   </form>
 </div>
 

@@ -24,6 +24,14 @@
   .logout { float: right; color: #7c6a90; font-size: .85rem; text-decoration: none; }
   .logout:hover { color: #C9A84C; }
   .meta { font-size: .8rem; color: #7c6a90; }
+  @media (max-width: 600px) {
+    body { padding: 1rem; overflow-x: hidden; }
+    h1 { font-size: 1.2rem; }
+    .logout { float: none; display: inline-block; margin: 8px 14px 0 0 !important; }
+    .login-box { max-width: 100%; }
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+    .btn-approve, .btn-reject { min-height: 32px; }
+  }
 </style>
 </head>
 <body>

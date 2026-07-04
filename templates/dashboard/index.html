@@ -2,6 +2,16 @@
 {% block title %}主页{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width:600px){
+  .apt-card{gap:10px 12px;padding:14px 16px;flex-wrap:wrap}
+  .apt-time-col{min-width:52px}
+  .apt-time{font-size:20px}
+  .apt-phone{flex-basis:100%;order:5;font-size:13px}
+  .quick-btn{flex:1;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center}
+}
+</style>
+
 <div class="dash-header">
   <h1>{{ greeting }}, {{ current_user.name.split()[0] }} 👋</h1>
   <p class="dash-sub">今日行程如下。</p>

@@ -15,6 +15,13 @@
     .my-photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
     .my-visit-row { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px dashed var(--border); }
     .my-balance { font-size: 26px; font-weight: 800; color: var(--gold-h); }
+    .my-head > div { min-width: 0; word-break: break-word; }
+    @media (max-width: 600px) {
+      .my-wrap { padding: 20px 16px 56px; }
+      .my-card { padding: 18px 16px; }
+      .my-avatar { width: 56px; height: 56px; font-size: 20px; }
+      .my-head { gap: 12px; }
+    }
   </style>
 </head>
 <body class="book-body">

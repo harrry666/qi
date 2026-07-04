@@ -19,6 +19,17 @@
     img.staff-ava { object-fit:cover; }
     .staff-card.staff-any .staff-ava { background:#FBF4E3; }
     .staff-name { font-size:13px; font-weight:600; color:#1A1209; }
+    @media (max-width: 600px) {
+      .book-hero { height: 170px; }
+      .biz-header-card h1 { font-size: 19px; }
+      /* 步骤条在小屏可能超 5 步，改为内部横向滚动，避免被裁切 */
+      .booking-steps { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 16px; scrollbar-width: none; }
+      .booking-steps::-webkit-scrollbar { display: none; }
+      .booking-steps .step { font-size: 11px; padding: 5px 9px; }
+      .booking-steps .step-line { min-width: 8px; }
+      .staff-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; }
+      .service-bar .svc-meta { gap: 10px; font-size: 13px; }
+    }
   </style>
 </head>
 <body class="book-body" data-slug="{{ biz.slug }}">

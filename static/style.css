@@ -1135,3 +1135,43 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
 .fc-icon-chevron-right::before { content: "\203A" !important; }
 .fc-icon-chevrons-left::before { content: "\00AB" !important; }
 .fc-icon-chevrons-right::before { content: "\00BB" !important; }
+
+/* ══════════════════════════════════════════════════════════
+   GLOBAL MOBILE SAFETY LAYER (≤600px)
+   兜底：防横向溢出 / 图片、表格、表单不溢出 / tap 目标够大
+   放在文件末尾，同断点下比上方 768/600 规则后出现，冲突时以此为准
+══════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* 防止任何元素撑出横向滚动条 */
+  html, body { overflow-x: hidden; max-width: 100%; }
+
+  /* 图片自适应，不溢出容器 */
+  img { max-width: 100%; height: auto; }
+
+  /* 所有 <table> 窄屏可横向滚动（配合上方 .apt-table/.services-table 规则） */
+  table {
+    display: block; max-width: 100%;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  /* 表单控件不超出容器宽度 */
+  input, textarea, select { max-width: 100%; }
+  input[type=file] { max-width: 100%; font-size: 12px; }
+
+  /* 主按钮 / 可点项最小高度，保证 tap 目标 ≥ 44px */
+  .btn-primary-full, .btn-primary, .btn-lg, .btn-lg-outline,
+  .btn-save, .btn-add, .quick-btn, .btn-sm, .booking-link-btn,
+  .slot-btn, .btn-primary-full:disabled { min-height: 44px; }
+
+  /* 容器 / 卡片窄屏 padding 收敛，别贴边也别过宽 */
+  .auth-card { padding: 28px 20px; }
+  .settings-card, .add-service-form, .hours-form, .login-card,
+  .confirm-card, .staff-card { padding: 20px 16px; }
+  .biz-header-card { padding: 20px 18px 16px; }
+  .book-container { padding: 0 12px 48px; }
+
+  /* 通用模态 / 弹层：限制高度并可内部滚动 */
+  .modal { max-height: 90vh; overflow-y: auto; }
+  .modal-overlay { padding: 12px; }
+}

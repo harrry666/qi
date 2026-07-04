@@ -15,6 +15,16 @@
   .fc-legend-chip { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); }
   /* "今天"高亮：默认刺眼黄，换成淡暖金 */
   .fc .fc-day-today { background: rgba(201, 168, 76, 0.07) !important; }
+  /* 弹层不超视口、内容多时可滚动 */
+  #apt-modal > div, #slot-modal > div { max-height: 90vh; overflow-y: auto; }
+  @media (max-width: 768px) {
+    #calendar-card { padding: 8px; }
+    .fc .fc-toolbar.fc-header-toolbar { flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .fc .fc-toolbar-title { font-size: 16px; }
+    .fc .fc-button { padding: 6px 10px; }
+    /* 日历自身可横向滚动，避免撑破窄屏 */
+    #cal { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
 </style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
   <div>
@@ -43,10 +53,10 @@
       </div>
     </div>
 
-    <div style="text-align:right;margin-top:16px;display:flex;justify-content:flex-end;gap:8px">
-      <button id="apt-modal-reschedule-btn" style="padding:8px 18px;border:1px solid var(--gold-border);color:var(--gold-h);border-radius:8px;background:white;cursor:pointer;font-size:14px">✏️ 改期</button>
-      <button id="apt-modal-cancel-btn" style="padding:8px 18px;border:1px solid var(--red);color:var(--red);border-radius:8px;background:white;cursor:pointer;font-size:14px">取消预约</button>
-      <button onclick="document.getElementById('apt-modal').style.display='none'" style="padding:8px 18px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">关闭</button>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+      <button id="apt-modal-reschedule-btn" style="padding:10px 18px;min-height:44px;border:1px solid var(--gold-border);color:var(--gold-h);border-radius:8px;background:white;cursor:pointer;font-size:14px">✏️ 改期</button>
+      <button id="apt-modal-cancel-btn" style="padding:10px 18px;min-height:44px;border:1px solid var(--red);color:var(--red);border-radius:8px;background:white;cursor:pointer;font-size:14px">取消预约</button>
+      <button onclick="document.getElementById('apt-modal').style.display='none'" style="padding:10px 18px;min-height:44px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">关闭</button>
     </div>
   </div>
 </div>

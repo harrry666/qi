@@ -1,5 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Hastrid Booking — 小商家预约管理平台{% endblock %}
+{% block head %}
+<style>
+  @media (max-width: 600px) {
+    .footer-qi { font-size: 40px; letter-spacing: -1px; }
+    .footer-links { flex-wrap: wrap; gap: 8px 10px; }
+    .cta-section { padding: 56px 22px; }
+    .cta-section h2 { font-size: 24px; }
+    .features-section { padding: 44px 20px; }
+    .features-heading { font-size: 20px; }
+    .landing-footer { padding: 56px 22px 48px; }
+  }
+</style>
+{% endblock %}
 {% block content %}
 
 <section class="hero-rich">

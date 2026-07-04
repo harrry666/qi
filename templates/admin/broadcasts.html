@@ -23,6 +23,15 @@
   .btn-approve { background: #2a6040; color: #5de88a; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: .85rem; }
   .btn-reject { background: #3a2030; color: #f0a0a0; border: 1px solid #5a2a2a; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: .85rem; }
   .empty { color: #7c6a90; text-align: center; padding: 3rem 0; }
+  @media (max-width: 600px) {
+    body { padding: 1rem; overflow-x: hidden; }
+    h1 { font-size: 1.2rem; }
+    .bc-card { padding: 1rem 1.1rem; }
+    .bc-top { flex-wrap: wrap; }
+    .bc-msg { word-break: break-word; }
+    .bc-actions { flex-wrap: wrap; }
+    .btn-approve, .btn-reject { min-height: 40px; }
+  }
 </style>
 </head>
 <body>

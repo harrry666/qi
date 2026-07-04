@@ -2,6 +2,14 @@
 {% block title %}时段锁定{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width:600px){
+  .settings-card-action form > div{flex:1 1 100%;min-width:0}
+  .settings-card-action .dash-input{width:100% !important}
+  .settings-card-action .btn-save{width:100%;margin-top:6px}
+}
+</style>
+
 <div class="page-title">🔒 时段锁定</div>
 <p style="color:#666;font-size:14px;margin-bottom:24px">锁定某天或某段日期内的具体时间段（例如电话预约已占用），客户在线预约时看不到这些时段。整段日期会按天锁定同一时间段。</p>
 

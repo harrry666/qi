@@ -1,7 +1,15 @@
 {% extends "base.html" %}
 {% block title %}隐私政策 — Hastrid Booking{% endblock %}
+{% block head %}
+<style>
+  @media (max-width: 600px) {
+    .privacy-section { margin: 32px auto 56px !important; padding: 0 20px !important; }
+    .privacy-section h1 { font-size: 26px !important; }
+  }
+</style>
+{% endblock %}
 {% block content %}
-<section style="max-width:680px;margin:60px auto 80px;padding:0 24px">
+<section class="privacy-section" style="max-width:680px;margin:60px auto 80px;padding:0 24px">
   <h1 style="font-family:'Noto Serif SC',serif;font-size:32px;font-weight:900;margin-bottom:8px">隐私政策</h1>
   <p style="color:#6B5C3E;font-size:14px;margin-bottom:40px">最后更新：2026年6月</p>
 

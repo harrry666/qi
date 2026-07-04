@@ -2,6 +2,15 @@
 {% block title %}分析报告{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width:600px){
+  .analytics-stats .stat-card{padding:16px}
+  .analytics-stats .stat-value{font-size:26px !important}
+  .chart-grid .settings-card{padding:16px !important}
+  .chart-grid canvas{max-width:100%}
+}
+</style>
+
 <div class="page-title">📊 分析报告</div>
 <p style="color:#666;font-size:14px;margin-bottom:24px">{{ this_month_label }} · 已确认预约统计</p>
 

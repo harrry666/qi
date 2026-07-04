@@ -2,6 +2,13 @@
 {% block title %}群发短信{% endblock %}
 {% block content %}
 
+<style>
+@media (max-width:600px){
+  .add-service-form{padding:18px 16px}
+  .bc-check{width:18px;height:18px;flex-shrink:0}
+}
+</style>
+
 <div class="page-title">📣 群发短信</div>
 
 <form method="POST" action="{{ url_for('dashboard.broadcast_send') }}" onsubmit="return confirm('确定提交群发申请？平台审核通过后才会发送。')">
