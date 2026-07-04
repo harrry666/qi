@@ -20,6 +20,10 @@
 <body class="book-body">
 <div class="my-wrap">
 
+  {% if request.args.get('saved') %}
+  <div style="background:#E7F4EC;color:#2E9E63;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;margin-bottom:14px;text-align:center">✓ 已保存</div>
+  {% endif %}
+
   <div class="my-card">
     <div class="my-head">
       {% if c.avatar_url %}
@@ -36,9 +40,10 @@
         <div class="my-balance">${{ c.balance }}</div>
       </div>
     </div>
-    <form method="POST" action="{{ url_for('booking.my_profile_avatar', token=c.profile_token) }}" enctype="multipart/form-data" style="margin-top:14px">
+    <label style="font-size:13px;color:var(--muted);display:block;margin:14px 0 6px">头像（选择图片后点"更换头像"）</label>
+    <form method="POST" action="{{ url_for('booking.my_profile_avatar', token=c.profile_token) }}" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <input type="file" name="avatar" accept="image/*" style="font-size:12px">
-      <button type="submit" style="font-size:12px;padding:4px 12px;border:1px solid #ccc;border-radius:6px;background:transparent;cursor:pointer;margin-left:6px">更换头像</button>
+      <button type="submit" class="btn-primary" style="width:auto;font-size:13px;padding:7px 16px">更换头像</button>
     </form>
   </div>
 

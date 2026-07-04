@@ -582,7 +582,7 @@ def my_profile_update(token):
         db.execute('UPDATE customers SET name=%s, preferences=%s WHERE id=%s', (name, preferences, cust['id']))
         db.commit()
     db.close()
-    return redirect(url_for('booking.my_profile', token=token))
+    return redirect(url_for('booking.my_profile', token=token, saved=1))
 
 
 @booking_bp.route('/my/<token>/avatar', methods=['POST'])
@@ -599,7 +599,7 @@ def my_profile_avatar(token):
             db.execute('UPDATE customers SET avatar_url=%s WHERE id=%s', (avatar_url, cust['id']))
             db.commit()
     db.close()
-    return redirect(url_for('booking.my_profile', token=token))
+    return redirect(url_for('booking.my_profile', token=token, saved=1))
 
 
 def _ical_escape(text):
@@ -675,4 +675,4 @@ def my_profile_photo(token):
             )
             db.commit()
     db.close()
-    return redirect(url_for('booking.my_profile', token=token))
+    return redirect(url_for('booking.my_profile', token=token, saved=1))
