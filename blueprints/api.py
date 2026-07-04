@@ -803,6 +803,76 @@ def my_bookings():
         db.close()
 
 
+@api_bp.route('/my/profile')
+def my_profile():
+    user, err = require_client()
+    if err:
+        return err
+    return jsonify({
+        'nickname': user.get('nickname') or '',
+        'avatar_url': user.get('avatar_url') or '',
+        'phone': user.get('phone') or '',
+        'preferences': user.get('preferences') or ''
+    })
+
+
+@api_bp.route('/my/profile', methods=['PUT'])
+def my_update_profile():
+    user, err = require_client()
+    if err:
+        return err
+    data = request.json or {}
+    fields = []
+    params = []
+    if 'nickname' in data:
+        fields.append('nickname=%s')
+        params.append((data.get('nickname') or '').strip())
+    if 'phone' in data:
+        fields.append('phone=%s')
+        params.append((data.get('phone') or '').strip())
+    if 'preferences' in data:
+        fields.append('preferences=%s')
+        params.append((data.get('preferences') or '').strip())
+    if not fields:
+        return jsonify({'ok': True})
+    db = get_db()
+    try:
+        params.append(user['id'])
+        db.execute('UPDATE users SET ' + ', '.join(fields) + ' WHERE id=%s', tuple(params))
+        db.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@api_bp.route('/my/avatar', methods=['POST'])
+def my_upload_avatar():
+    user, err = require_client()
+    if err:
+        return err
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'error': '缺少文件'}), 400
+    if file.mimetype not in ALLOWED_IMG:
+        return jsonify({'error': '仅支持图片格式'}), 400
+    file.seek(0, os.SEEK_END)
+    if file.tell() > MAX_UPLOAD:
+        return jsonify({'error': '图片不能超过 5MB'}), 400
+    file.seek(0)
+    db = get_db()
+    try:
+        url = save_upload(file, 'avatar')
+        db.execute('UPDATE users SET avatar_url=%s WHERE id=%s', (url, user['id']))
+        db.commit()
+        return jsonify({'url': url})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
 @api_bp.route('/categories')
 def categories():
     from blueprints.auth import CATEGORIES

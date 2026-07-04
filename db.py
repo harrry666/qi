@@ -165,6 +165,9 @@ def init_db():
         )''',
         'ALTER TABLE services ADD COLUMN IF NOT EXISTS color TEXT DEFAULT \'\'',
         'ALTER TABLE services ADD COLUMN IF NOT EXISTS duration_min_mins INTEGER',
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT \'\'',
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT \'\'',
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences TEXT DEFAULT \'\'',
         '''CREATE TABLE IF NOT EXISTS customers (
             id SERIAL PRIMARY KEY,
             business_id INTEGER NOT NULL,
