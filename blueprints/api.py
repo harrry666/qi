@@ -575,11 +575,12 @@ def merchant_add_service():
         buffer_mins = int(data.get('buffer_mins') or 0)
     except (ValueError, TypeError):
         buffer_mins = 0
+    color = (data.get('color') or '').strip()
     db = get_db()
     try:
         cur = db.execute(
-            'INSERT INTO services (business_id, name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins, is_active, sort_order) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,1,0) RETURNING id',
-            (biz['id'], name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins)
+            'INSERT INTO services (business_id, name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins, color, is_active, sort_order) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,1,0) RETURNING id',
+            (biz['id'], name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins, color)
         )
         new_id = cur.fetchone()['id']
         db.commit()
@@ -657,6 +658,9 @@ def merchant_update_service(service_id):
         if 'name_sub' in data or 'description' in data:
             fields.append('name_sub=%s')
             params.append((data.get('name_sub') or data.get('description') or '').strip())
+        if 'color' in data:
+            fields.append('color=%s')
+            params.append((data.get('color') or '').strip())
         if fields:
             params.extend([service_id, biz['id']])
             db.execute(
