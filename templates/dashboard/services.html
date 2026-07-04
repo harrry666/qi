@@ -49,6 +49,7 @@
 </div>
 
 {% if services %}
+<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
 <table class="svc-table">
   <thead>
     <tr>
@@ -86,7 +87,7 @@
         </form>
       </td>
       <td>
-        <div class="color-swatches" data-svc="{{ s.id }}" style="display:flex;gap:5px;flex-wrap:wrap;max-width:130px">
+        <div class="color-swatches" data-svc="{{ s.id }}" style="display:flex;gap:5px;flex-wrap:wrap;width:138px">
           {% for col in palette %}
           <button type="button" class="color-swatch {% if (s.color or palette[s.id % palette|length]) == col %}active{% endif %}"
                   style="width:18px;height:18px;border-radius:50%;background:{{ col }};border:2px solid {% if (s.color or palette[s.id % palette|length]) == col %}var(--text){% else %}transparent{% endif %};cursor:pointer;padding:0"
@@ -158,6 +159,7 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
   <div class="empty-msg">暂无服务，请在上方添加。</div>
 {% endif %}
