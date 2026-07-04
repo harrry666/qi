@@ -1604,7 +1604,7 @@ def merchant_create_appointment():
     date = (data.get('date') or '').strip()
     time_ = (data.get('time') or '').strip()
     comment = (data.get('comment') or '').strip()
-    if not all([service_id, name, phone, date, time_]):
+    if not all([service_id, name, date, time_]):
         return jsonify({'error': '请填写完整信息'}), 400
     db = get_db()
     try:
@@ -1617,7 +1617,7 @@ def merchant_create_appointment():
             if not own:
                 staff_id = None
         apt_dt = f'{date} {time_}'
-        customer_id = upsert_customer(db, biz['id'], phone, name)
+        customer_id = upsert_customer(db, biz['id'], phone, name) if phone else None
         cancel_token = str(uuid.uuid4())
         db.execute(
             'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id, customer_id) '
@@ -1645,7 +1645,8 @@ def merchant_create_appointment():
         + (f"\n如需取消：{cancel_url}" if cancel_url else '')
         + "\n或直接回复本短信「取消」"
     )
-    threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
+    if phone:
+        threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
     return jsonify({'success': True})
 
 
