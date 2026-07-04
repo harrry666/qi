@@ -1147,12 +1147,13 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
 
   /* 图片自适应，不溢出容器 */
   img { max-width: 100%; height: auto; }
+  /* 表格单元格里的小图(头像/图标)保持固定尺寸，不被 max-width 压塌 */
+  td img, th img { max-width: none; height: auto; }
 
-  /* 所有 <table> 窄屏可横向滚动（配合上方 .apt-table/.services-table 规则） */
-  table {
+  /* 数据表窄屏横滚：只针对本站数据表，绝不动 FullCalendar(.fc 内部靠 table 布局，会被压塌) */
+  .apt-table, .services-table, .svc-table {
     display: block; max-width: 100%;
     overflow-x: auto; -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
   }
 
   /* 表单控件不超出容器宽度 */
