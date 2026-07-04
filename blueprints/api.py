@@ -507,13 +507,21 @@ def merchant_cancel_appointment(apt_id):
             dt_display = row['appointment_dt']
 
         biz_phone = biz.get('phone') or ''
-        message = (
-            f"【预约取消】{row['customer_name']}，您在【{biz['name']}】的预约已被取消。\n\n"
-            f"服务：{row['service_name']}\n"
-            f"时间：{dt_display}\n\n"
-            + (f"如需重新预约请致电：{biz_phone}" if biz_phone else "如需重新预约请联系商家。")
-        )
-        threading.Thread(target=send_sms, args=(format_phone(row['phone']), message), daemon=True).start()
+        cust_phone = row.get('phone') or ''
+        if cust_phone:
+            message = (
+                f"【预约取消】{row['customer_name']}，您在【{biz['name']}】的预约已被取消。\n\n"
+                f"服务：{row['service_name']}\n"
+                f"时间：{dt_display}\n\n"
+                + (f"如需重新预约请致电：{biz_phone}" if biz_phone else "如需重新预约请联系商家。")
+            )
+            threading.Thread(target=send_sms, args=(format_phone(cust_phone), message), daemon=True).start()
+        if biz_phone:
+            biz_msg = (
+                f"【取消提醒】客人 {row['customer_name']} 的预约已取消。\n"
+                f"服务：{row['service_name']}\n时间：{dt_display}"
+            )
+            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
 
         return jsonify({'success': True})
     except Exception as e:
