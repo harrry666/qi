@@ -239,6 +239,11 @@ document.addEventListener('DOMContentLoaded', function() {
     eventStartEditable: true,
     eventDurationEditable: false,
     eventDrop: function(info) {
+      var fmt = function(d){ return d.toLocaleString('zh-CN',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}); };
+      if (!confirm('把「' + info.event.title + '」改期到：\n' + fmt(info.event.start) + '\n（原：' + fmt(info.oldEvent.start) + '）\n\n确认后会短信通知客人和你。')) {
+        info.revert();
+        return;
+      }
       rescheduleAppointment(info.event.id, toLocalInputValue(info.event.start), function(r) {
         if (!r.ok) { info.revert(); alert('改期失败，请重试。'); }
       }, function() { info.revert(); alert('改期失败，请重试。'); });
@@ -277,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('apt-modal-cancel-btn').addEventListener('click', function() {
     if (!activeAptId) return;
-    if (!confirm('确认取消这条预约？会通知客人。')) return;
+    if (!confirm('确认取消这条预约？会短信通知客人和你。')) return;
     fetch('/dashboard/appointments/' + activeAptId + '/cancel', { method: 'POST' })
       .then(function() {
         document.getElementById('apt-modal').style.display = 'none';

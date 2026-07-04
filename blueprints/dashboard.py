@@ -560,8 +560,14 @@ def cancel_appointment(apt_id):
             + (f"如需重新预约请致电：{biz_phone}" if biz_phone else "如需重新预约请联系商家。")
         )
         threading.Thread(target=send_sms, args=(format_phone(row['phone']), message), daemon=True).start()
+        if biz_phone:
+            biz_msg = (
+                f"【取消提醒】客人 {row['customer_name']} 的预约已取消。\n"
+                f"服务：{row['service_name']}\n时间：{dt_display}"
+            )
+            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
 
-    flash('预约已取消。', 'success')
+    flash('预约已取消，已通知客人和你。', 'success')
     return redirect(url_for('dashboard.appointments'))
 
 @dashboard_bp.route('/appointments/<int:apt_id>/reschedule', methods=['POST'])
@@ -578,13 +584,38 @@ def reschedule_appointment(apt_id):
         return redirect(url_for('dashboard.appointments'))
     new_dt_str = new_dt.strftime('%Y-%m-%d %H:%M')
     db = get_db()
+    row = db.execute(
+        "SELECT a.*, s.name as service_name FROM appointments a "
+        "JOIN services s ON a.service_id=s.id WHERE a.id=%s AND a.business_id=%s",
+        (apt_id, current_user.id)
+    ).fetchone()
     db.execute(
         'UPDATE appointments SET appointment_dt=%s WHERE id=%s AND business_id=%s',
         (new_dt_str, apt_id, current_user.id)
     )
     db.commit()
     db.close()
-    flash('预约时间已更新。', 'success')
+    if row:
+        try:
+            old_disp = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M').strftime('%Y年%-m月%-d日 %-H:%M')
+        except Exception:
+            old_disp = row['appointment_dt']
+        new_disp = new_dt.strftime('%Y年%-m月%-d日 %-H:%M')
+        biz_name = current_user.name
+        biz_phone = current_user.phone or ''
+        cust_msg = (
+            f"【预约改期】{row['customer_name']}，您在【{biz_name}】的预约时间已更改。\n\n"
+            f"服务：{row['service_name']}\n原时间：{old_disp}\n新时间：{new_disp}\n\n"
+            + (f"如有疑问请致电：{biz_phone}" if biz_phone else "如有疑问请联系商家。")
+        )
+        threading.Thread(target=send_sms, args=(format_phone(row['phone']), cust_msg), daemon=True).start()
+        if biz_phone:
+            biz_msg = (
+                f"【改期提醒】客人 {row['customer_name']} 的预约已改期。\n"
+                f"服务：{row['service_name']}\n{old_disp} → {new_disp}"
+            )
+            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
+    flash('预约时间已更新，已通知客人和你。', 'success')
     return redirect(url_for('dashboard.appointments'))
 
 @dashboard_bp.route('/appointments/<int:apt_id>/note', methods=['POST'])

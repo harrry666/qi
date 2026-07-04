@@ -738,6 +738,8 @@ a:hover { text-decoration: underline; }
     position: fixed; top: 0; left: 0; right: 0; height: 52px;
     background: white; border-bottom: 1px solid #E8D5A3;
     padding: 0 16px; z-index: 200;
+    transform: translateZ(0); -webkit-transform: translateZ(0);
+    will-change: transform; backface-visibility: hidden;
   }
   .mobile-biz-name {
     flex: 1; font-size: 14px; font-weight: 700;
@@ -753,6 +755,8 @@ a:hover { text-decoration: underline; }
     display: flex; position: fixed; bottom: 0; left: 0; right: 0;
     height: 62px; background: white; border-top: 1px solid #E8D5A3;
     z-index: 200; padding-bottom: env(safe-area-inset-bottom);
+    transform: translateZ(0); -webkit-transform: translateZ(0);
+    will-change: transform; backface-visibility: hidden;
   }
   .mobile-tab {
     flex: 1; display: flex; flex-direction: column;
