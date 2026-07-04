@@ -718,6 +718,48 @@ def delete_block(bid):
     db.close()
     return redirect(url_for('dashboard.blocks'))
 
+@dashboard_bp.route('/broadcast')
+@login_required
+def broadcast():
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, name, phone FROM customers "
+        "WHERE business_id=%s AND phone IS NOT NULL AND phone != '' "
+        "ORDER BY name",
+        (current_user.id,)
+    ).fetchall()
+    db.close()
+    return render_template('dashboard/broadcast.html', customers=rows)
+
+@dashboard_bp.route('/broadcast/send', methods=['POST'])
+@login_required
+def broadcast_send():
+    message = (request.form.get('message') or '').strip()
+    ids = request.form.getlist('customer_ids')
+    if not message:
+        flash('请输入要群发的内容', 'error')
+        return redirect(url_for('dashboard.broadcast'))
+    if not ids:
+        flash('请至少选择一位客人', 'error')
+        return redirect(url_for('dashboard.broadcast'))
+    db = get_db()
+    rows = db.execute(
+        "SELECT phone FROM customers "
+        "WHERE business_id=%s AND id = ANY(%s) AND phone IS NOT NULL AND phone != ''",
+        (current_user.id, [int(i) for i in ids])
+    ).fetchall()
+    db.close()
+    phones = [format_phone(r['phone']) for r in rows if r['phone']]
+    body = message + '\n\n【' + (current_user.name or '') + '】回复 STOP 退订'
+
+    def _send_all(nums, text):
+        for n in nums:
+            send_sms(n, text)
+
+    threading.Thread(target=_send_all, args=(phones, body), daemon=True).start()
+    flash(f'已开始群发给 {len(phones)} 位客人，短信稍后陆续送达', 'success')
+    return redirect(url_for('dashboard.broadcast'))
+
 @dashboard_bp.route('/customers')
 @login_required
 def customers():
