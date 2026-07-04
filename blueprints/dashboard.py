@@ -7,6 +7,7 @@ import os
 import uuid
 import csv
 import io
+import json
 from blueprints.booking import send_sms, format_phone
 from blueprints.auth import CATEGORIES
 from cloud import upload_to_cloudinary as _upload_to_cloudinary
@@ -722,14 +723,19 @@ def delete_block(bid):
 @login_required
 def broadcast():
     db = get_db()
-    rows = db.execute(
+    customers = db.execute(
         "SELECT id, name, phone FROM customers "
         "WHERE business_id=%s AND phone IS NOT NULL AND phone != '' "
         "ORDER BY name",
         (current_user.id,)
     ).fetchall()
+    requests_ = db.execute(
+        "SELECT id, message, recipient_count, status, sent_count, created_at "
+        "FROM broadcast_requests WHERE business_id=%s ORDER BY created_at DESC LIMIT 20",
+        (current_user.id,)
+    ).fetchall()
     db.close()
-    return render_template('dashboard/broadcast.html', customers=rows)
+    return render_template('dashboard/broadcast.html', customers=customers, requests=requests_)
 
 @dashboard_bp.route('/broadcast/send', methods=['POST'])
 @login_required
@@ -748,16 +754,19 @@ def broadcast_send():
         "WHERE business_id=%s AND id = ANY(%s) AND phone IS NOT NULL AND phone != ''",
         (current_user.id, [int(i) for i in ids])
     ).fetchall()
-    db.close()
     phones = [format_phone(r['phone']) for r in rows if r['phone']]
-    body = message + '\n\n【' + (current_user.name or '') + '】回复 STOP 退订'
-
-    def _send_all(nums, text):
-        for n in nums:
-            send_sms(n, text)
-
-    threading.Thread(target=_send_all, args=(phones, body), daemon=True).start()
-    flash(f'已开始群发给 {len(phones)} 位客人，短信稍后陆续送达', 'success')
+    if not phones:
+        db.close()
+        flash('选中的客人没有有效手机号', 'error')
+        return redirect(url_for('dashboard.broadcast'))
+    db.execute(
+        "INSERT INTO broadcast_requests (business_id, message, phones, recipient_count, status) "
+        "VALUES (%s,%s,%s,%s,'pending')",
+        (current_user.id, message, json.dumps(phones), len(phones))
+    )
+    db.commit()
+    db.close()
+    flash(f'已提交群发申请（{len(phones)} 位客人），等待平台审核通过后发送', 'success')
     return redirect(url_for('dashboard.broadcast'))
 
 @dashboard_bp.route('/customers')

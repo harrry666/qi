@@ -4,7 +4,7 @@
 
 <div class="page-title">📣 群发短信</div>
 
-<form method="POST" action="{{ url_for('dashboard.broadcast_send') }}" onsubmit="return confirm('确定发送给选中的客人？短信会产生费用。')">
+<form method="POST" action="{{ url_for('dashboard.broadcast_send') }}" onsubmit="return confirm('确定提交群发申请？平台审核通过后才会发送。')">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <div class="add-service-form" style="margin-bottom:16px">
@@ -35,7 +35,8 @@
       </label>
       {% endfor %}
     </div>
-    <button type="submit" class="btn-primary" style="margin-top:16px;width:100%">发送给选中客人</button>
+    <button type="submit" class="btn-primary" style="margin-top:16px;width:100%">提交群发申请（需平台审核）</button>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px;text-align:center">提交后由平台审核，通过后统一发送。</div>
     {% else %}
     <div style="color:var(--muted);text-align:center;padding:24px 0">
       还没有带手机号的客人。客人预约后会自动进客户档案。
@@ -43,6 +44,25 @@
     {% endif %}
   </div>
 </form>
+
+{% if requests %}
+<div class="add-service-form" style="margin-top:16px">
+  <h2>我的群发申请</h2>
+  {% for r in requests %}
+  <div style="padding:11px 4px;border-bottom:1px solid var(--line)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <span style="font-size:13px;color:var(--muted)">
+        {{ r.recipient_count }} 人 · {{ r.created_at.strftime('%m-%d %H:%M') if r.created_at else '' }}
+      </span>
+      <span style="font-size:13px;font-weight:700;color:{% if r.status=='approved' %}#4CAF7D{% elif r.status=='rejected' %}#EF4444{% else %}#C9A84C{% endif %}">
+        {{ {'pending':'审核中','approved':'已通过 · 已发送','rejected':'已拒绝'}.get(r.status, r.status) }}
+      </span>
+    </div>
+    <div style="font-size:13px;margin-top:4px;color:var(--text);white-space:pre-wrap">{{ r.message }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 
 <script>
 function toggleAll(el){

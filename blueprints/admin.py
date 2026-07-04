@@ -84,6 +84,66 @@ def feedback_resolve(fid):
         db.close()
     return redirect(url_for('admin.feedback_inbox'))
 
+@admin_bp.route('/broadcasts')
+def broadcasts():
+    if not _check_secret():
+        return redirect(url_for('admin.index'))
+    db = get_db()
+    try:
+        rows = db.execute(
+            "SELECT br.*, b.name as biz_name FROM broadcast_requests br "
+            "LEFT JOIN businesses b ON br.business_id = b.id "
+            "ORDER BY (br.status = 'pending') DESC, br.created_at DESC"
+        ).fetchall()
+        return render_template('admin/broadcasts.html', items=[dict(r) for r in rows])
+    finally:
+        db.close()
+
+@admin_bp.route('/broadcasts/<int:bid>/approve', methods=['POST'])
+def broadcast_approve(bid):
+    if not _check_secret():
+        return redirect(url_for('admin.index'))
+    import json, threading
+    from blueprints.booking import send_sms
+    db = get_db()
+    try:
+        row = db.execute(
+            "SELECT br.*, b.name as biz_name FROM broadcast_requests br "
+            "LEFT JOIN businesses b ON br.business_id=b.id WHERE br.id=%s", (bid,)
+        ).fetchone()
+        if not row or row['status'] != 'pending':
+            return redirect(url_for('admin.broadcasts'))
+        try:
+            phones = json.loads(row['phones'])
+        except Exception:
+            phones = []
+        body = row['message'] + '\n\n【' + (row['biz_name'] or '') + '】回复 STOP 退订'
+        db.execute(
+            "UPDATE broadcast_requests SET status='approved', sent_count=%s, reviewed_at=NOW() WHERE id=%s",
+            (len(phones), bid)
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    def _send_all(nums, text):
+        for n in nums:
+            send_sms(n, text)
+    threading.Thread(target=_send_all, args=(phones, body), daemon=True).start()
+    return redirect(url_for('admin.broadcasts'))
+
+@admin_bp.route('/broadcasts/<int:bid>/reject', methods=['POST'])
+def broadcast_reject(bid):
+    if not _check_secret():
+        return redirect(url_for('admin.index'))
+    db = get_db()
+    try:
+        db.execute("UPDATE broadcast_requests SET status='rejected', reviewed_at=NOW() WHERE id=%s AND status='pending'", (bid,))
+        db.commit()
+    finally:
+        db.close()
+    return redirect(url_for('admin.broadcasts'))
+
 @admin_bp.route('/logout')
 def logout():
     session.pop('admin_authed', None)

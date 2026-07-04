@@ -210,6 +210,17 @@ def init_db():
             status TEXT NOT NULL DEFAULT 'new',
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
+        '''CREATE TABLE IF NOT EXISTS broadcast_requests (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            message TEXT NOT NULL,
+            phones TEXT NOT NULL DEFAULT '[]',
+            recipient_count INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'pending',
+            sent_count INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            reviewed_at TIMESTAMPTZ
+        )''',
     ]:
         db.execute(stmt)
     db.commit()

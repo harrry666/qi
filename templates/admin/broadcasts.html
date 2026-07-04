@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>群发审核 · 管理后台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1120; color: #e8e0f0; font-family: system-ui, sans-serif; min-height: 100vh; padding: 2rem; }
+  h1 { color: #C9A84C; font-size: 1.5rem; margin-bottom: 1.5rem; }
+  .back { color: #7c6a90; font-size: .85rem; text-decoration: none; float: right; }
+  .back:hover { color: #C9A84C; }
+  .bc-card { background: #241830; border-radius: 12px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+  .bc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .bc-biz { font-weight: 700; font-size: 1rem; color: #e8e0f0; }
+  .bc-meta { font-size: .8rem; color: #7c6a90; margin-top: 4px; }
+  .bc-msg { margin-top: .7rem; font-size: .95rem; line-height: 1.5; white-space: pre-wrap; background: #1a1120; border-radius: 8px; padding: .7rem .9rem; }
+  .bc-status { font-size: .75rem; padding: 2px 10px; border-radius: 20px; white-space: nowrap; }
+  .st-pending { background: #7c5c20; color: #ffd875; }
+  .st-approved { background: #2a6040; color: #5de88a; }
+  .st-rejected { background: #5a2a2a; color: #f0a0a0; }
+  .bc-actions { display: flex; gap: 8px; margin-top: .9rem; }
+  .btn-approve { background: #2a6040; color: #5de88a; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+  .btn-reject { background: #3a2030; color: #f0a0a0; border: 1px solid #5a2a2a; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+  .empty { color: #7c6a90; text-align: center; padding: 3rem 0; }
+</style>
+</head>
+<body>
+<h1>群发审核 <a class="back" href="/admin">← 返回商家审核</a></h1>
+
+{% if items %}
+  {% for b in items %}
+  <div class="bc-card">
+    <div class="bc-top">
+      <div>
+        <span class="bc-biz">{{ b.biz_name or '未知商家' }}</span>
+        <div class="bc-meta">
+          发送对象 {{ b.recipient_count }} 人
+          {% if b.status == 'approved' %} · 已发 {{ b.sent_count }} 条{% endif %}
+          · {{ b.created_at.strftime('%Y-%m-%d %H:%M') if b.created_at else '' }}
+        </div>
+      </div>
+      <span class="bc-status st-{{ b.status }}">
+        {{ {'pending':'待审核','approved':'已通过','rejected':'已拒绝'}.get(b.status, b.status) }}
+      </span>
+    </div>
+    <div class="bc-msg">{{ b.message }}</div>
+    {% if b.status == 'pending' %}
+    <div class="bc-actions">
+      <form method="POST" action="/admin/broadcasts/{{ b.id }}/approve" onsubmit="return confirm('确认批准并立即发送给 {{ b.recipient_count }} 位客人？会产生短信费用。')">
+        <button class="btn-approve" type="submit">批准并发送</button>
+      </form>
+      <form method="POST" action="/admin/broadcasts/{{ b.id }}/reject">
+        <button class="btn-reject" type="submit">拒绝</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty">暂无群发申请</div>
+{% endif %}
+</body>
+</html>
