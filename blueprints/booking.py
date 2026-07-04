@@ -574,12 +574,21 @@ def my_profile(token):
 
 @booking_bp.route('/my/<token>/update', methods=['POST'])
 def my_profile_update(token):
+    from cloud import upload_to_cloudinary
     db = get_db()
     cust = db.execute('SELECT id FROM customers WHERE profile_token=%s', (token,)).fetchone()
     if cust:
         name = request.form.get('name', '').strip()
         preferences = request.form.get('preferences', '').strip()
         db.execute('UPDATE customers SET name=%s, preferences=%s WHERE id=%s', (name, preferences, cust['id']))
+        avatar_file = request.files.get('avatar')
+        if avatar_file and avatar_file.filename:
+            avatar_url = upload_to_cloudinary(
+                avatar_file, folder='qi/customers',
+                transformation=[{'width': 300, 'height': 300, 'crop': 'fill'}]
+            )
+            if avatar_url:
+                db.execute('UPDATE customers SET avatar_url=%s WHERE id=%s', (avatar_url, cust['id']))
         db.commit()
     db.close()
     return redirect(url_for('booking.my_profile', token=token, saved=1))

@@ -40,21 +40,18 @@
         <div class="my-balance">${{ c.balance }}</div>
       </div>
     </div>
-    <label style="font-size:13px;color:var(--muted);display:block;margin:14px 0 6px">头像（选择图片后点"更换头像"）</label>
-    <form method="POST" action="{{ url_for('booking.my_profile_avatar', token=c.profile_token) }}" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <input type="file" name="avatar" accept="image/*" style="font-size:12px">
-      <button type="submit" class="btn-primary" style="width:auto;font-size:13px;padding:7px 16px">更换头像</button>
-    </form>
   </div>
 
   <div class="my-card">
     <h2>我的资料</h2>
-    <form method="POST" action="{{ url_for('booking.my_profile_update', token=c.profile_token) }}">
+    <form method="POST" action="{{ url_for('booking.my_profile_update', token=c.profile_token) }}" enctype="multipart/form-data">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">头像（选填，选图后点下方保存）</label>
+      <input type="file" name="avatar" accept="image/*" style="font-size:12px;margin-bottom:14px">
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">称呼</label>
       <input class="book-input" type="text" name="name" value="{{ c.name or '' }}" placeholder="你的称呼" style="margin-bottom:12px">
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">偏好备注</label>
       <textarea class="book-input" name="preferences" rows="3" placeholder="例：37分/6度发色，喜欢偏软的烫发">{{ c.preferences or '' }}</textarea>
-      <button type="submit" class="btn-primary" style="width:auto;padding:9px 22px;margin-top:8px">保存</button>
+      <button type="submit" class="btn-primary" style="width:auto;padding:9px 22px;margin-top:8px">✓ 保存更新</button>
     </form>
   </div>
 
