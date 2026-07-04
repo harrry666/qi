@@ -1666,16 +1666,44 @@ def merchant_reschedule_appointment(apt_id):
     new_dt_str = new_dt.strftime('%Y-%m-%d %H:%M')
     db = get_db()
     try:
-        own = db.execute('SELECT id FROM appointments WHERE id=%s AND business_id=%s', (apt_id, biz['id'])).fetchone()
-        if not own:
+        row = db.execute(
+            "SELECT a.*, s.name as service_name FROM appointments a "
+            "JOIN services s ON a.service_id=s.id WHERE a.id=%s AND a.business_id=%s",
+            (apt_id, biz['id'])
+        ).fetchone()
+        if not row:
             return jsonify({'error': '预约不存在'}), 404
+        row = dict(row)
         db.execute(
             'UPDATE appointments SET appointment_dt=%s WHERE id=%s AND business_id=%s',
             (new_dt_str, apt_id, biz['id'])
         )
         db.commit()
-        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
+
+    from blueprints.booking import send_sms, format_phone
+    try:
+        old_disp = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M').strftime('%Y年%-m月%-d日 %-H:%M')
+    except Exception:
+        old_disp = row.get('appointment_dt')
+    new_disp = new_dt.strftime('%Y年%-m月%-d日 %-H:%M')
+    biz_name = biz.get('name') or ''
+    biz_phone = biz.get('phone') or ''
+    cust_phone = row.get('phone') or ''
+    if cust_phone:
+        cust_msg = (
+            f"【预约改期】{row['customer_name']}，您在【{biz_name}】的预约时间已更改。\n\n"
+            f"服务：{row['service_name']}\n原时间：{old_disp}\n新时间：{new_disp}\n\n"
+            + (f"如有疑问请致电：{biz_phone}" if biz_phone else "如有疑问请联系商家。")
+        )
+        threading.Thread(target=send_sms, args=(format_phone(cust_phone), cust_msg), daemon=True).start()
+    if biz_phone:
+        biz_msg = (
+            f"【改期提醒】客人 {row['customer_name']} 的预约已改期。\n"
+            f"服务：{row['service_name']}\n{old_disp} → {new_disp}"
+        )
+        threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
+    return jsonify({'success': True})
