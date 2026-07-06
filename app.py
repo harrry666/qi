@@ -166,7 +166,7 @@ def send_wx_reminders():
             if claimed:
                 try:
                     dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
-                    dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+                    dt_display = dt.strftime('%Y年%m月%d日 %H:%M')
                 except Exception:
                     dt_display = row['appointment_dt']
                 data = {
