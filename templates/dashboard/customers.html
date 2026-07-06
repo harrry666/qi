@@ -69,25 +69,25 @@
   <tbody>
     {% for c in customers %}
     <tr class="customer-row" onclick="location.href='{{ url_for('dashboard.customer_detail', cid=c.id) }}'" style="cursor:pointer">
-      <td>
+      <td class="cell-avatar">
         {% if c.avatar_url %}
           <img src="{{ c.avatar_url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle">
         {% else %}
           <span style="width:32px;height:32px;border-radius:50%;background:var(--gold-light);color:var(--gold-h);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">{{ (c.name or '?')[:1] }}</span>
         {% endif %}
       </td>
-      <td>
+      <td class="cell-head">
         {{ c.name or '未命名' }}
         {% if c.visit_count >= 3 %}
           <span class="badge" style="background:#C9A84C;color:#1A1209;margin-left:6px">常客</span>
         {% endif %}
       </td>
-      <td style="color:#A78BFA">{{ c.phone }}</td>
-      <td style="font-weight:700;color:var(--text)">
+      <td data-label="手机号" style="color:#A78BFA">{{ c.phone }}</td>
+      <td data-label="预约次数" style="font-weight:700;color:var(--text)">
         {{ c.visit_count }}
       </td>
-      <td style="color:var(--text)">{% if c.balance %}${{ c.balance }}{% else %}—{% endif %}</td>
-      <td style="color:var(--muted);font-size:13px">{{ (c.last_visit or '')[:10] or '—' }}</td>
+      <td data-label="储值余额" style="color:var(--text)">{% if c.balance %}${{ c.balance }}{% else %}—{% endif %}</td>
+      <td data-label="最近预约" style="color:var(--muted);font-size:13px">{{ (c.last_visit or '')[:10] or '—' }}</td>
     </tr>
     {% endfor %}
   </tbody>

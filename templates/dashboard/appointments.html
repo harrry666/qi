@@ -35,21 +35,21 @@
   <tbody>
     {% for a in appointments %}
     <tr>
-      <td style="font-weight:600;white-space:nowrap">{{ a.appointment_dt|fmt_dt }}</td>
-      <td>
+      <td class="cell-head" style="font-weight:600;white-space:nowrap">{{ a.appointment_dt|fmt_dt }}</td>
+      <td data-label="服务">
         <div style="font-size:14px;color:var(--text)">{{ a.service_name }}</div>
         {% if a.name_sub %}<div style="font-size:12px;color:#555">{{ a.name_sub }}</div>{% endif %}
       </td>
-      <td>
+      <td data-label="客户">
         {{ a.customer_name }}
         <span class="note-badge" data-note-badge="{{ a.id }}" onclick="toggleNote({{ a.id }})" title="查看商家备注"{% if not a.merchant_note %} style="display:none"{% endif %}>📝</span>
       </td>
-      <td style="color:var(--gold-h)">{{ a.phone }}</td>
-      <td style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>
-      <td>
+      <td data-label="电话" style="color:var(--gold-h)">{{ a.phone }}</td>
+      <td data-label="备注" style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>
+      <td data-label="状态">
         <span class="badge badge-{{ a.status }}">{{ '已确认' if a.status == 'confirmed' else '已取消' }}</span>
       </td>
-      <td class="apt-actions">
+      <td class="apt-actions cell-actions">
         {% if current_filter == 'upcoming' and a.status == 'confirmed' %}
         <button type="button" class="btn-reschedule" onclick="toggleReschedule({{ a.id }})">改期</button>
         {% endif %}

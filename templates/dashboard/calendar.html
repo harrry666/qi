@@ -211,13 +211,14 @@ document.addEventListener('DOMContentLoaded', function() {
     headerToolbar: isMobile ? {
       left: 'prev,next',
       center: 'title',
-      right: 'timeGridDay,timeGridWeek'
+      right: 'timeGridDay,listWeek'
     } : {
       left: 'prev,next today',
       center: 'title',
       right: 'timeGridWeek,timeGridDay,dayGridMonth'
     },
-    buttonText: { today: '今天', week: '周', day: '日', month: '月' },
+    buttonText: { today: '今天', week: '周', day: '日', month: '月', list: '列表' },
+    views: { listWeek: { buttonText: '列表' } },
     eventClassNames: function(arg) {
       var t = arg.event.extendedProps.type;
       if (t === 'block') return ['fc-block-locked'];

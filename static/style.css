@@ -66,12 +66,12 @@ a:hover { text-decoration: underline; }
 .nav-links a { color: var(--muted); }
 .nav-links a:hover { color: var(--text); text-decoration: none; }
 .btn-sm {
-  background: var(--text); color: #FFFFFF;
-  padding: 7px 18px; border-radius: 20px; font-weight: 600;
+  background: var(--gold); color: var(--text);
+  padding: 7px 18px; border-radius: 20px; font-weight: 700;
 }
-.btn-sm:hover { background: #3D2410; color: #FFFFFF; text-decoration: none; }
-.nav-links .btn-sm { color: #FFFFFF; }
-.nav-links .btn-sm:hover { color: #FFFFFF; }
+.btn-sm:hover { background: var(--gold-h); color: var(--text); text-decoration: none; }
+.nav-links .btn-sm { color: var(--text); }
+.nav-links .btn-sm:hover { color: var(--text); }
 
 /* ── Landing Hero ── */
 .hero-rich {
@@ -1179,4 +1179,27 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
   /* 通用模态 / 弹层：限制高度并可内部滚动 */
   .modal { max-height: 90vh; overflow-y: auto; }
   .modal-overlay { padding: 12px; }
+}
+
+/* ---------- 手机端：数据表 → 卡片（客户/预约） ---------- */
+@media (max-width: 600px) {
+  .apt-table, .apt-table tbody, .apt-table tr, .apt-table td { display: block; width: auto; }
+  .apt-table thead { display: none; }
+  .apt-table tbody tr:not(.expand-row) {
+    background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 16px; margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .apt-table td { border: none !important; padding: 4px 0 !important; white-space: normal !important; text-align: left; }
+  .apt-table td[data-label]::before {
+    content: attr(data-label) "："; font-weight: 600; color: var(--muted); margin-right: 4px;
+  }
+  .apt-table td.cell-avatar { display: none !important; }
+  .apt-table td.cell-head {
+    font-size: 17px; font-weight: 700; color: var(--text);
+    padding-bottom: 8px !important; margin-bottom: 6px;
+    border-bottom: 1px solid var(--border) !important;
+  }
+  .apt-table td.cell-actions { padding-top: 12px !important; display: flex; gap: 8px; flex-wrap: wrap; }
+  .apt-table td.cell-actions form { display: inline; }
+  .apt-table tr.expand-row td { padding: 0 0 10px !important; }
 }
