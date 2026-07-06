@@ -196,13 +196,14 @@ document.addEventListener('DOMContentLoaded', function() {
   var calEl = document.getElementById('cal');
   var isMobile = window.matchMedia('(max-width: 768px)').matches;
   calendar = new FullCalendar.Calendar(calEl, {
-    initialView: isMobile ? 'timeGridDay' : 'timeGridWeek',
+    initialView: isMobile ? 'timeGridWeek' : 'timeGridWeek',
     height: 'auto',
     locale: 'zh-cn',
     firstDay: 1,
     slotMinTime: '08:00:00',
     slotMaxTime: '21:00:00',
     snapDuration: '00:05:00',
+    dayMinWidth: isMobile ? 108 : undefined,
     nowIndicator: true,
     selectable: true,
     longPressDelay: 250,
@@ -211,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
     headerToolbar: isMobile ? {
       left: 'prev,next',
       center: 'title',
-      right: 'timeGridDay,listWeek'
+      right: 'timeGridDay,timeGridWeek'
     } : {
       left: 'prev,next today',
       center: 'title',
