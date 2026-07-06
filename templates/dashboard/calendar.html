@@ -22,8 +22,9 @@
     .fc .fc-toolbar.fc-header-toolbar { flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .fc .fc-toolbar-title { font-size: 16px; }
     .fc .fc-button { padding: 6px 10px; }
-    /* 日历自身可横向滚动，避免撑破窄屏 */
-    #cal { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* 周网格：给一个最小宽度，让每列够宽；在视图区内横向滚动（工具栏不受影响） */
+    .fc-timeGridWeek-view .fc-scrollgrid { min-width: 720px; }
+    #cal .fc-view-harness { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   }
 </style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
@@ -203,7 +204,6 @@ document.addEventListener('DOMContentLoaded', function() {
     slotMinTime: '08:00:00',
     slotMaxTime: '21:00:00',
     snapDuration: '00:05:00',
-    dayMinWidth: isMobile ? 108 : undefined,
     nowIndicator: true,
     selectable: true,
     longPressDelay: 250,
