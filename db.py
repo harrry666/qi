@@ -2,6 +2,7 @@ import psycopg2
 import psycopg2.extras
 import os
 from dotenv import load_dotenv
+from extensions import db_pool
 
 load_dotenv()
 
@@ -11,8 +12,9 @@ if _URL.startswith('postgres://'):
 
 
 class _DB:
-    def __init__(self, conn):
+    def __init__(self, conn, pooled=False):
         self._conn = conn
+        self._pooled = pooled
 
     def execute(self, sql, params=()):
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -23,10 +25,16 @@ class _DB:
         self._conn.commit()
 
     def close(self):
-        self._conn.close()
+        if self._pooled:
+            self._conn.rollback()
+            db_pool.putconn(self._conn)
+        else:
+            self._conn.close()
 
 
 def get_db():
+    if db_pool:
+        return _DB(db_pool.getconn(), pooled=True)
     conn = psycopg2.connect(_URL)
     return _DB(conn)
 
