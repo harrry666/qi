@@ -8,7 +8,7 @@ import urllib.request
 
 WX_APPID = os.environ.get('WX_APPID', '')
 WX_APPSECRET = os.environ.get('WX_APPSECRET', '')
-WX_TEMPLATE_BOOKING = os.environ.get('WX_TEMPLATE_BOOKING', '')
+WX_TEMPLATE_BOOKING = os.environ.get('WX_TEMPLATE_BOOKING', 'YUxZ8RpPrwZBczvbAC9JkM_u1hH3cSwrNjnvxVhc31c')
 
 _token_cache = {'value': '', 'expires_at': 0}
 _token_lock = threading.Lock()

@@ -170,10 +170,10 @@ def send_wx_reminders():
                 except Exception:
                     dt_display = row['appointment_dt']
                 data = {
-                    'thing1': {'value': row['biz_name'][:20]},
-                    'thing2': {'value': row['service_name'][:20]},
-                    'time3': {'value': dt_display},
-                    'thing4': {'value': (row['address'] or '')[:20]},
+                    'thing6': {'value': (row['biz_name'] or '')[:20]},
+                    'thing13': {'value': (row['service_name'] or '')[:20]},
+                    'date3': {'value': dt_display},
+                    'thing2': {'value': (row['address'] or '本店')[:20]},
                 }
                 threading.Thread(
                     target=send_subscribe_message, args=(row['openid'], data), daemon=True
