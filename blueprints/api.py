@@ -909,6 +909,8 @@ def my_upload_avatar():
     if file.tell() > MAX_UPLOAD:
         return jsonify({'error': '图片不能超过 5MB'}), 400
     file.seek(0)
+    if not is_real_image(file):
+        return jsonify({'error': '文件不是有效的图片'}), 400
     db = get_db()
     try:
         url = save_upload(file, 'avatar')
@@ -976,6 +978,21 @@ ALLOWED_IMG = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
 MAX_UPLOAD = 5 * 1024 * 1024
 
 
+def is_real_image(file):
+    """按文件头魔数校验真实图片类型，客户端 mimetype 可伪造不可信。读后复位流。"""
+    head = file.read(12)
+    file.seek(0)
+    if head[:3] == b'\xff\xd8\xff':                     # JPEG
+        return True
+    if head[:8] == b'\x89PNG\r\n\x1a\n':                # PNG
+        return True
+    if head[:6] in (b'GIF87a', b'GIF89a'):             # GIF
+        return True
+    if head[:4] == b'RIFF' and head[8:12] == b'WEBP':  # WebP
+        return True
+    return False
+
+
 def save_upload(file, kind):
     if os.environ.get('CLOUDINARY_CLOUD_NAME'):
         import cloudinary, cloudinary.uploader
@@ -1017,6 +1034,8 @@ def merchant_upload():
     if file.tell() > MAX_UPLOAD:
         return jsonify({'error': '图片不能超过 5MB'}), 400
     file.seek(0)
+    if not is_real_image(file):
+        return jsonify({'error': '文件不是有效的图片'}), 400
     try:
         url = save_upload(file, kind)
         return jsonify({'url': url})
