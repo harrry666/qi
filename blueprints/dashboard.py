@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from db import get_db
+from db import get_db, normalize_phone
 from datetime import datetime, timedelta
 import threading
 import os
@@ -471,7 +471,7 @@ def calendar_quick_appointment():
     service_id = request.form.get('service_id', '').strip()
     staff_id = request.form.get('staff_id', '').strip() or None
     name = request.form.get('customer_name', '').strip()
-    phone = request.form.get('phone', '').strip()
+    phone = normalize_phone(request.form.get('phone', '').strip())
     date = request.form.get('date', '').strip()
     time_ = request.form.get('time', '').strip()
     comment = request.form.get('comment', '').strip()
@@ -834,7 +834,7 @@ def customers():
 def add_customer():
     from db import upsert_customer
     name = request.form.get('name', '').strip()
-    phone = request.form.get('phone', '').strip()
+    phone = normalize_phone(request.form.get('phone', '').strip())
     preferences = request.form.get('preferences', '').strip()
     private_note = request.form.get('private_note', '').strip()
     balance = request.form.get('balance', '').strip()
@@ -941,7 +941,7 @@ def customer_detail(cid):
 @login_required
 def customer_update_profile(cid):
     name = request.form.get('name', '').strip()
-    phone = request.form.get('phone', '').strip()
+    phone = normalize_phone(request.form.get('phone', '').strip())
     preferences = request.form.get('preferences', '').strip()
     private_note = request.form.get('private_note', '').strip()
     db = get_db()
@@ -1057,7 +1057,7 @@ def settings():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         address = request.form.get('address', '').strip()
-        phone = request.form.get('phone', '').strip()
+        phone = normalize_phone(request.form.get('phone', '').strip())
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
         support_contact = request.form.get('support_contact', '').strip()

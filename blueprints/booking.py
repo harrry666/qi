@@ -244,7 +244,8 @@ def api_create(slug):
         return jsonify({'success': True, 'service': 'OK'})
     service_id = data.get('service_id')
     name = (data.get('customer_name') or '').strip()
-    phone = (data.get('phone') or '').strip()
+    from db import normalize_phone
+    phone = normalize_phone((data.get('phone') or '').strip())
     apt_dt = data.get('appointment_dt')
     comment = (data.get('comment') or '').strip()
 

@@ -1,6 +1,7 @@
 import psycopg2
 import psycopg2.extras
 import os
+import re
 from dotenv import load_dotenv
 from extensions import db_pool
 
@@ -39,8 +40,17 @@ def get_db():
     return _DB(conn)
 
 
+def normalize_phone(raw):
+    """归一化为纯10位美国号码；11位带1去掉国码。无法识别时返回去符号后的数字。"""
+    digits = re.sub(r'\D', '', raw or '')
+    if len(digits) == 11 and digits.startswith('1'):
+        digits = digits[1:]
+    return digits[-10:] if len(digits) >= 10 else digits
+
+
 def upsert_customer(db, business_id, phone, name):
     import uuid
+    phone = normalize_phone(phone)
     row = db.execute(
         'SELECT id FROM customers WHERE business_id=%s AND phone=%s',
         (business_id, phone)

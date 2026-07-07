@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, url_for
-from db import get_db
+from db import get_db, normalize_phone
 from extensions import limiter
 from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
@@ -194,7 +194,7 @@ def create_booking():
     slug = (data.get('slug') or '').strip()
     service_id = data.get('service_id')
     customer_name = (data.get('customer_name') or '').strip()
-    phone = (data.get('phone') or '').strip()
+    phone = normalize_phone((data.get('phone') or '').strip())
     date = (data.get('date') or '').strip()
     time = (data.get('time') or '').strip()
     comment = (data.get('comment') or '').strip()
@@ -913,7 +913,7 @@ def merchant_register():
     data = request.json or {}
     name = (data.get('name') or '').strip()
     email = (data.get('email') or '').strip().lower()
-    phone = (data.get('phone') or '').strip()
+    phone = normalize_phone((data.get('phone') or '').strip())
     password = data.get('password') or ''
     category = (data.get('category') or '').strip()
     slug = slugify(data.get('slug') or name)
@@ -1408,7 +1408,7 @@ def merchant_add_customer():
         return err
     data = request.json or {}
     name = (data.get('name') or '').strip()
-    phone = (data.get('phone') or '').strip()
+    phone = normalize_phone((data.get('phone') or '').strip())
     preferences = (data.get('preferences') or '').strip()
     private_note = (data.get('private_note') or '').strip()
     balance = data.get('balance')
@@ -1487,7 +1487,7 @@ def merchant_customer_update(cid):
         return err
     data = request.json or {}
     name = (data.get('name') or '').strip()
-    phone = (data.get('phone') or '').strip()
+    phone = normalize_phone((data.get('phone') or '').strip())
     preferences = (data.get('preferences') or '').strip()
     private_note = (data.get('private_note') or '').strip()
     db = get_db()
@@ -1628,7 +1628,7 @@ def merchant_create_appointment():
     service_id = (str(data.get('service_id') or '')).strip()
     staff_id = data.get('staff_id') or None
     name = (data.get('customer_name') or '').strip()
-    phone = (data.get('phone') or '').strip()
+    phone = normalize_phone((data.get('phone') or '').strip())
     date = (data.get('date') or '').strip()
     time_ = (data.get('time') or '').strip()
     comment = (data.get('comment') or '').strip()

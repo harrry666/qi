@@ -72,7 +72,8 @@ def register():
         name = request.form.get('name', '').strip()
         slug = slugify(request.form.get('slug', '') or name)
         email = request.form.get('email', '').strip().lower()
-        phone = request.form.get('phone', '').strip()
+        from db import normalize_phone
+        phone = normalize_phone(request.form.get('phone', '').strip())
         password = request.form.get('password', '')
         category = request.form.get('category', '').strip()
 
