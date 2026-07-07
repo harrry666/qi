@@ -65,7 +65,7 @@
 </section>
 
 <div class="trust-strip">
-  <span class="trust-pill">✓ 免费使用</span>
+  <span class="trust-pill">✓ 首月免费试用</span>
   <span class="trust-sep">·</span>
   <span class="trust-pill">✓ 2 分钟创建</span>
   <span class="trust-sep">·</span>
@@ -100,44 +100,30 @@
 
 <section class="features-section" style="padding-top:0">
   <h2 class="features-heading">简单透明的价格</h2>
-  <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:820px;margin:24px auto 0;padding:0 20px">
-
-    <div style="flex:1;min-width:280px;background:var(--white);border:1px solid var(--border);border-radius:18px;padding:32px 28px;box-shadow:var(--shadow)">
-      <div style="font-size:18px;font-weight:800;color:var(--text)">免费版</div>
-      <div style="margin:10px 0 4px"><span style="font-size:40px;font-weight:800;color:var(--text)">$0</span></div>
-      <div style="color:var(--muted);font-size:14px;margin-bottom:18px">永久免费，够小店起步</div>
-      <div style="font-size:15px;line-height:2;color:var(--text)">
+  <div style="max-width:440px;margin:24px auto 0;padding:0 20px">
+    <div style="background:var(--white);border:2px solid var(--gold);border-radius:18px;padding:36px 30px;box-shadow:var(--shadow);text-align:center;position:relative">
+      <span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--text);font-size:13px;font-weight:700;padding:4px 16px;border-radius:20px">🎁 首月免费试用</span>
+      <div style="font-size:18px;font-weight:800;color:var(--text)">Hastrid 全功能版</div>
+      <div style="margin:16px 0 6px"><span style="font-size:48px;font-weight:800;color:var(--gold-h)">$19.99</span><span style="color:var(--muted);font-size:16px">/月</span></div>
+      <div style="color:var(--gold-h);font-weight:700;font-size:15px">先免费用 1 个月，之后订阅</div>
+      <div style="color:var(--muted);font-size:14px;margin-bottom:22px">随时可取消</div>
+      <div style="font-size:15px;line-height:2.1;color:var(--text);text-align:left;max-width:300px;margin:0 auto">
         ✓ 专属预约页 + 日程日历<br>
-        ✓ 客户列表<br>
-        ✓ 微信预约提醒（免费）<br>
-        ✓ 营业时间 / 空档管理
-      </div>
-      <a href="{{ url_for('auth.register') }}" class="btn-lg-outline" style="display:block;text-align:center;margin-top:22px">免费开始</a>
-    </div>
-
-    <div style="flex:1;min-width:280px;background:var(--white);border:2px solid var(--gold);border-radius:18px;padding:32px 28px;box-shadow:var(--shadow);position:relative">
-      <span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--text);font-size:13px;font-weight:700;padding:4px 16px;border-radius:20px">推荐</span>
-      <div style="font-size:18px;font-weight:800;color:var(--text)">专业版</div>
-      <div style="margin:10px 0 4px"><span style="font-size:40px;font-weight:800;color:var(--gold-h)">$19</span><span style="color:var(--muted);font-size:15px">/月</span></div>
-      <div style="color:var(--gold-h);font-size:14px;font-weight:700;margin-bottom:18px">🎁 首月免费</div>
-      <div style="font-size:15px;line-height:2;color:var(--text)">
-        <b>免费版全部功能，再加：</b><br>
-        ✓ 短信提醒 / 确认<br>
+        ✓ 短信 + 微信预约提醒<br>
         ✓ 员工管理 + 按员工排班<br>
         ✓ 客户档案（储值 / 偏好 / 照片）<br>
         ✓ 数据分析报表<br>
         ✓ 群发短信
       </div>
-      <a href="{{ url_for('auth.register') }}" class="btn-lg" style="display:block;text-align:center;margin-top:22px">免费开始 →</a>
+      <a href="{{ url_for('auth.register') }}" class="btn-lg" style="display:block;text-align:center;margin-top:26px">免费试用 1 个月 →</a>
     </div>
-
   </div>
 </section>
 
 <section class="cta-section">
   <h2>今天就开始接受预约。</h2>
-  <p>已有 50+ 商家使用 · 完全免费</p>
-  <a href="{{ url_for('auth.register') }}" class="btn-lg">免费创建账号</a>
+  <p>已有 50+ 商家使用 · 首月免费试用</p>
+  <a href="{{ url_for('auth.register') }}" class="btn-lg">免费试用 1 个月</a>
 </section>
 
 <footer class="landing-footer">
