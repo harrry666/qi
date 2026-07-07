@@ -283,6 +283,9 @@ def api_create(slug):
     db.close()
 
     a_date, a_time = apt_dt.split(' ')
+    date_obj = datetime.strptime(a_date, '%Y-%m-%d').date()
+    if a_time not in slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=data.get('staff_id') or None):
+        return jsonify({'error': '该时段已被预约或不可用，请重新选择时间'}), 409
     staff_id = resolve_staff_id(biz['id'], service_id, a_date, a_time, svc['duration_mins'], data.get('staff_id') or None)
 
     db = get_db()

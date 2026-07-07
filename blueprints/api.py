@@ -245,7 +245,10 @@ def create_booking():
         except ValueError:
             return jsonify({'error': '日期时间格式无效'}), 400
 
-        from blueprints.booking import resolve_staff_id
+        from blueprints.booking import resolve_staff_id, slots_for_service
+        date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+        if time not in slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=data.get('staff_id') or None):
+            return jsonify({'error': '该时段已被预约或不可用，请重新选择时间'}), 409
         staff_id = resolve_staff_id(biz['id'], service_id, date, time, svc['duration_mins'], data.get('staff_id') or None)
 
         cancel_token = str(uuid.uuid4())
