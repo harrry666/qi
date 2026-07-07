@@ -336,6 +336,15 @@ def api_create(slug):
 @booking_bp.route('/sms/incoming', methods=['POST'])
 def sms_incoming():
     from twilio.twiml.messaging_response import MessagingResponse
+    from twilio.request_validator import RequestValidator
+    if TWILIO_TOKEN:
+        validator = RequestValidator(TWILIO_TOKEN)
+        signature = request.headers.get('X-Twilio-Signature', '')
+        _base = os.environ.get('BASE_URL', '').rstrip('/')
+        url = (_base + request.full_path.rstrip('?')) if _base else request.url
+        if not validator.validate(url, request.form.to_dict(), signature):
+            print(f'[SMS] rejected: bad Twilio signature from {request.remote_addr}', flush=True, file=sys.stderr)
+            return Response('Forbidden', status=403)
     body = (request.form.get('Body') or '').strip()
     from_phone = request.form.get('From', '')
 
