@@ -149,28 +149,52 @@ def logout():
     logout_user()
     return redirect(url_for('auth.landing'))
 
+def _issue_reset_token(db, business_id):
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now(timezone.utc) + timedelta(hours=1)
+    db.execute('UPDATE password_reset_tokens SET used=1 WHERE business_id=%s AND used=0', (business_id,))
+    db.execute(
+        'INSERT INTO password_reset_tokens (business_id, token, expires_at) VALUES (%s,%s,%s)',
+        (business_id, token, expires)
+    )
+    db.commit()
+    return token
+
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 @limiter.limit('5 per hour')
 def forgot_password():
     if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
+        method = request.form.get('method', 'email')
         db = get_db()
-        row = db.execute('SELECT * FROM businesses WHERE email=%s', (email,)).fetchone()
-        if row:
-            token = secrets.token_urlsafe(32)
-            expires = datetime.now(timezone.utc) + timedelta(hours=1)
-            db.execute('UPDATE password_reset_tokens SET used=1 WHERE business_id=%s AND used=0', (row['id'],))
-            db.execute(
-                'INSERT INTO password_reset_tokens (business_id, token, expires_at) VALUES (%s,%s,%s)',
-                (row['id'], token, expires)
-            )
-            db.commit()
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
-            _body = f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
-            threading.Thread(target=send_email, args=(email, '重置你的 Hastrid Booking 密码', _body), daemon=True).start()
-        db.close()
-        flash('如果该邮箱已注册，重置链接已发送，请查收。', 'success')
-        return redirect(url_for('auth.login'))
+        if method == 'phone':
+            from blueprints.booking import format_phone, send_sms
+            raw = request.form.get('phone', '').strip()
+            last10 = re.sub(r'\D', '', raw)[-10:]
+            row = None
+            if len(last10) == 10:
+                row = db.execute(
+                    "SELECT * FROM businesses WHERE RIGHT(regexp_replace(phone,'\\D','','g'),10)=%s",
+                    (last10,)
+                ).fetchone()
+            if row:
+                token = _issue_reset_token(db, row['id'])
+                reset_url = url_for('auth.reset_password', token=token, _external=True)
+                _msg = f'【Hastrid Booking】重置密码链接（1小时内有效）：{reset_url}'
+                threading.Thread(target=send_sms, args=(format_phone(raw), _msg), daemon=True).start()
+            db.close()
+            flash('如果该手机号已注册，重置链接已通过短信发送。', 'success')
+            return redirect(url_for('auth.login'))
+        else:
+            email = request.form.get('email', '').strip().lower()
+            row = db.execute('SELECT * FROM businesses WHERE email=%s', (email,)).fetchone()
+            if row:
+                token = _issue_reset_token(db, row['id'])
+                reset_url = url_for('auth.reset_password', token=token, _external=True)
+                _body = f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
+                threading.Thread(target=send_email, args=(email, '重置你的 Hastrid Booking 密码', _body), daemon=True).start()
+            db.close()
+            flash('如果该邮箱已注册，重置链接已发送，请查收。', 'success')
+            return redirect(url_for('auth.login'))
     return render_template('auth/forgot_password.html')
 
 @auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
