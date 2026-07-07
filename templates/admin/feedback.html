@@ -50,6 +50,7 @@
       </div>
       {% if f.status != 'resolved' %}
       <form method="POST" action="/admin/feedback/{{ f.id }}/resolve">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="btn-resolve" type="submit">标记已处理</button>
       </form>
       {% endif %}

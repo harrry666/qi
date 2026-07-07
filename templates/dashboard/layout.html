@@ -3,7 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}控制台{% endblock %} — Hastrid Booking</title>
+  <script>
+  // 给同源的 fetch POST/PUT/DELETE 自动带上 CSRF token，覆盖所有 AJAX 调用
+  (function () {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    var token = meta ? meta.content : '';
+    var _fetch = window.fetch;
+    window.fetch = function (input, init) {
+      init = init || {};
+      var method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      var sameOrigin = url.indexOf('http') !== 0 || url.indexOf(window.location.origin) === 0;
+      if (token && sameOrigin && ['POST', 'PUT', 'DELETE', 'PATCH'].indexOf(method) !== -1) {
+        var headers = new Headers(init.headers || (typeof input === 'object' ? input.headers : undefined) || {});
+        if (!headers.has('X-CSRFToken')) headers.set('X-CSRFToken', token);
+        init.headers = headers;
+      }
+      return _fetch(input, init);
+    };
+  })();
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">

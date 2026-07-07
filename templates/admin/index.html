@@ -48,6 +48,7 @@
 <div class="login-box">
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="password" name="secret" placeholder="管理员密码" autofocus>
     <button type="submit">进入后台</button>
   </form>
@@ -85,11 +86,13 @@
       <td>
         {% if m.is_approved != 1 %}
         <form method="POST" action="/admin/merchants/{{ m.id }}/approve" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn-approve" type="submit">批准</button>
         </form>
         {% endif %}
         {% if m.is_approved != -1 %}
         <form method="POST" action="/admin/merchants/{{ m.id }}/reject" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn-reject" type="submit">拒绝</button>
         </form>
         {% endif %}

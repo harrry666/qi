@@ -57,9 +57,11 @@
     {% if b.status == 'pending' %}
     <div class="bc-actions">
       <form method="POST" action="/admin/broadcasts/{{ b.id }}/approve" onsubmit="return confirm('确认批准并立即发送给 {{ b.recipient_count }} 位客人？会产生短信费用。')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="btn-approve" type="submit">批准并发送</button>
       </form>
       <form method="POST" action="/admin/broadcasts/{{ b.id }}/reject">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="btn-reject" type="submit">拒绝</button>
       </form>
     </div>

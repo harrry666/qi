@@ -29,6 +29,7 @@
   <div class="sub">发给所有已通过审核的店家（当前 <b style="color:#C9A84C">{{ count }}</b> 位）。适合通知新版本、新功能、维护公告等。</div>
 
   <form method="POST" action="/admin/notify/send" onsubmit="return confirm('确定群发给 {{ count }} 位店家？')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label>邮件标题</label>
     <input type="text" name="subject" maxlength="120" required placeholder="例：哈瓜小约 新增员工提成统计功能 🎉">
     <label>邮件内容</label>

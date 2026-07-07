@@ -15,7 +15,12 @@ _secret = os.environ.get('SECRET_KEY')
 if not _secret:
     raise RuntimeError('SECRET_KEY environment variable is not set')
 app.secret_key = _secret
-app.config['WTF_CSRF_ENABLED'] = False
+app.config['WTF_CSRF_ENABLED'] = True
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=bool(os.environ.get('RAILWAY_ENVIRONMENT')),
+)
 
 csrf.init_app(app)
 limiter.init_app(app)
@@ -45,7 +50,6 @@ app.register_blueprint(dashboard_bp)
 app.register_blueprint(booking_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(admin_bp)
-csrf.exempt(admin_bp)
 csrf.exempt(booking_bp)
 csrf.exempt(api_bp)
 
@@ -96,6 +100,16 @@ def ratelimited(e):
     if request.path.startswith('/api/') or request.is_json:
         return jsonify({'error': '操作太频繁，请稍后再试'}), 429
     return render_template('500.html'), 429
+
+from flask_wtf.csrf import CSRFError
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    from flask import request, jsonify, flash, redirect
+    if request.path.startswith('/api/') or request.is_json:
+        return jsonify({'error': '会话已过期，请刷新页面重试'}), 400
+    flash('会话已过期，请重新提交。', 'error')
+    return redirect(request.referrer or '/'), 302
 
 
 def send_reminders():
