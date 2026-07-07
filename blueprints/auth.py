@@ -7,6 +7,8 @@ from models import Business
 import re
 import secrets
 import smtplib
+import socket
+import ssl
 import os
 import threading
 from email.mime.text import MIMEText
@@ -29,12 +31,17 @@ def send_email(to, subject, body):
     msg['From'] = MAIL_FROM
     msg['To'] = to
     try:
-        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=15) as smtp:
-            smtp.ehlo()
-            smtp.starttls()
-            smtp.login(MAIL_USERNAME, MAIL_PASSWORD)
-            smtp.sendmail(MAIL_FROM, to, msg.as_string())
-        print(f'[send_email] OK: sent to {to} via {MAIL_SERVER}:{MAIL_PORT} from {MAIL_FROM}', flush=True)
+        ipv4 = socket.getaddrinfo(MAIL_SERVER, MAIL_PORT, socket.AF_INET, socket.SOCK_STREAM)[0][4][0]
+        smtp = smtplib.SMTP(timeout=15)
+        smtp.connect(ipv4, MAIL_PORT)
+        smtp._host = MAIL_SERVER
+        smtp.ehlo()
+        smtp.starttls(context=ssl.create_default_context())
+        smtp.ehlo()
+        smtp.login(MAIL_USERNAME, MAIL_PASSWORD)
+        smtp.sendmail(MAIL_FROM, to, msg.as_string())
+        smtp.quit()
+        print(f'[send_email] OK: sent to {to} via {MAIL_SERVER}({ipv4}):{MAIL_PORT} from {MAIL_FROM}', flush=True)
     except Exception as e:
         print(f'[send_email] FAIL: {type(e).__name__}: {e}', flush=True)
 
