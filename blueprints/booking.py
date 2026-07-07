@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, Response
 from db import get_db
+from extensions import limiter
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -232,6 +233,7 @@ def api_week_slots(slug):
     return jsonify(result)
 
 @booking_bp.route('/api/book/<slug>/create', methods=['POST'])
+@limiter.limit('5 per minute; 30 per hour')
 def api_create(slug):
     biz = get_biz_by_slug(slug)
     if not biz:

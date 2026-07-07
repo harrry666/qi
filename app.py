@@ -90,6 +90,13 @@ def server_error(e):
     from flask import render_template
     return render_template('500.html'), 500
 
+@app.errorhandler(429)
+def ratelimited(e):
+    from flask import request, jsonify, render_template
+    if request.path.startswith('/api/') or request.is_json:
+        return jsonify({'error': '操作太频繁，请稍后再试'}), 429
+    return render_template('500.html'), 429
+
 
 def send_reminders():
     from db import get_db

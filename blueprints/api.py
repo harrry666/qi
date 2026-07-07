@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request, url_for
 from db import get_db
+from extensions import limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -13,6 +15,17 @@ from werkzeug.utils import secure_filename
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 TWILIO_VERIFY_SID = os.environ.get('TWILIO_VERIFY_SID', '')
+
+
+def _verify_rate_key():
+    """按手机号限流验证码发送；拿不到手机号时退回按 IP。"""
+    try:
+        phone = (request.get_json(silent=True) or {}).get('phone') or ''
+    except Exception:
+        phone = ''
+    import re as _re
+    digits = _re.sub(r'\D', '', phone)[-10:]
+    return f'verify:{digits}' if len(digits) == 10 else get_remote_address()
 
 
 def get_merchant_from_token():
@@ -174,6 +187,7 @@ def get_business_staff(slug):
 
 
 @api_bp.route('/bookings', methods=['POST'])
+@limiter.limit('5 per minute; 30 per hour')
 def create_booking():
     from blueprints.booking import send_sms, format_phone
     data = request.json or {}
@@ -284,6 +298,8 @@ def create_booking():
 
 
 @api_bp.route('/verify/send', methods=['POST'])
+@limiter.limit('3 per minute; 10 per hour', key_func=_verify_rate_key)
+@limiter.limit('20 per hour')
 def verify_send():
     from blueprints.booking import TWILIO_SID, TWILIO_TOKEN, format_phone
     data = request.json or {}
