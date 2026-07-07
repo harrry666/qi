@@ -353,22 +353,34 @@ def calendar():
 @dashboard_bp.route('/calendar/events')
 @login_required
 def calendar_events():
+    try:
+        sf = int(request.args.get('staff_id') or 0) or None
+    except ValueError:
+        sf = None
     db = get_db()
-    rows = db.execute(
+    apt_sql = (
         "SELECT a.id, a.customer_name, a.appointment_dt, a.status, a.staff_id, "
         "s.id as service_id, s.name as service_name, s.duration_mins, s.color as service_color, "
         "st.name as staff_name "
         "FROM appointments a JOIN services s ON a.service_id=s.id "
         "LEFT JOIN staff st ON a.staff_id=st.id "
-        "WHERE a.business_id=%s AND a.status='confirmed'",
-        (current_user.id,)
-    ).fetchall()
-    blocks = db.execute(
+        "WHERE a.business_id=%s AND a.status='confirmed'"
+    )
+    apt_params = [current_user.id]
+    if sf:
+        apt_sql += " AND a.staff_id=%s"
+        apt_params.append(sf)
+    rows = db.execute(apt_sql, tuple(apt_params)).fetchall()
+    blk_sql = (
         "SELECT tb.id, tb.date, tb.start_time, tb.end_time, tb.reason, st.name AS staff_name "
         "FROM time_blocks tb LEFT JOIN staff st ON tb.staff_id=st.id "
-        "WHERE tb.business_id=%s",
-        (current_user.id,)
-    ).fetchall()
+        "WHERE tb.business_id=%s"
+    )
+    blk_params = [current_user.id]
+    if sf:
+        blk_sql += " AND (tb.staff_id=%s OR tb.staff_id IS NULL)"
+        blk_params.append(sf)
+    blocks = db.execute(blk_sql, tuple(blk_params)).fetchall()
     blackouts = db.execute(
         "SELECT start_date, end_date, reason FROM business_blackouts WHERE business_id=%s",
         (current_user.id,)

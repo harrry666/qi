@@ -32,7 +32,15 @@
     <h1 style="font-size:24px;font-weight:800;color:var(--text);margin:0">🗓️ 日程日历</h1>
     <p style="color:var(--muted);font-size:14px;margin:4px 0 0">按周查看预约，颜色对应服务项目。深棕斜纹=已锁定/休业（点它可解锁）。点空白时段可锁定或加预约，点预约可取消/改期。</p>
   </div>
-  <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap" id="legend"></div>
+  <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    {% if staff %}
+    <select id="staff-filter" class="dash-input" style="width:auto;min-width:140px" onchange="calendar.refetchEvents()">
+      <option value="">👥 全部员工</option>
+      {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap" id="legend"></div>
+  </div>
 </div>
 
 <div id="calendar-card" style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px">
@@ -226,7 +234,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (t === 'blackout') return ['fc-blackout'];
       return [];
     },
-    events: '{{ url_for("dashboard.calendar_events") }}',
+    events: {
+      url: '{{ url_for("dashboard.calendar_events") }}',
+      extraParams: function() {
+        var el = document.getElementById('staff-filter');
+        return { staff_id: el ? el.value : '' };
+      }
+    },
     eventDidMount: function(info) {
       var legend = document.getElementById('legend');
       var key = info.event.extendedProps.service;
