@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 _LA = ZoneInfo('America/Los_Angeles')
 import os
+import sys
 import uuid
 import threading
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -83,7 +84,8 @@ def list_businesses():
         ).fetchall()
         return jsonify({'businesses': [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -120,7 +122,8 @@ def get_business(slug):
             'hours': [dict(h) for h in hours],
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -157,7 +160,8 @@ def get_slots(slug):
         available = slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=staff_id)
         return jsonify({'slots': available})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -181,7 +185,8 @@ def get_business_staff(slug):
             for s in staff
         ]})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -295,7 +300,8 @@ def create_booking():
 
         return jsonify({'success': True, 'cancel_token': cancel_token, 'message': '预约成功'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -370,7 +376,8 @@ def cancel_booking(cancel_token):
 
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -396,7 +403,8 @@ def merchant_login():
         db.commit()
         return jsonify({'token': token, 'business_name': biz['name'], 'id': biz['id']})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -431,7 +439,8 @@ def merchant_appointments():
         ).fetchall()
         return jsonify({'appointments': [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -464,7 +473,8 @@ def merchant_appointments_list():
         rows = db.execute(sql, tuple(params)).fetchall()
         return jsonify({'appointments': [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -491,7 +501,8 @@ def merchant_confirm_appointment(apt_id):
         db.commit()
         return jsonify({'ok': True, 'status': 'confirmed'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -545,7 +556,8 @@ def merchant_cancel_appointment(apt_id):
 
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -563,7 +575,8 @@ def merchant_services():
         ).fetchall()
         return jsonify({'services': [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -614,7 +627,8 @@ def merchant_add_service():
         db.commit()
         return jsonify({'success': True, 'id': new_id})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -639,7 +653,8 @@ def merchant_delete_service(svc_id):
         db.commit()
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -702,7 +717,8 @@ def merchant_update_service(service_id):
         ).fetchone()
         return jsonify(dict(svc))
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -772,7 +788,8 @@ def merchant_analytics():
             'peak_hours': [{'hour': r['hour'], 'count': r['count']} for r in peak_hours],
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -803,7 +820,8 @@ def wx_login():
             db.commit()
         return jsonify({'token': token})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -826,7 +844,8 @@ def my_bookings():
         ).fetchall()
         return jsonify({'appointments': [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -870,7 +889,8 @@ def my_update_profile():
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -896,7 +916,8 @@ def my_upload_avatar():
         db.commit()
         return jsonify({'url': url})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -945,7 +966,8 @@ def merchant_register():
         db.commit()
         return jsonify({'pending': True, 'message': '注册申请已提交，管理员审核通过后即可登录'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -999,7 +1021,8 @@ def merchant_upload():
         url = save_upload(file, kind)
         return jsonify({'url': url})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
 
 
 @api_bp.route('/merchant/profile', methods=['PUT'])
@@ -1027,7 +1050,8 @@ def merchant_update_profile():
         row.pop('api_token', None)
         return jsonify({'business': row})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1074,7 +1098,8 @@ def merchant_update_hours():
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1115,7 +1140,8 @@ def merchant_add_blackout():
         db.commit()
         return jsonify({'id': row['id'], 'start_date': start, 'end_date': end, 'reason': reason})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1131,7 +1157,8 @@ def merchant_delete_blackout(bo_id):
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1188,7 +1215,8 @@ def merchant_add_block():
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1204,7 +1232,8 @@ def merchant_delete_block(bid):
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1233,7 +1262,8 @@ def merchant_staff():
             })
         return jsonify({'staff': result})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1259,7 +1289,8 @@ def merchant_add_staff():
         db.commit()
         return jsonify({'id': row['id']})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1298,7 +1329,8 @@ def merchant_update_staff(sid):
             db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1319,7 +1351,8 @@ def merchant_delete_staff(sid):
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1344,7 +1377,8 @@ def merchant_staff_services(sid):
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1371,7 +1405,8 @@ def merchant_staff_hours(sid):
         db.commit()
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1395,7 +1430,8 @@ def merchant_customers():
         ).fetchall()
         return jsonify({'customers': [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1434,7 +1470,8 @@ def merchant_add_customer():
         db.commit()
         return jsonify({'success': True, 'customer_id': cid})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1475,7 +1512,8 @@ def merchant_customer_detail(cid):
             'transactions': [dict(t) for t in transactions],
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1509,7 +1547,8 @@ def merchant_customer_update(cid):
         db.commit()
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1540,7 +1579,8 @@ def merchant_customer_adjust_balance(cid):
         row = db.execute('SELECT balance FROM customers WHERE id=%s', (cid,)).fetchone()
         return jsonify({'success': True, 'balance': row['balance']})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1567,7 +1607,8 @@ def merchant_customer_add_photo(cid):
         db.commit()
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1589,7 +1630,8 @@ def merchant_customer_delete(cid):
         db.commit()
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1612,7 +1654,8 @@ def merchant_feedback():
         db.commit()
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1654,7 +1697,8 @@ def merchant_create_appointment():
         )
         db.commit()
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
@@ -1708,7 +1752,8 @@ def merchant_reschedule_appointment(apt_id):
         )
         db.commit()
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
     finally:
         db.close()
 
