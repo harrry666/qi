@@ -376,6 +376,7 @@ def cancel_booking(cancel_token):
 
 
 @api_bp.route('/merchant/login', methods=['POST'])
+@limiter.limit('10 per minute; 50 per hour')
 def merchant_login():
     data = request.json or {}
     email = (data.get('email') or '').strip().lower()

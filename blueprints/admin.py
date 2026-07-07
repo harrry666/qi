@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from db import get_db
+from extensions import limiter
 import os
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -9,6 +10,7 @@ def _check_secret():
     return secret and session.get('admin_authed') == secret
 
 @admin_bp.route('/', methods=['GET', 'POST'])
+@limiter.limit('10 per minute; 30 per hour', methods=['POST'])
 def index():
     secret = os.environ.get('ADMIN_SECRET', '')
     if not secret:
