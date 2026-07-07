@@ -23,10 +23,11 @@
   <p>浏览本地商家，在线立即预约。</p>
 </div>
 
+{% set zh = {'Hair':'理发','Nails':'美甲','Massage':'按摩','Fitness & Yoga':'健身瑜伽','Medical':'医疗','Beauty':'美容','Skincare':'护肤','Private Chef':'私厨','Tattoo & Piercing':'纹身穿孔','Pet Grooming':'宠物美容','Photography':'摄影','Tutoring':'家教','Other':'其他'} %}
 <div class="explore-filters">
   <a href="{{ url_for('auth.explore') }}" class="filter-chip {% if not active_cat %}active{% endif %}">全部</a>
   {% for cat in categories %}
-  <a href="{{ url_for('auth.explore', cat=cat) }}" class="filter-chip {% if active_cat == cat %}active{% endif %}">{{ cat }}</a>
+  <a href="{{ url_for('auth.explore', cat=cat) }}" class="filter-chip {% if active_cat == cat %}active{% endif %}">{{ zh.get(cat, cat) }}（{{ cat }}）</a>
   {% endfor %}
 </div>
 
@@ -42,7 +43,7 @@
           {% else %}
           <div class="biz-avatar">{{ biz.name[0].upper() }}</div>
           {% endif %}
-          <span class="biz-category-badge">{{ biz.category or 'Other' }}</span>
+          <span class="biz-category-badge">{% set bc = biz.category or 'Other' %}{{ zh.get(bc, bc) }}（{{ bc }}）</span>
         </div>
         <div class="biz-name">{{ biz.name }}</div>
         {% if biz.address %}

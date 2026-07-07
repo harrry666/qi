@@ -23,10 +23,11 @@
       <input class="form-input" type="tel" name="phone" placeholder="e.g. 9095551234" required value="{{ form.get('phone','') }}">
 
       <label class="field-label">服务类别</label>
+      {% set zh = {'Hair':'理发','Nails':'美甲','Massage':'按摩','Fitness & Yoga':'健身瑜伽','Medical':'医疗','Beauty':'美容','Skincare':'护肤','Private Chef':'私厨','Tattoo & Piercing':'纹身穿孔','Pet Grooming':'宠物美容','Photography':'摄影','Tutoring':'家教','Other':'其他'} %}
       <select class="form-input" name="category" required>
         <option value="">请选择类别...</option>
         {% for cat in categories %}
-        <option value="{{ cat }}" {% if form.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+        <option value="{{ cat }}" {% if form.get('category') == cat %}selected{% endif %}>{{ zh.get(cat, cat) }}（{{ cat }}）</option>
         {% endfor %}
       </select>
 
