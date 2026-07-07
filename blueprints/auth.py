@@ -8,6 +8,7 @@ import re
 import secrets
 import smtplib
 import os
+import threading
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta, timezone
 
@@ -27,7 +28,7 @@ def send_email(to, subject, body):
     msg['From'] = MAIL_FROM
     msg['To'] = to
     try:
-        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as smtp:
+        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=15) as smtp:
             smtp.ehlo()
             smtp.starttls()
             smtp.login(MAIL_USERNAME, MAIL_PASSWORD)
@@ -156,11 +157,8 @@ def forgot_password():
             )
             db.commit()
             reset_url = url_for('auth.reset_password', token=token, _external=True)
-            send_email(
-                email,
-                '重置你的 Hastrid Booking 密码',
-                f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
-            )
+            _body = f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
+            threading.Thread(target=send_email, args=(email, '重置你的 Hastrid Booking 密码', _body), daemon=True).start()
         db.close()
         flash('如果该邮箱已注册，重置链接已发送，请查收。', 'success')
         return redirect(url_for('auth.login'))
