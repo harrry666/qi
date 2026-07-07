@@ -22,6 +22,7 @@ MAIL_FROM     = os.environ.get('MAIL_FROM', MAIL_USERNAME)
 
 def send_email(to, subject, body):
     if not all([MAIL_USERNAME, MAIL_PASSWORD]):
+        print(f'[send_email] SKIP: MAIL_USERNAME or MAIL_PASSWORD not set (user set={bool(MAIL_USERNAME)}, pass set={bool(MAIL_PASSWORD)})', flush=True)
         return
     msg = MIMEText(body, 'plain', 'utf-8')
     msg['Subject'] = subject
@@ -33,8 +34,9 @@ def send_email(to, subject, body):
             smtp.starttls()
             smtp.login(MAIL_USERNAME, MAIL_PASSWORD)
             smtp.sendmail(MAIL_FROM, to, msg.as_string())
-    except Exception:
-        pass
+        print(f'[send_email] OK: sent to {to} via {MAIL_SERVER}:{MAIL_PORT} from {MAIL_FROM}', flush=True)
+    except Exception as e:
+        print(f'[send_email] FAIL: {type(e).__name__}: {e}', flush=True)
 
 CATEGORIES = [
     'Hair', 'Nails', 'Massage', 'Fitness & Yoga', 'Medical',
