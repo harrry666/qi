@@ -385,7 +385,7 @@ def merchant_login():
         if not biz or not check_password_hash(biz['password_hash'], password):
             return jsonify({'error': '邮箱或密码错误'}), 401
         biz = dict(biz)
-        if not biz.get('is_approved'):
+        if biz.get('is_approved') != 1:
             return jsonify({'error': '账号待审核，请联系管理员'}), 403
         token = str(uuid.uuid4())
         db.execute('UPDATE businesses SET api_token=%s WHERE id=%s', (token, biz['id']))

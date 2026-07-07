@@ -134,7 +134,7 @@ def login():
             flash('邮箱或密码错误。', 'error')
             return render_template('auth/login.html')
 
-        if not row.get('is_approved'):
+        if row.get('is_approved') != 1:
             flash('账号待审核，请联系管理员。', 'error')
             return render_template('auth/login.html')
 
