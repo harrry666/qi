@@ -30,7 +30,7 @@
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
   <div>
     <h1 style="font-size:24px;font-weight:800;color:var(--text);margin:0">🗓️ 日程日历</h1>
-    <p style="color:var(--muted);font-size:14px;margin:4px 0 0">按周查看预约，颜色对应服务项目。深棕斜纹=已锁定/休业（点它可解锁）。点空白时段可锁定或加预约，点预约可取消/改期。</p>
+    <p style="color:var(--muted);font-size:14px;margin:4px 0 0">按周查看预约，颜色对应服务项目。深棕斜纹=已锁定/休业（点它可解锁）。点空白时段可锁定或加预约（起止时间可手填，精确到分钟），点预约可取消/改期。</p>
   </div>
   <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
     {% if staff %}
@@ -84,8 +84,16 @@
     </div>
 
     <form id="slot-block-form" style="display:none;margin-top:4px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">结束时间</label>
-      <input type="time" id="block-end-time" class="dash-input" style="margin-bottom:10px">
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">开始时间</label>
+          <input type="time" id="block-start-time" class="dash-input" style="margin-bottom:10px">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">结束时间</label>
+          <input type="time" id="block-end-time" class="dash-input" style="margin-bottom:10px">
+        </div>
+      </div>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">员工（不选=整店锁定）</label>
       <select id="block-staff" class="dash-input" style="margin-bottom:10px">
         <option value="">整店</option>
@@ -100,6 +108,8 @@
     </form>
 
     <form id="slot-appointment-form" style="display:none;margin-top:4px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">开始时间</label>
+      <input type="time" id="apt-start-time" class="dash-input" style="margin-bottom:10px">
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">服务</label>
       <select id="apt-service" class="dash-input" style="margin-bottom:10px">
         {% for sv in services %}<option value="{{ sv.id }}">{{ sv.name }}</option>{% endfor %}
@@ -152,20 +162,26 @@ function closeSlotModal() {
 function showSlotForm(kind) {
   document.getElementById('slot-actions').style.display = 'none';
   if (kind === 'block') {
+    document.getElementById('block-start-time').value = slotState.time;
     var end = new Date(slotState.date + 'T' + slotState.time);
     end.setMinutes(end.getMinutes() + 30);
     document.getElementById('block-end-time').value = end.toTimeString().slice(0, 5);
     document.getElementById('slot-block-form').style.display = 'block';
   } else {
+    document.getElementById('apt-start-time').value = slotState.time;
     document.getElementById('slot-appointment-form').style.display = 'block';
   }
 }
 
 function submitBlock() {
+  var startT = document.getElementById('block-start-time').value;
+  var endT = document.getElementById('block-end-time').value;
+  if (!startT || !endT) { alert('请填写开始和结束时间'); return; }
+  if (endT <= startT) { alert('结束时间要晚于开始时间'); return; }
   var fd = new FormData();
   fd.append('date', slotState.date);
-  fd.append('start_time', slotState.time);
-  fd.append('end_time', document.getElementById('block-end-time').value);
+  fd.append('start_time', startT);
+  fd.append('end_time', endT);
   fd.append('staff_id', document.getElementById('block-staff').value);
   fd.append('reason', document.getElementById('block-reason').value);
   fetch('{{ url_for("dashboard.calendar_quick_block") }}', { method: 'POST', body: fd })
@@ -180,6 +196,8 @@ function submitBlock() {
 function submitAppointment() {
   var name = document.getElementById('apt-name').value.trim();
   var phone = document.getElementById('apt-phone').value.trim();
+  var startT = document.getElementById('apt-start-time').value;
+  if (!startT) { alert('请填写开始时间'); return; }
   if (!name || !phone) { alert('请填写客人姓名和手机号'); return; }
   var fd = new FormData();
   fd.append('service_id', document.getElementById('apt-service').value);
@@ -187,7 +205,7 @@ function submitAppointment() {
   fd.append('customer_name', name);
   fd.append('phone', phone);
   fd.append('date', slotState.date);
-  fd.append('time', slotState.time);
+  fd.append('time', startT);
   fd.append('comment', document.getElementById('apt-comment').value);
   fetch('{{ url_for("dashboard.calendar_quick_appointment") }}', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
@@ -291,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
       slotState.date = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
       slotState.time = pad(d.getHours()) + ':' + pad(d.getMinutes());
       document.getElementById('slot-modal-title').textContent =
-        d.toLocaleDateString('zh-CN', {month:'numeric', day:'numeric', weekday:'short'}) + ' ' + slotState.time;
+        d.toLocaleDateString('zh-CN', {month:'numeric', day:'numeric', weekday:'short'}) + ' · 选择操作';
       document.getElementById('slot-modal').style.display = 'flex';
     }
   });
