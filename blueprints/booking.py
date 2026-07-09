@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, Response, g
-from db import get_db
+from db import get_db, normalize_phone
 from extensions import limiter
 from translations import t
 from datetime import datetime, timedelta
@@ -545,7 +545,7 @@ def my_request(slug):
     sent = False
     error = None
     if request.method == 'POST':
-        phone = request.form.get('phone', '').strip()
+        phone = normalize_phone(request.form.get('phone', '').strip())
         db = get_db()
         cust = db.execute(
             'SELECT * FROM customers WHERE business_id=%s AND phone=%s',
@@ -553,7 +553,7 @@ def my_request(slug):
         ).fetchone()
         db.close()
         if cust:
-            base_url = os.environ.get('BASE_URL', '').rstrip('/')
+            base_url = os.environ.get('BASE_URL', request.host_url).rstrip('/')
             link = f"{base_url}/my/{cust['profile_token']}"
             msg = f"【{biz['name']}】你的专属客户档案链接：\n{link}\n\n可以设置偏好、上传照片。请勿转发给他人。"
             threading.Thread(target=send_sms, args=(format_phone(phone), msg), daemon=True).start()

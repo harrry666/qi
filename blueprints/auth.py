@@ -137,11 +137,11 @@ def login():
 
         if not row or not check_password_hash(row['password_hash'], password):
             flash('flash.auth.login_invalid', 'error')
-            return render_template('auth/login.html')
+            return render_template('auth/login.html', email=email)
 
         if row.get('is_approved') != 1:
             flash('flash.auth.pending_approval', 'error')
-            return render_template('auth/login.html')
+            return render_template('auth/login.html', email=email)
 
         login_user(Business(row))
         return redirect(url_for('dashboard.index'))

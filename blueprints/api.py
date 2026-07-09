@@ -270,7 +270,7 @@ def create_booking():
 
         biz_phone = biz.get('phone') or ''
         formatted_customer_phone = format_phone(phone)
-        _base = os.environ.get('BASE_URL', '').rstrip('/')
+        _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
         cancel_url = f"{_base}/cancel/{cancel_token}" if _base else ''
 
         customer_msg = (
@@ -876,7 +876,7 @@ def my_update_profile():
         params.append((data.get('nickname') or '').strip())
     if 'phone' in data:
         fields.append('phone=%s')
-        params.append((data.get('phone') or '').strip())
+        params.append(normalize_phone((data.get('phone') or '').strip()))
     if 'preferences' in data:
         fields.append('preferences=%s')
         params.append((data.get('preferences') or '').strip())
@@ -1726,7 +1726,7 @@ def merchant_create_appointment():
         dt_display = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M').strftime('%Y年%-m月%-d日 %-H:%M')
     except ValueError:
         dt_display = apt_dt
-    _base = os.environ.get('BASE_URL', '').rstrip('/')
+    _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
     cancel_url = f"{_base}/cancel/{cancel_token}" if _base else ''
     biz_phone = biz.get('phone') or ''
     customer_msg = (
