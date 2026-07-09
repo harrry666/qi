@@ -147,40 +147,6 @@ def broadcast_reject(bid):
         db.close()
     return redirect(url_for('admin.broadcasts'))
 
-@admin_bp.route('/notify')
-def notify():
-    if not _check_secret():
-        return redirect(url_for('admin.index'))
-    db = get_db()
-    try:
-        rows = db.execute("SELECT email FROM businesses WHERE is_approved=1 AND email IS NOT NULL AND email != ''").fetchall()
-        return render_template('admin/notify.html', count=len(rows), sent=request.args.get('sent'))
-    finally:
-        db.close()
-
-@admin_bp.route('/notify/send', methods=['POST'])
-def notify_send():
-    if not _check_secret():
-        return redirect(url_for('admin.index'))
-    import threading
-    from blueprints.auth import send_email
-    subject = (request.form.get('subject') or '').strip()
-    body = (request.form.get('body') or '').strip()
-    if not subject or not body:
-        return redirect(url_for('admin.notify'))
-    db = get_db()
-    try:
-        rows = db.execute("SELECT email FROM businesses WHERE is_approved=1 AND email IS NOT NULL AND email != ''").fetchall()
-        emails = [r['email'] for r in rows]
-    finally:
-        db.close()
-
-    def _blast(recips, subj, text):
-        for e in recips:
-            send_email(e, subj, text)
-    threading.Thread(target=_blast, args=(emails, subject, body), daemon=True).start()
-    return redirect(url_for('admin.notify', sent=len(emails)))
-
 @admin_bp.route('/logout')
 def logout():
     session.pop('admin_authed', None)
