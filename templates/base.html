@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +13,7 @@
       .public-nav { padding: 0 14px; height: 58px; }
       .nav-logo { font-size: 17px; gap: 6px; }
       .nav-logo-img { height: 40px; }
-      .nav-links { gap: 12px; font-size: 13px; }
+      .nav-links { gap: 10px; font-size: 13px; }
       .nav-links .btn-sm { padding: 6px 12px; }
     }
   </style>
@@ -27,14 +27,18 @@
     Hastrid
   </a>
   <div class="nav-links">
-    <a href="{{ url_for('auth.explore') }}">浏览商家</a>
+    <a href="{{ url_for('auth.explore') }}">{{ t('nav.explore') }}</a>
     {% if current_user.is_authenticated %}
-      <a href="{{ url_for('dashboard.index') }}">主页</a>
-      <a href="{{ url_for('auth.logout') }}">退出登录</a>
+      <a href="{{ url_for('dashboard.index') }}">{{ t('nav.home') }}</a>
+      <a href="{{ url_for('auth.logout') }}">{{ t('nav.logout') }}</a>
     {% else %}
-      <a href="{{ url_for('auth.login') }}">登录</a>
-      <a href="{{ url_for('auth.register') }}" class="btn-sm">免费注册</a>
+      <a href="{{ url_for('auth.login') }}">{{ t('nav.login') }}</a>
+      <a href="{{ url_for('auth.register') }}" class="btn-sm">{{ t('nav.register') }}</a>
     {% endif %}
+    <div class="lang-switch">
+      <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+      <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+    </div>
   </div>
 </nav>
 
@@ -42,7 +46,7 @@
   {% if messages %}
     <div style="max-width:480px;margin:12px auto;padding:0 16px">
       {% for cat, msg in messages %}
-        <div class="flash flash-{{ cat }}">{{ msg }}</div>
+        <div class="flash flash-{{ cat }}">{{ t(msg) }}</div>
       {% endfor %}
     </div>
   {% endif %}

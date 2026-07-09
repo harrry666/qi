@@ -11,10 +11,13 @@ import json
 from blueprints.booking import send_sms, format_phone
 from blueprints.auth import CATEGORIES
 from cloud import upload_to_cloudinary as _upload_to_cloudinary
+from translations import t
+from flask import g
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
 _WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+_WEEKDAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 @dashboard_bp.app_template_filter('fmt_dt')
 def fmt_dt(value):
@@ -24,6 +27,8 @@ def fmt_dt(value):
         dt = datetime.strptime(value[:16], '%Y-%m-%d %H:%M')
     except (ValueError, TypeError):
         return value
+    if getattr(g, 'lang', 'zh') == 'en':
+        return f"{dt.strftime('%b')} {dt.day}, {_WEEKDAYS_EN[dt.weekday()]} {dt.hour:02d}:{dt.minute:02d}"
     return f"{dt.month}月{dt.day}日 {_WEEKDAYS[dt.weekday()]} {dt.hour:02d}:{dt.minute:02d}"
 
 @dashboard_bp.route('/')
@@ -33,7 +38,7 @@ def index():
     today = datetime.now().strftime('%Y-%m-%d')
     now = datetime.now()
     hour = now.hour
-    greeting = '早上好' if hour < 12 else ('下午好' if hour < 17 else '晚上好')
+    greeting = t('dash.index.greeting_morning') if hour < 12 else (t('dash.index.greeting_afternoon') if hour < 17 else t('dash.index.greeting_evening'))
 
     today_apts = db.execute(
         "SELECT a.*, s.name as service_name, s.duration_mins, s.price "
@@ -74,17 +79,17 @@ def index():
 
     delta = week_count - last_week_count
     if week_count == 0:
-        insight = '本周还没有预约，分享你的预约页拉几个客人吧。'
+        insight = t('dash.index.insight_none')
     elif last_week_count == 0:
-        insight = f'本周已经有 {week_count} 个预约。'
+        insight = t('dash.index.insight_first', week_count=week_count)
     elif delta > 0:
-        insight = f'本周比上周多了 {delta} 个预约，势头不错。'
+        insight = t('dash.index.insight_up', delta=delta)
     elif delta < 0:
-        insight = f'本周比上周少了 {-delta} 个预约，可以推一波老客户。'
+        insight = t('dash.index.insight_down', delta=-delta)
     else:
-        insight = f'本周和上周一样都是 {week_count} 个预约，很稳。'
+        insight = t('dash.index.insight_flat', week_count=week_count)
     if peak and peak['hh'] is not None:
-        insight += f" 你的高峰时段在 {int(peak['hh'])} 点。"
+        insight += t('dash.index.insight_peak', hour=int(peak['hh']))
 
     return render_template('dashboard/index.html',
         today_apts=today_apts, today_count=len(today_apts),
@@ -217,7 +222,7 @@ def add_service():
     icon_url = _upload_to_cloudinary(request.files.get('icon_image'), transformation=[{'width': 200, 'height': 200, 'crop': 'fill'}])
 
     if not name:
-        flash('服务名称为必填项。', 'error')
+        flash('flash.svc.name_required', 'error')
         return redirect(url_for('dashboard.services'))
 
     db = get_db()
@@ -227,7 +232,7 @@ def add_service():
     )
     db.commit()
     db.close()
-    flash('服务已添加。', 'success')
+    flash('flash.svc.added', 'success')
     return redirect(url_for('dashboard.services'))
 
 @dashboard_bp.route('/services/<int:svc_id>/icon', methods=['POST'])
@@ -242,9 +247,9 @@ def update_service_icon(svc_id):
         )
         db.commit()
         db.close()
-        flash('图片已更新。', 'success')
+        flash('flash.svc.icon_updated', 'success')
     else:
-        flash('请上传有效的图片文件（jpg/png/webp/gif）。', 'error')
+        flash('flash.svc.icon_invalid', 'error')
     return redirect(url_for('dashboard.services'))
 
 @dashboard_bp.route('/services/<int:svc_id>/color', methods=['POST'])
@@ -271,7 +276,7 @@ def edit_service(svc_id):
     emoji = request.form.get('emoji', '').strip()
     buffer_mins = int(request.form.get('buffer_mins', 0) or 0)
     if not name:
-        flash('服务名称为必填项。', 'error')
+        flash('flash.svc.name_required', 'error')
         return redirect(url_for('dashboard.services'))
     db = get_db()
     db.execute(
@@ -281,7 +286,7 @@ def edit_service(svc_id):
     )
     db.commit()
     db.close()
-    flash('服务已更新。', 'success')
+    flash('flash.svc.updated', 'success')
     return redirect(url_for('dashboard.services'))
 
 @dashboard_bp.route('/services/<int:svc_id>/delete', methods=['POST'])
@@ -579,7 +584,7 @@ def cancel_appointment(apt_id):
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
 
-    flash('预约已取消，已通知客人和你。', 'success')
+    flash('flash.apt.cancelled', 'success')
     return redirect(url_for('dashboard.appointments'))
 
 @dashboard_bp.route('/appointments/<int:apt_id>/reschedule', methods=['POST'])
@@ -587,12 +592,12 @@ def cancel_appointment(apt_id):
 def reschedule_appointment(apt_id):
     new_dt_raw = request.form.get('new_dt', '').strip()
     if not new_dt_raw:
-        flash('请选择新的日期和时间。', 'error')
+        flash('flash.apt.pick_datetime', 'error')
         return redirect(url_for('dashboard.appointments'))
     try:
         new_dt = datetime.strptime(new_dt_raw, '%Y-%m-%dT%H:%M')
     except ValueError:
-        flash('日期格式无效。', 'error')
+        flash('flash.apt.invalid_date', 'error')
         return redirect(url_for('dashboard.appointments'))
     new_dt_str = new_dt.strftime('%Y-%m-%d %H:%M')
     db = get_db()
@@ -627,7 +632,7 @@ def reschedule_appointment(apt_id):
                 f"服务：{row['service_name']}\n{old_disp} → {new_disp}"
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
-    flash('预约时间已更新，已通知客人和你。', 'success')
+    flash('flash.apt.rescheduled', 'success')
     return redirect(url_for('dashboard.appointments'))
 
 @dashboard_bp.route('/appointments/<int:apt_id>/note', methods=['POST'])
@@ -1071,7 +1076,7 @@ def settings():
                 result = cloudinary.uploader.upload(avatar_file, folder='qi/avatars', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
                 avatar_url = result['secure_url']
             except Exception as e:
-                flash(f'头像上传失败: {e}', 'error')
+                flash(t('flash.settings.avatar_failed', error=e), 'error')
 
         cover_file = request.files.get('cover')
         if cover_file and cover_file.filename:
@@ -1079,7 +1084,7 @@ def settings():
                 result = cloudinary.uploader.upload(cover_file, folder='qi/covers', transformation=[{'width': 1200, 'height': 400, 'crop': 'fill'}])
                 cover_url = result['secure_url']
             except Exception as e:
-                flash(f'封面上传失败: {e}', 'error')
+                flash(t('flash.settings.cover_failed', error=e), 'error')
 
         if name:
             db.execute(
@@ -1087,7 +1092,7 @@ def settings():
                 (name, address, phone, description, category, avatar_url, cover_url, support_contact, current_user.id)
             )
             db.commit()
-            flash('设置已保存。', 'success')
+            flash('flash.settings.saved', 'success')
 
     biz = db.execute('SELECT * FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
     if not biz['calendar_token']:
@@ -1109,7 +1114,7 @@ def regenerate_calendar_token():
     db.execute('UPDATE businesses SET calendar_token=%s WHERE id=%s', (uuid.uuid4().hex, current_user.id))
     db.commit()
     db.close()
-    flash('订阅链接已重新生成，之前的链接会失效。', 'success')
+    flash('flash.settings.calendar_regenerated', 'success')
     return redirect(url_for('dashboard.settings'))
 
 @dashboard_bp.route('/feedback', methods=['GET', 'POST'])

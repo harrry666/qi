@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, g, request
 from flask_login import LoginManager
 from dotenv import load_dotenv
 from extensions import csrf, limiter
+from translations import t
 import os
 import sys
 import threading
@@ -27,8 +28,26 @@ limiter.init_app(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'auth.login'
-login_manager.login_message = '请登录后继续。'
+login_manager.login_message = 'flash.login_required'
 login_manager.login_message_category = 'error'
+
+@app.before_request
+def _set_lang():
+    lang = request.cookies.get('lang')
+    g.lang = lang if lang in ('zh', 'en') else 'zh'
+
+@app.context_processor
+def _inject_i18n():
+    return dict(lang=getattr(g, 'lang', 'zh'), t=t)
+
+@app.route('/set-lang/<lang>')
+def set_lang(lang):
+    from flask import redirect, make_response, url_for
+    if lang not in ('zh', 'en'):
+        lang = 'zh'
+    resp = make_response(redirect(request.referrer or url_for('auth.landing')))
+    resp.set_cookie('lang', lang, max_age=60 * 60 * 24 * 365, samesite='Lax')
+    return resp
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -98,7 +117,7 @@ def server_error(e):
 def ratelimited(e):
     from flask import request, jsonify, render_template
     if request.path.startswith('/api/') or request.is_json:
-        return jsonify({'error': '操作太频繁，请稍后再试'}), 429
+        return jsonify({'error': t('flash.rate_limited')}), 429
     return render_template('500.html'), 429
 
 from flask_wtf.csrf import CSRFError
@@ -107,8 +126,8 @@ from flask_wtf.csrf import CSRFError
 def handle_csrf_error(e):
     from flask import request, jsonify, flash, redirect
     if request.path.startswith('/api/') or request.is_json:
-        return jsonify({'error': '会话已过期，请刷新页面重试'}), 400
-    flash('会话已过期，请重新提交。', 'error')
+        return jsonify({'error': t('flash.session_expired')}), 400
+    flash('flash.session_expired', 'error')
     return redirect(request.referrer or '/'), 302
 
 

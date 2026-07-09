@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}预约记录{% endblock %}
+{% block title %}{{ t('dash.apt.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -11,10 +11,10 @@
 }
 </style>
 
-<div class="page-title">📋 预约记录</div>
+<div class="page-title">{{ t('dash.apt.page_title') }}</div>
 
 <div class="filter-tabs">
-  {% for label, key in [('即将到来','upcoming'),('已完成','past'),('已取消','cancelled'),('全部','all')] %}
+  {% for label, key in [(t('dash.apt.filter_upcoming'),'upcoming'),(t('dash.apt.filter_past'),'past'),(t('dash.apt.filter_cancelled'),'cancelled'),(t('dash.apt.filter_all'),'all')] %}
     <a href="?filter={{ key }}" class="tab-btn {% if current_filter == key %}active{% endif %}">{{ label }}</a>
   {% endfor %}
 </div>
@@ -23,12 +23,12 @@
 <table class="apt-table">
   <thead>
     <tr>
-      <th>日期 &amp; 时间</th>
-      <th>服务</th>
-      <th>客户</th>
-      <th>电话</th>
-      <th>备注</th>
-      <th>状态</th>
+      <th>{{ t('dash.apt.col_datetime') }}</th>
+      <th>{{ t('dash.apt.col_service') }}</th>
+      <th>{{ t('dash.apt.col_customer') }}</th>
+      <th>{{ t('dash.apt.col_phone') }}</th>
+      <th>{{ t('dash.apt.col_note') }}</th>
+      <th>{{ t('dash.apt.col_status') }}</th>
       <th></th>
     </tr>
   </thead>
@@ -36,28 +36,28 @@
     {% for a in appointments %}
     <tr>
       <td class="cell-head" style="font-weight:600;white-space:nowrap">{{ a.appointment_dt|fmt_dt }}</td>
-      <td data-label="服务">
+      <td data-label="{{ t('dash.apt.col_service') }}">
         <div style="font-size:14px;color:var(--text)">{{ a.service_name }}</div>
         {% if a.name_sub %}<div style="font-size:12px;color:#555">{{ a.name_sub }}</div>{% endif %}
       </td>
-      <td data-label="客户">
+      <td data-label="{{ t('dash.apt.col_customer') }}">
         {{ a.customer_name }}
-        <span class="note-badge" data-note-badge="{{ a.id }}" onclick="toggleNote({{ a.id }})" title="查看商家备注"{% if not a.merchant_note %} style="display:none"{% endif %}>📝</span>
+        <span class="note-badge" data-note-badge="{{ a.id }}" onclick="toggleNote({{ a.id }})" title="{{ t('dash.apt.view_note') }}"{% if not a.merchant_note %} style="display:none"{% endif %}>📝</span>
       </td>
-      <td data-label="电话" style="color:var(--gold-h)">{{ a.phone }}</td>
-      <td data-label="备注" style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>
-      <td data-label="状态">
-        <span class="badge badge-{{ a.status }}">{{ '已确认' if a.status == 'confirmed' else '已取消' }}</span>
+      <td data-label="{{ t('dash.apt.col_phone') }}" style="color:var(--gold-h)">{{ a.phone }}</td>
+      <td data-label="{{ t('dash.apt.col_note') }}" style="color:#555;font-size:13px">{{ a.comment or '—' }}</td>
+      <td data-label="{{ t('dash.apt.col_status') }}">
+        <span class="badge badge-{{ a.status }}">{{ t('dash.apt.status_confirmed') if a.status == 'confirmed' else t('dash.apt.status_cancelled') }}</span>
       </td>
       <td class="apt-actions cell-actions">
         {% if current_filter == 'upcoming' and a.status == 'confirmed' %}
-        <button type="button" class="btn-reschedule" onclick="toggleReschedule({{ a.id }})">改期</button>
+        <button type="button" class="btn-reschedule" onclick="toggleReschedule({{ a.id }})">{{ t('dash.apt.btn_reschedule') }}</button>
         {% endif %}
-        <button type="button" class="btn-note-toggle" onclick="toggleNote({{ a.id }})" title="商家备注">📝</button>
+        <button type="button" class="btn-note-toggle" onclick="toggleNote({{ a.id }})" title="{{ t('dash.apt.merchant_note_title') }}">📝</button>
         {% if a.status == 'confirmed' %}
-        <form method="POST" action="{{ url_for('dashboard.cancel_appointment', apt_id=a.id) }}" onsubmit="return confirm('确认取消此预约？')" style="display:inline">
+        <form method="POST" action="{{ url_for('dashboard.cancel_appointment', apt_id=a.id) }}" onsubmit="return confirm({{ t('dash.apt.confirm_cancel')|tojson }})" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn-cancel">取消</button>
+          <button type="submit" class="btn-cancel">{{ t('dash.apt.btn_cancel') }}</button>
         </form>
         {% endif %}
       </td>
@@ -68,10 +68,10 @@
       <td colspan="7">
         <form method="POST" action="{{ url_for('dashboard.reschedule_appointment', apt_id=a.id) }}" class="reschedule-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <label>新时间：</label>
+          <label>{{ t('dash.apt.new_time_label') }}</label>
           <input type="datetime-local" name="new_dt" required>
-          <button type="submit" class="btn-confirm-reschedule">确认改期</button>
-          <button type="button" class="btn-cancel-inline" onclick="toggleReschedule({{ a.id }})">取消</button>
+          <button type="submit" class="btn-confirm-reschedule">{{ t('dash.apt.confirm_reschedule') }}</button>
+          <button type="button" class="btn-cancel-inline" onclick="toggleReschedule({{ a.id }})">{{ t('dash.apt.btn_cancel') }}</button>
         </form>
       </td>
     </tr>
@@ -81,8 +81,8 @@
       <td colspan="7">
         <div class="note-area">
           <input type="hidden" class="apt-csrf" value="{{ csrf_token() }}">
-          <label>📝 商家备注</label>
-          <textarea id="note-{{ a.id }}" onblur="saveNote({{ a.id }})" placeholder="添加内部备注（仅商家可见）...">{{ a.merchant_note or '' }}</textarea>
+          <label>{{ t('dash.apt.merchant_note_label') }}</label>
+          <textarea id="note-{{ a.id }}" onblur="saveNote({{ a.id }})" placeholder="{{ t('dash.apt.note_placeholder') }}">{{ a.merchant_note or '' }}</textarea>
         </div>
       </td>
     </tr>
@@ -91,7 +91,7 @@
   </tbody>
 </table>
 {% else %}
-  <div class="empty-table">暂无预约记录。</div>
+  <div class="empty-table">{{ t('dash.apt.empty') }}</div>
 {% endif %}
 
 <script>

@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}服务项目{% endblock %}
+{% block title %}{{ t('dash.svc.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -9,48 +9,48 @@
 }
 </style>
 
-<div class="page-title">✂️ 服务项目</div>
+<div class="page-title">{{ t('dash.svc.page_title') }}</div>
 
 <div class="add-service-form">
-  <h2>添加服务</h2>
+  <h2>{{ t('dash.svc.add_heading') }}</h2>
   <form method="POST" action="{{ url_for('dashboard.add_service') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="svc-form-grid">
       <div class="svc-col-2">
-        <span class="btn-label">服务名称 *</span>
-        <input class="dash-input" type="text" name="name" placeholder="例：男士剪发" required>
+        <span class="btn-label">{{ t('dash.svc.name') }}</span>
+        <input class="dash-input" type="text" name="name" placeholder="{{ t('dash.svc.name_ph') }}" required>
       </div>
       <div class="svc-col-2">
-        <span class="btn-label">副标题（选填）</span>
-        <input class="dash-input" type="text" name="name_sub" placeholder="例：一位男发剪发">
+        <span class="btn-label">{{ t('dash.svc.name_sub') }}</span>
+        <input class="dash-input" type="text" name="name_sub" placeholder="{{ t('dash.svc.name_sub_ph') }}">
       </div>
       <div>
-        <span class="btn-label">时长（分钟）</span>
+        <span class="btn-label">{{ t('dash.svc.duration') }}</span>
         <input class="dash-input" type="number" name="duration" value="30" min="5" step="5">
       </div>
       <div>
-        <span class="btn-label">最长耗时（分钟，选填）</span>
-        <input class="dash-input" type="number" name="duration_max" placeholder="如 50" min="5" step="5">
+        <span class="btn-label">{{ t('dash.svc.duration_max') }}</span>
+        <input class="dash-input" type="number" name="duration_max" placeholder="{{ t('dash.svc.duration_max_ph') }}" min="5" step="5">
       </div>
       <div>
-        <span class="btn-label">价格（$，选填）</span>
-        <input class="dash-input" type="number" name="price" placeholder="例：20" min="0" step="0.01">
+        <span class="btn-label">{{ t('dash.svc.price') }}</span>
+        <input class="dash-input" type="number" name="price" placeholder="{{ t('dash.svc.price_ph') }}" min="0" step="0.01">
       </div>
       <div>
-        <span class="btn-label">图标 Emoji（选填）</span>
-        <input class="dash-input" type="text" name="emoji" placeholder="例：💅 ✂️ 💆" style="font-size:20px">
+        <span class="btn-label">{{ t('dash.svc.emoji') }}</span>
+        <input class="dash-input" type="text" name="emoji" placeholder="{{ t('dash.svc.emoji_ph') }}" style="font-size:20px">
       </div>
       <div>
-        <span class="btn-label">自定义图片（选填）</span>
+        <span class="btn-label">{{ t('dash.svc.custom_icon') }}</span>
         <input class="dash-input" type="file" name="icon_image" accept="image/*" style="padding:6px">
       </div>
       <div>
-        <span class="btn-label">缓冲时间（分钟）</span>
-        <input class="dash-input" type="number" name="buffer_mins" value="0" min="0" step="5" placeholder="例：10">
+        <span class="btn-label">{{ t('dash.svc.buffer') }}</span>
+        <input class="dash-input" type="number" name="buffer_mins" value="0" min="0" step="5" placeholder="{{ t('dash.svc.buffer_ph') }}">
       </div>
     </div>
     <div style="margin-top:14px">
-      <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">+ 添加服务</button>
+      <button type="submit" class="btn-add" style="width:auto;padding:10px 28px">{{ t('dash.svc.add_btn') }}</button>
     </div>
   </form>
 </div>
@@ -60,12 +60,12 @@
 <table class="svc-table">
   <thead>
     <tr>
-      <th>图标</th>
-      <th>服务</th>
-      <th>日历颜色</th>
-      <th>时长</th>
-      <th>缓冲</th>
-      <th>价格</th>
+      <th>{{ t('dash.svc.col_icon') }}</th>
+      <th>{{ t('dash.svc.col_service') }}</th>
+      <th>{{ t('dash.svc.col_color') }}</th>
+      <th>{{ t('dash.svc.col_duration') }}</th>
+      <th>{{ t('dash.svc.col_buffer') }}</th>
+      <th>{{ t('dash.svc.col_price') }}</th>
       <th></th>
     </tr>
   </thead>
@@ -86,10 +86,10 @@
         {% if s.name_sub %}<div class="svc-sub">{{ s.name_sub }}</div>{% endif %}
         <form method="POST" action="{{ url_for('dashboard.update_service_icon', svc_id=s.id) }}" enctype="multipart/form-data" style="margin-top:8px">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:3px">自定义图标（选填，替换左侧「图标」列）</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:3px">{{ t('dash.svc.custom_icon_hint') }}</div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="file" name="icon_image" accept="image/*" style="font-size:12px;max-width:140px" data-crop data-crop-ratio="1" data-out-w="200" data-out-h="200">
-            <button type="submit" style="font-size:12px;padding:6px 10px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">上传</button>
+            <button type="submit" style="font-size:12px;padding:6px 10px;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:transparent">{{ t('dash.svc.upload') }}</button>
           </div>
         </form>
       </td>
@@ -104,21 +104,21 @@
                 background-image:linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%);
                 background-size:6px 6px;background-position:0 0,0 3px,3px -3px,-3px 0px;background-color:#fff">
             <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;pointer-events:none">✏️</span>
-            <input type="color" class="color-swatch-custom" title="自定义颜色"
+            <input type="color" class="color-swatch-custom" title="{{ t('dash.svc.custom_color') }}"
                    value="{{ s.color or palette[s.id % palette|length] }}"
                    style="position:absolute;inset:0;width:100%;height:100%;border:2px solid transparent;border-radius:50%;padding:0;cursor:pointer;opacity:0"
                    oninput="setServiceColor({{ s.id }}, this.value, this, true)">
           </span>
         </div>
       </td>
-      <td style="white-space:nowrap">{% if s.duration_min_mins %}{{ s.duration_min_mins }}-{{ s.duration_mins }}{% else %}{{ s.duration_mins }}{% endif %} 分钟</td>
-      <td>{% if s.buffer_mins %}{{ s.buffer_mins }} 分{% else %}—{% endif %}</td>
+      <td style="white-space:nowrap">{% if s.duration_min_mins %}{{ s.duration_min_mins }}-{{ s.duration_mins }}{% else %}{{ s.duration_mins }}{% endif %} {{ t('dash.svc.mins') }}</td>
+      <td>{% if s.buffer_mins %}{{ s.buffer_mins }} {{ t('dash.svc.mins_short') }}{% else %}—{% endif %}</td>
       <td>{% if s.price %}${{ s.price|int }}{% else %}—{% endif %}</td>
       <td style="white-space:nowrap">
-        <button type="button" class="btn-reschedule" onclick="toggleSvcEdit({{ s.id }})">编辑</button>
-        <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm('确认删除此服务？')" style="display:inline">
+        <button type="button" class="btn-reschedule" onclick="toggleSvcEdit({{ s.id }})">{{ t('dash.svc.edit_btn') }}</button>
+        <form method="POST" action="{{ url_for('dashboard.delete_service', svc_id=s.id) }}" onsubmit="return confirm({{ t('dash.svc.confirm_delete')|tojson }})" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn-delete">删除</button>
+          <button type="submit" class="btn-delete">{{ t('dash.svc.delete_btn') }}</button>
         </form>
       </td>
     </tr>
@@ -128,37 +128,37 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="svc-form-grid">
             <div class="svc-col-2">
-              <span class="btn-label">服务名称 *</span>
+              <span class="btn-label">{{ t('dash.svc.name') }}</span>
               <input class="dash-input" type="text" name="name" value="{{ s.name }}" required>
             </div>
             <div class="svc-col-2">
-              <span class="btn-label">副标题</span>
+              <span class="btn-label">{{ t('dash.svc.name_sub_edit') }}</span>
               <input class="dash-input" type="text" name="name_sub" value="{{ s.name_sub or '' }}">
             </div>
             <div>
-              <span class="btn-label">时长（分钟）</span>
+              <span class="btn-label">{{ t('dash.svc.duration_edit') }}</span>
               <input class="dash-input" type="number" name="duration" value="{{ s.duration_min_mins or s.duration_mins }}" min="5" step="5">
             </div>
             <div>
-              <span class="btn-label">最长耗时（分钟，选填）</span>
-              <input class="dash-input" type="number" name="duration_max" value="{{ s.duration_mins if s.duration_min_mins else '' }}" placeholder="如 50" min="5" step="5">
+              <span class="btn-label">{{ t('dash.svc.duration_max') }}</span>
+              <input class="dash-input" type="number" name="duration_max" value="{{ s.duration_mins if s.duration_min_mins else '' }}" placeholder="{{ t('dash.svc.duration_max_ph') }}" min="5" step="5">
             </div>
             <div>
-              <span class="btn-label">价格（$）</span>
+              <span class="btn-label">{{ t('dash.svc.price_edit') }}</span>
               <input class="dash-input" type="number" name="price" value="{{ s.price|int if s.price else '' }}" min="0" step="0.01">
             </div>
             <div>
-              <span class="btn-label">缓冲（分钟）</span>
+              <span class="btn-label">{{ t('dash.svc.buffer_edit') }}</span>
               <input class="dash-input" type="number" name="buffer_mins" value="{{ s.buffer_mins }}" min="0" step="5">
             </div>
             <div>
-              <span class="btn-label">图标 Emoji</span>
+              <span class="btn-label">{{ t('dash.svc.emoji_edit') }}</span>
               <input class="dash-input" type="text" name="emoji" value="{{ s.emoji or '' }}" style="font-size:20px">
             </div>
           </div>
           <div style="margin-top:12px;display:flex;gap:8px">
-            <button type="submit" class="btn-add" style="width:auto;padding:9px 24px">保存修改</button>
-            <button type="button" onclick="toggleSvcEdit({{ s.id }})" style="padding:9px 20px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer">取消</button>
+            <button type="submit" class="btn-add" style="width:auto;padding:9px 24px">{{ t('dash.svc.save') }}</button>
+            <button type="button" onclick="toggleSvcEdit({{ s.id }})" style="padding:9px 20px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer">{{ t('dash.svc.cancel') }}</button>
           </div>
         </form>
       </td>
@@ -168,7 +168,7 @@
 </table>
 </div>
 {% else %}
-  <div class="empty-msg">暂无服务，请在上方添加。</div>
+  <div class="empty-msg">{{ t('dash.svc.empty') }}</div>
 {% endif %}
 
 <script>

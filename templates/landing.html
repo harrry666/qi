@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Hastrid Booking — 小商家预约管理平台{% endblock %}
+{% block title %}{{ t('landing.title_tag') }}{% endblock %}
 {% block head %}
 <style>
   @media (max-width: 600px) {
@@ -19,12 +19,12 @@
   <div class="hero-rule"></div>
   <div class="hero-rich-inner">
     <div class="hero-copy">
-      <span class="hero-eyebrow">美发 · 美甲 · 按摩 · 私教 — 所有本地服务</span>
-      <h1><span class="hero-thin">在线预约，</span><br>从此<span class="accent">简单。</span></h1>
-      <p class="hero-sub">几分钟创建你的专属预约页面。客户在线预约，你用一个后台管理一切。</p>
+      <span class="hero-eyebrow">{{ t('landing.eyebrow') }}</span>
+      <h1><span class="hero-thin">{{ t('landing.hero_thin') }}</span><br><span class="accent">{{ t('landing.hero_accent') }}</span></h1>
+      <p class="hero-sub">{{ t('landing.hero_sub') }}</p>
       <div class="hero-actions">
-        <a href="{{ url_for('auth.register') }}" class="btn-lg">免费开始 →</a>
-        <a href="{{ url_for('auth.explore') }}" class="btn-lg-outline">浏览商家</a>
+        <a href="{{ url_for('auth.register') }}" class="btn-lg">{{ t('landing.cta_start') }}</a>
+        <a href="{{ url_for('auth.explore') }}" class="btn-lg-outline">{{ t('landing.cta_explore') }}</a>
       </div>
     </div>
     <div class="hero-preview">
@@ -35,28 +35,28 @@
             <span class="qi-phone-sb"><i></i><i></i><i></i><i></i></span>
           </div>
           <div class="qi-phone-hero">
-            <div class="qi-phone-bizname">Chris 美发工作室</div>
-            <div class="qi-phone-tag">专业男女造型 · 在线预约</div>
+            <div class="qi-phone-bizname">{{ t('landing.phone_bizname') }}</div>
+            <div class="qi-phone-tag">{{ t('landing.phone_tag') }}</div>
             <div class="qi-phone-avatar">💈</div>
           </div>
           <div class="qi-phone-body">
             <div class="qi-phone-svc">
               <div class="qi-phone-svc-icon">✂️</div>
               <div>
-                <strong>男士剪发</strong>
-                <small>30分钟 · 一位男发剪发造型</small>
+                <strong>{{ t('landing.phone_svc_name') }}</strong>
+                <small>{{ t('landing.phone_svc_desc') }}</small>
               </div>
               <div class="qi-phone-price">$20</div>
             </div>
-            <div class="qi-phone-label">选择时间</div>
-            <div class="qi-phone-datechip">📅 今天 · 6月1日 周一</div>
+            <div class="qi-phone-label">{{ t('landing.phone_select_time') }}</div>
+            <div class="qi-phone-datechip">{{ t('landing.phone_date') }}</div>
             <div class="qi-phone-slots">
               <span>13:30</span>
               <span class="on">14:30</span>
               <span>15:30</span>
               <span>16:30</span>
             </div>
-            <button class="qi-phone-cta">✓ 确认预约</button>
+            <button class="qi-phone-cta">{{ t('landing.phone_cta') }}</button>
           </div>
         </div>
       </div>
@@ -65,78 +65,73 @@
 </section>
 
 <div class="trust-strip">
-  <span class="trust-pill">✓ 首月免费试用</span>
+  <span class="trust-pill">{{ t('landing.trust1') }}</span>
   <span class="trust-sep">·</span>
-  <span class="trust-pill">✓ 2 分钟创建</span>
+  <span class="trust-pill">{{ t('landing.trust2') }}</span>
   <span class="trust-sep">·</span>
-  <span class="trust-pill">✓ 客户已发送 1000+ 次预约</span>
+  <span class="trust-pill">{{ t('landing.trust3') }}</span>
 </div>
 
 <section class="features-section">
-  <h2 class="features-heading">为什么选择 Hastrid Booking？</h2>
+  <h2 class="features-heading">{{ t('landing.features_heading') }}</h2>
   <div class="features-grid">
     <div class="feature-card">
       <div class="feature-icon">🔗</div>
-      <h3>专属预约链接</h3>
-      <p>获得专属链接，例如 <strong>hastrid.app/book/你的名字</strong>。发给客户，立即可约。</p>
+      <h3>{{ t('landing.feature1_title') }}</h3>
+      <p>{{ t('landing.feature1_desc') }}</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon">✂️</div>
-      <h3>灵活管理服务</h3>
-      <p>添加服务、设定价格和时长，随时修改，实时生效。</p>
+      <h3>{{ t('landing.feature2_title') }}</h3>
+      <p>{{ t('landing.feature2_desc') }}</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon">🕐</div>
-      <h3>智能空档管理</h3>
-      <p>设置营业时间，系统只显示空闲时段，杜绝重复预约。</p>
+      <h3>{{ t('landing.feature3_title') }}</h3>
+      <p>{{ t('landing.feature3_desc') }}</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon">📋</div>
-      <h3>预约管理后台</h3>
-      <p>查看今日日程、即将到来的预约和历史记录，一键取消。</p>
+      <h3>{{ t('landing.feature4_title') }}</h3>
+      <p>{{ t('landing.feature4_desc') }}</p>
     </div>
   </div>
 </section>
 
 <section class="features-section" style="padding-top:0">
-  <h2 class="features-heading">简单透明的价格</h2>
+  <h2 class="features-heading">{{ t('landing.pricing_heading') }}</h2>
   <div style="max-width:440px;margin:24px auto 0;padding:0 20px">
     <div style="background:var(--white);border:2px solid var(--gold);border-radius:18px;padding:36px 30px;box-shadow:var(--shadow);text-align:center;position:relative">
-      <span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--text);font-size:13px;font-weight:700;padding:4px 16px;border-radius:20px">🎁 首月免费试用</span>
-      <div style="font-size:18px;font-weight:800;color:var(--text)">Hastrid 全功能版</div>
-      <div style="margin:16px 0 6px"><span style="font-size:48px;font-weight:800;color:var(--gold-h)">$19.99</span><span style="color:var(--muted);font-size:16px">/月</span></div>
-      <div style="color:var(--gold-h);font-weight:700;font-size:15px">先免费用 1 个月，之后订阅</div>
-      <div style="color:var(--muted);font-size:14px;margin-bottom:22px">随时可取消</div>
+      <span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--text);font-size:13px;font-weight:700;padding:4px 16px;border-radius:20px">{{ t('landing.pricing_badge') }}</span>
+      <div style="font-size:18px;font-weight:800;color:var(--text)">{{ t('landing.pricing_plan') }}</div>
+      <div style="margin:16px 0 6px"><span style="font-size:48px;font-weight:800;color:var(--gold-h)">$19.99</span><span style="color:var(--muted);font-size:16px">{{ t('landing.pricing_period') }}</span></div>
+      <div style="color:var(--gold-h);font-weight:700;font-size:15px">{{ t('landing.pricing_trial') }}</div>
+      <div style="color:var(--muted);font-size:14px;margin-bottom:22px">{{ t('landing.pricing_cancel') }}</div>
       <div style="font-size:15px;line-height:2.1;color:var(--text);text-align:left;max-width:300px;margin:0 auto">
-        ✓ 专属预约页 + 日程日历<br>
-        ✓ 短信 + 微信预约提醒<br>
-        ✓ 员工管理 + 按员工排班<br>
-        ✓ 客户档案（储值 / 偏好 / 照片）<br>
-        ✓ 数据分析报表<br>
-        ✓ 群发短信
+        {{ t('landing.pricing_features_html')|safe }}
       </div>
-      <a href="{{ url_for('auth.register') }}" class="btn-lg" style="display:block;text-align:center;margin-top:26px">免费试用 1 个月 →</a>
+      <a href="{{ url_for('auth.register') }}" class="btn-lg" style="display:block;text-align:center;margin-top:26px">{{ t('landing.pricing_cta') }}</a>
     </div>
   </div>
 </section>
 
 <section class="cta-section">
-  <h2>今天就开始接受预约。</h2>
-  <p>已有 50+ 商家使用 · 首月免费试用</p>
-  <a href="{{ url_for('auth.register') }}" class="btn-lg">免费试用 1 个月</a>
+  <h2>{{ t('landing.cta_heading') }}</h2>
+  <p>{{ t('landing.cta_sub') }}</p>
+  <a href="{{ url_for('auth.register') }}" class="btn-lg">{{ t('landing.cta_button') }}</a>
 </section>
 
 <footer class="landing-footer">
   <div class="footer-qi">Hastrid Booking</div>
-  <p class="footer-slogan">专为本地小商家打造</p>
+  <p class="footer-slogan">{{ t('landing.footer_tagline') }}</p>
   <div class="footer-links">
-    <a href="/explore">浏览商家</a>
+    <a href="/explore">{{ t('nav.explore') }}</a>
     <span>·</span>
-    <a href="{{ url_for('auth.login') }}">登录</a>
+    <a href="{{ url_for('auth.login') }}">{{ t('nav.login') }}</a>
     <span>·</span>
-    <a href="{{ url_for('auth.register') }}">注册</a>
+    <a href="{{ url_for('auth.register') }}">{{ t('nav.register') }}</a>
     <span>·</span>
-    <a href="{{ url_for('auth.privacy') }}">隐私政策</a>
+    <a href="{{ url_for('auth.privacy') }}">{{ t('landing.footer_privacy') }}</a>
   </div>
   <p class="footer-copy">© 2026 Hastrid Booking. All rights reserved.</p>
 </footer>

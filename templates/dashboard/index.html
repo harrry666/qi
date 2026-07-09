@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}主页{% endblock %}
+{% block title %}{{ t('dash.index.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -14,24 +14,24 @@
 
 <div class="dash-header">
   <h1>{{ greeting }}, {{ current_user.name.split()[0] }} 👋</h1>
-  <p class="dash-sub">今日行程如下。</p>
+  <p class="dash-sub">{{ t('dash.index.today_sub') }}</p>
 </div>
 
 <div class="stats-row">
   <div class="stat-card stat-card-hero">
-    <div class="stat-label">📅 今日预约</div>
+    <div class="stat-label">{{ t('dash.index.stat_today') }}</div>
     <div class="stat-value">{{ today_count }}</div>
-    <div class="stat-sub">个预约</div>
+    <div class="stat-sub">{{ t('dash.index.stat_today_sub') }}</div>
   </div>
   <div class="stat-card stat-card-secondary">
-    <div class="stat-label">📊 本周预约</div>
+    <div class="stat-label">{{ t('dash.index.stat_week') }}</div>
     <div class="stat-value">{{ week_count }}</div>
-    <div class="stat-sub">已确认</div>
+    <div class="stat-sub">{{ t('dash.index.stat_week_sub') }}</div>
   </div>
   <div class="stat-card stat-card-secondary">
-    <div class="stat-label">✅ 累计总数</div>
+    <div class="stat-label">{{ t('dash.index.stat_total') }}</div>
     <div class="stat-value">{{ total }}</div>
-    <div class="stat-sub">次预约</div>
+    <div class="stat-sub">{{ t('dash.index.stat_total_sub') }}</div>
   </div>
 </div>
 
@@ -40,11 +40,11 @@
 {% endif %}
 
 <div class="quick-actions">
-  <a href="{{ url_for('booking.book_page', slug=current_user.slug) }}" target="_blank" class="quick-btn">👀 查看我的预约页</a>
-  <a href="{{ url_for('dashboard.appointments') }}" class="quick-btn quick-btn-outline">📋 全部预约</a>
+  <a href="{{ url_for('booking.book_page', slug=current_user.slug) }}" target="_blank" class="quick-btn">{{ t('dash.index.view_booking_page') }}</a>
+  <a href="{{ url_for('dashboard.appointments') }}" class="quick-btn quick-btn-outline">{{ t('dash.index.all_appointments') }}</a>
 </div>
 
-<div class="section-heading">今日日程</div>
+<div class="section-heading">{{ t('dash.index.today_schedule') }}</div>
 
 {% if today_apts %}
   <div class="apt-list">
@@ -56,9 +56,9 @@
       <div class="apt-time-col">
         <div class="apt-time">{{ a.appointment_dt[11:16] }}</div>
         {% if diff < 0 %}
-          <div class="apt-rel-time apt-rel-past">已过</div>
+          <div class="apt-rel-time apt-rel-past">{{ t('dash.index.past') }}</div>
         {% elif diff <= 120 %}
-          <div class="apt-rel-time apt-rel-soon">{{ diff }} 分钟后</div>
+          <div class="apt-rel-time apt-rel-soon">{{ t('dash.index.min_later', n=diff) }}</div>
         {% endif %}
       </div>
       <div class="apt-info">
@@ -74,8 +74,8 @@
 {% else %}
   <div class="empty-today">
     <div class="empty-today-icon">🌿</div>
-    <div class="empty-today-msg">今天暂无预约</div>
-    <div class="empty-today-sub">休息一下，或者分享你的预约页面吸引新客户。</div>
+    <div class="empty-today-msg">{{ t('dash.index.empty_title') }}</div>
+    <div class="empty-today-sub">{{ t('dash.index.empty_sub') }}</div>
   </div>
 {% endif %}
 

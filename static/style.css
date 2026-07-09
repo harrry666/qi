@@ -73,6 +73,18 @@ a:hover { text-decoration: underline; }
 .nav-links .btn-sm { color: var(--text); }
 .nav-links .btn-sm:hover { color: var(--text); }
 
+/* ── Language switch ── */
+.lang-switch {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px; font-size: 12px; font-weight: 700;
+}
+.lang-switch a { padding: 4px 10px; border-radius: 16px; color: var(--muted); }
+.lang-switch a:hover { color: var(--text); text-decoration: none; }
+.lang-switch a.active { background: var(--gold); color: var(--text); }
+.mobile-topbar .lang-switch { font-size: 11px; }
+.mobile-topbar .lang-switch a { padding: 3px 8px; }
+
 /* ── Landing Hero ── */
 .hero-rich {
   position: relative; overflow: hidden;
@@ -485,6 +497,7 @@ a:hover { text-decoration: underline; }
 .book-body { background: var(--bg); min-height: 100vh; }
 
 .book-hero {
+  position: relative;
   width: 100%;
   height: 240px;
   background: linear-gradient(135deg, #F5ECD7 0%, #E8D5A3 40%, #D4B87A 100%);
@@ -1208,6 +1221,9 @@ input[type="date"].dash-input::-webkit-calendar-picker-indicator {
   .apt-table td { border: none !important; padding: 4px 0 !important; white-space: normal !important; text-align: left; }
   .apt-table td[data-label]::before {
     content: attr(data-label) "："; font-weight: 600; color: var(--muted); margin-right: 4px;
+  }
+  html[lang="en"] .apt-table td[data-label]::before {
+    content: attr(data-label) ": ";
   }
   .apt-table td.cell-avatar { display: none !important; }
   .apt-table td.cell-head {

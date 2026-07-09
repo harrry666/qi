@@ -79,22 +79,22 @@ def register():
         category = request.form.get('category', '').strip()
 
         if not all([name, slug, email, phone, password, category]):
-            flash('所有字段为必填项。', 'error')
+            flash('flash.auth.required_fields', 'error')
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if len(password) < 6:
-            flash('密码至少 6 个字符。', 'error')
+            flash('flash.auth.password_min', 'error')
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if password != password_confirm:
-            flash('两次输入的密码不一致。', 'error')
+            flash('flash.auth.password_mismatch', 'error')
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
         db = get_db()
         if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():
-            flash('该链接地址已被使用。', 'error')
+            flash('flash.auth.slug_taken', 'error')
             db.close()
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if db.execute('SELECT id FROM businesses WHERE email=%s', (email,)).fetchone():
-            flash('该邮箱已被注册。', 'error')
+            flash('flash.auth.email_taken', 'error')
             db.close()
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
@@ -117,7 +117,7 @@ def register():
         db.commit()
         db.close()
 
-        flash('注册申请已提交，管理员审核通过后即可登录。', 'success')
+        flash('flash.auth.register_success', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html', form={}, categories=CATEGORIES)
@@ -136,11 +136,11 @@ def login():
         db.close()
 
         if not row or not check_password_hash(row['password_hash'], password):
-            flash('邮箱或密码错误。', 'error')
+            flash('flash.auth.login_invalid', 'error')
             return render_template('auth/login.html')
 
         if row.get('is_approved') != 1:
-            flash('账号待审核，请联系管理员。', 'error')
+            flash('flash.auth.pending_approval', 'error')
             return render_template('auth/login.html')
 
         login_user(Business(row))
@@ -188,7 +188,7 @@ def forgot_password():
                 _msg = f'【Hastrid Booking】重置密码链接（1小时内有效）：{reset_url}'
                 threading.Thread(target=send_sms, args=(format_phone(raw), _msg), daemon=True).start()
             db.close()
-            flash('如果该手机号已注册，重置链接已通过短信发送。', 'success')
+            flash('flash.auth.reset_sent_phone', 'success')
             return redirect(url_for('auth.login'))
         else:
             email = request.form.get('email', '').strip().lower()
@@ -200,7 +200,7 @@ def forgot_password():
                 _body = f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
                 threading.Thread(target=send_email, args=(email, '重置你的 Hastrid Booking 密码', _body), daemon=True).start()
             db.close()
-            flash('如果该邮箱已注册，重置链接已发送，请查收。', 'success')
+            flash('flash.auth.reset_sent_email', 'success')
             return redirect(url_for('auth.login'))
     return render_template('auth/forgot_password.html')
 
@@ -213,7 +213,7 @@ def reset_password(token):
     ).fetchone()
     if not row:
         db.close()
-        flash('链接已失效或过期，请重新申请。', 'error')
+        flash('flash.auth.reset_expired', 'error')
         return redirect(url_for('auth.forgot_password'))
 
     if request.method == 'POST':
@@ -221,11 +221,11 @@ def reset_password(token):
         password_confirm = request.form.get('password_confirm', '')
         if len(password) < 6:
             db.close()
-            flash('密码至少 6 个字符。', 'error')
+            flash('flash.auth.password_min', 'error')
             return render_template('auth/reset_password.html', token=token)
         if password != password_confirm:
             db.close()
-            flash('两次输入的密码不一致。', 'error')
+            flash('flash.auth.password_mismatch', 'error')
             return render_template('auth/reset_password.html', token=token)
         db.execute(
             'UPDATE businesses SET password_hash=%s WHERE id=%s',
@@ -234,7 +234,7 @@ def reset_password(token):
         db.execute('UPDATE password_reset_tokens SET used=1 WHERE token=%s', (token,))
         db.commit()
         db.close()
-        flash('密码已重置，请登录。', 'success')
+        flash('flash.auth.reset_success', 'success')
         return redirect(url_for('auth.login'))
 
     db.close()

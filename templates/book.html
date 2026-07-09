@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ biz.name }} — 预约服务</title>
+  <title>{{ biz.name }} — {{ t('book.title_suffix') }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .phone-verify-row { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
@@ -19,6 +19,7 @@
     img.staff-ava { object-fit:cover; }
     .staff-card.staff-any .staff-ava { background:#FBF4E3; }
     .staff-name { font-size:13px; font-weight:600; color:#1A1209; }
+    .book-lang-switch { position:absolute; top:14px; right:14px; z-index:10; }
     @media (max-width: 600px) {
       .book-hero { height: 170px; }
       .biz-header-card h1 { font-size: 19px; }
@@ -34,7 +35,12 @@
 </head>
 <body class="book-body" data-slug="{{ biz.slug }}">
 
-<div class="book-hero" {% if biz.cover_url %}style="background-image:url('{{ biz.cover_url }}');background-size:cover;background-position:center"{% endif %}></div>
+<div class="book-hero" {% if biz.cover_url %}style="background-image:url('{{ biz.cover_url }}');background-size:cover;background-position:center"{% endif %}>
+  <div class="lang-switch book-lang-switch">
+    <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+    <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+  </div>
+</div>
 
 <div class="book-container">
 
@@ -46,59 +52,59 @@
     <div class="biz-logo-box">{{ biz.name[0].upper() }}</div>
     {% endif %}
     <h1>{{ biz.name }}</h1>
-    <p id="header-sub">选择服务开始预约</p>
+    <p id="header-sub">{{ t('book.header_sub') }}</p>
     <div style="margin-top:8px;font-size:12.5px;color:var(--muted)">
-      {% if biz.support_contact %}💬 客服：{{ biz.support_contact }} · {% endif %}
-      <a href="{{ url_for('booking.my_request', slug=biz.slug) }}" style="color:var(--gold-h)">👤 我的档案</a>
-      · <a href="{{ url_for('booking.public_feedback', biz=biz.slug) }}" style="color:var(--gold-h)">📝 意见反馈</a>
+      {% if biz.support_contact %}{{ t('book.support_prefix') }}{{ biz.support_contact }} · {% endif %}
+      <a href="{{ url_for('booking.my_request', slug=biz.slug) }}" style="color:var(--gold-h)">{{ t('book.my_profile') }}</a>
+      · <a href="{{ url_for('booking.public_feedback', biz=biz.slug) }}" style="color:var(--gold-h)">{{ t('book.feedback_link') }}</a>
     </div>
   </div>
 
   <!-- Step progress indicator -->
   <div class="booking-steps">
-    <div class="step active" id="step-1">① 选服务</div>
+    <div class="step active" id="step-1">{{ t('book.step1') }}</div>
     <div class="step-line" id="line-staff" style="display:none"></div>
-    <div class="step" id="step-staff" style="display:none">② 选员工</div>
+    <div class="step" id="step-staff" style="display:none">{{ t('book.step_staff') }}</div>
     <div class="step-line"></div>
-    <div class="step" id="step-2">② 选时间</div>
+    <div class="step" id="step-2">{{ t('book.step2') }}</div>
     <div class="step-line"></div>
-    <div class="step" id="step-3">③ 填信息</div>
+    <div class="step" id="step-3">{{ t('book.step3') }}</div>
     <div class="step-line"></div>
-    <div class="step" id="step-4">④ 确认</div>
+    <div class="step" id="step-4">{{ t('book.step4') }}</div>
   </div>
 
   <!-- Screen 1: Services -->
   <div id="screen-services" class="screen active">
-    <div class="section-title">选择服务项目</div>
+    <div class="section-title">{{ t('book.select_service_heading') }}</div>
     <div id="service-list"></div>
   </div>
 
   <!-- Screen 1.5: Staff -->
   <div id="screen-staff" class="screen">
-    <button class="btn-back" onclick="backToServices()">← 返回</button>
-    <div class="section-title">选择服务人员</div>
+    <button class="btn-back" onclick="backToServices()">{{ t('book.back') }}</button>
+    <div class="section-title">{{ t('book.select_staff_heading') }}</div>
     <div id="staff-list" class="staff-grid"></div>
-    <button class="btn-primary" onclick="proceedFromStaff()">下一步 →</button>
+    <button class="btn-primary" onclick="proceedFromStaff()">{{ t('book.next') }}</button>
   </div>
 
   <!-- Screen 2: Time Slots -->
   <div id="screen-slots" class="screen">
-    <button class="btn-back" onclick="backFromSlots()">← 返回</button>
+    <button class="btn-back" onclick="backFromSlots()">{{ t('book.back') }}</button>
     <div id="service-bar" class="service-bar"></div>
     <div class="calendar-nav">
       <button class="btn-nav" onclick="prevWeek()">‹</button>
       <span id="month-label" class="month-label"></span>
       <button class="btn-nav" onclick="nextWeek()">›</button>
-      <button class="btn-today" onclick="goToToday()">今天</button>
+      <button class="btn-today" onclick="goToToday()">{{ t('book.today_btn') }}</button>
     </div>
     <div id="week-grid" class="week-grid"></div>
   </div>
 
   <!-- Screen 3: Login -->
   <div id="screen-login" class="screen">
-    <button class="btn-back" onclick="backToSlots()">← 返回</button>
+    <button class="btn-back" onclick="backToSlots()">{{ t('book.back') }}</button>
     <div class="login-card">
-      <h2>填写信息</h2>
+      <h2>{{ t('book.fill_info_heading') }}</h2>
       <div class="apt-preview" style="margin-bottom:20px">
         <div class="svc-icon" id="login-icon" style="width:44px;height:44px;font-size:20px"></div>
         <div class="apt-preview-info">
@@ -107,37 +113,37 @@
         </div>
       </div>
       <input type="text" id="hp_website" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <input id="cust-name" class="book-input" type="text" placeholder="姓名">
+      <input id="cust-name" class="book-input" type="text" placeholder="{{ t('book.name_placeholder') }}">
       {% if verify_enabled %}
       <div class="phone-verify-row">
-        <input id="cust-phone" class="book-input phone-verify-input" type="tel" placeholder="手机号码（10位）">
-        <button type="button" id="btn-send-code" class="btn-send-code" onclick="sendVerifyCode()">获取验证码</button>
+        <input id="cust-phone" class="book-input phone-verify-input" type="tel" placeholder="{{ t('book.phone_placeholder') }}">
+        <button type="button" id="btn-send-code" class="btn-send-code" onclick="sendVerifyCode()">{{ t('book.send_code') }}</button>
       </div>
       <span id="phone-error" style="display:none;font-size:12px;color:#EF4444;margin:-8px 0 8px"></span>
       <div id="code-row" style="display:none;margin-bottom:12px">
-        <input id="cust-code" class="book-input" type="number" placeholder="输入6位验证码" style="letter-spacing:4px;margin-bottom:0">
+        <input id="cust-code" class="book-input" type="number" placeholder="{{ t('book.code_placeholder') }}" style="letter-spacing:4px;margin-bottom:0">
       </div>
       {% else %}
-      <input id="cust-phone" class="book-input" type="tel" placeholder="手机号码（10位）">
+      <input id="cust-phone" class="book-input" type="tel" placeholder="{{ t('book.phone_placeholder') }}">
       <span id="phone-error" style="display:none;font-size:12px;color:#EF4444;margin:-8px 0 8px"></span>
       {% endif %}
       <label class="sms-consent-label">
         <input type="checkbox" id="sms-consent">
         <span>I agree to receive SMS appointment confirmations and reminders from this business. Msg &amp; data rates may apply. Reply STOP to unsubscribe.</span>
       </label>
-      <button id="btn-book" class="btn-primary" onclick="showConfirmScreen()">下一步 →</button>
+      <button id="btn-book" class="btn-primary" onclick="showConfirmScreen()">{{ t('book.next') }}</button>
     </div>
   </div>
 
   <!-- Screen 4: Confirm Summary -->
   <div id="screen-confirm" class="screen">
-    <button class="btn-back" onclick="showScreen('screen-login')">← 修改</button>
+    <button class="btn-back" onclick="showScreen('screen-login')">{{ t('book.edit') }}</button>
     <div class="confirm-card">
-      <div class="confirm-title">确认预约信息</div>
+      <div class="confirm-title">{{ t('book.confirm_heading') }}</div>
       <div class="confirm-rows" id="confirm-rows"></div>
       <div class="confirm-actions">
-        <button class="btn-secondary" onclick="showScreen('screen-login')">← 修改</button>
-        <button id="btn-confirm-submit" class="btn-primary" onclick="submitBooking()">✅ 确认提交</button>
+        <button class="btn-secondary" onclick="showScreen('screen-login')">{{ t('book.edit') }}</button>
+        <button id="btn-confirm-submit" class="btn-primary" onclick="submitBooking()">{{ t('book.submit_confirm') }}</button>
       </div>
     </div>
   </div>
@@ -146,13 +152,13 @@
   <div id="screen-success" class="screen">
     <div class="success-card">
       <div class="success-icon">✓</div>
-      <h2>预约成功！</h2>
-      <p>期待您光临 {{ biz.name }}。</p>
+      <h2>{{ t('book.success_heading') }}</h2>
+      <p>{{ t('book.success_sub', name=biz.name) }}</p>
       <div class="success-details" id="success-details"></div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">📅 别忘了记下预约时间</p>
-      {% if biz.phone %}<p style="font-size:13px;color:var(--muted);margin-bottom:4px">有疑问？请致电 <a href="tel:{{ biz.phone }}">{{ biz.phone }}</a></p>{% endif %}
-      {% if biz.support_contact %}<p style="font-size:13px;color:var(--muted);margin-bottom:20px">💬 客服：{{ biz.support_contact }}</p>{% endif %}
-      <button class="btn-primary" onclick="resetBooking()">再次预约</button>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">{{ t('book.remember_time') }}</p>
+      {% if biz.phone %}<p style="font-size:13px;color:var(--muted);margin-bottom:4px">{{ t('book.call_question') }} <a href="tel:{{ biz.phone }}">{{ biz.phone }}</a></p>{% endif %}
+      {% if biz.support_contact %}<p style="font-size:13px;color:var(--muted);margin-bottom:20px">{{ t('book.support_prefix') }}{{ biz.support_contact }}</p>{% endif %}
+      <button class="btn-primary" onclick="resetBooking()">{{ t('book.book_again') }}</button>
     </div>
   </div>
 
@@ -162,7 +168,7 @@
 <div id="modal-overlay" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2>确认预约</h2>
+      <h2>{{ t('book.modal_title') }}</h2>
       <button class="btn-close" onclick="closeModal()">×</button>
     </div>
     <div class="apt-preview">
@@ -172,9 +178,9 @@
         <span id="modal-dt"></span>
       </div>
     </div>
-    <textarea id="modal-comment" class="comment-field" placeholder="添加备注（选填，最多100字）" maxlength="100"></textarea>
+    <textarea id="modal-comment" class="comment-field" placeholder="{{ t('book.comment_placeholder') }}" maxlength="100"></textarea>
     <div id="char-count" class="char-count">0 / 100</div>
-    <button class="btn-primary" onclick="proceedToLogin()">✓ 确认</button>
+    <button class="btn-primary" onclick="proceedToLogin()">{{ t('book.modal_confirm') }}</button>
   </div>
 </div>
 

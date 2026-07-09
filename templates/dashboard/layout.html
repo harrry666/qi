@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}控制台{% endblock %} — Hastrid Booking</title>
+  <title>{% block title %}{{ t('dash.title_suffix') }}{% endblock %} — Hastrid Booking</title>
   <script>
   // 给同源的 fetch POST/PUT/DELETE 自动带上 CSRF token，覆盖所有 AJAX 调用
   (function () {
@@ -35,25 +35,29 @@
 <header class="mobile-topbar">
   <img src="{{ url_for('static', filename='logo.png') }}" style="height:32px;width:auto">
   <span class="mobile-biz-name">{{ current_user.name }}</span>
-  <a href="/book/{{ current_user.slug }}" target="_blank" class="mobile-book-link">预约页 ↗</a>
+  <div class="lang-switch">
+    <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+    <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+  </div>
+  <a href="/book/{{ current_user.slug }}" target="_blank" class="mobile-book-link">{{ t('dash.book_link_mobile') }}</a>
 </header>
 
 <!-- Mobile bottom nav -->
 <nav class="mobile-bottom-nav">
   <a href="{{ url_for('dashboard.index') }}" class="mobile-tab {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
-    <span class="tab-icon">📅</span><span class="tab-label">主页</span>
+    <span class="tab-icon">📅</span><span class="tab-label">{{ t('dash.mobile.home') }}</span>
   </a>
   <a href="{{ url_for('dashboard.calendar') }}" class="mobile-tab {% if request.endpoint == 'dashboard.calendar' %}active{% endif %}">
-    <span class="tab-icon">🗓️</span><span class="tab-label">日历</span>
+    <span class="tab-icon">🗓️</span><span class="tab-label">{{ t('dash.mobile.calendar') }}</span>
   </a>
   <a href="{{ url_for('dashboard.appointments') }}" class="mobile-tab {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">
-    <span class="tab-icon">📋</span><span class="tab-label">预约</span>
+    <span class="tab-icon">📋</span><span class="tab-label">{{ t('dash.mobile.appointments') }}</span>
   </a>
   <a href="{{ url_for('dashboard.customers') }}" class="mobile-tab {% if request.endpoint == 'dashboard.customers' %}active{% endif %}">
-    <span class="tab-icon">👥</span><span class="tab-label">客户</span>
+    <span class="tab-icon">👥</span><span class="tab-label">{{ t('dash.mobile.customers') }}</span>
   </a>
   <button type="button" class="mobile-tab" onclick="document.getElementById('mobile-more').classList.add('open')">
-    <span class="tab-icon">☰</span><span class="tab-label">更多</span>
+    <span class="tab-icon">☰</span><span class="tab-label">{{ t('dash.mobile.more') }}</span>
   </button>
 </nav>
 
@@ -62,16 +66,16 @@
   <div class="mobile-more-sheet">
     <div class="mobile-more-handle"></div>
     <div class="mobile-more-grid">
-      <a href="{{ url_for('dashboard.analytics') }}" class="mobile-more-item">📊<span>分析报告</span></a>
-      <a href="{{ url_for('dashboard.services') }}" class="mobile-more-item">✂️<span>服务项目</span></a>
-      <a href="{{ url_for('dashboard.staff') }}" class="mobile-more-item">👥<span>员工</span></a>
-      <a href="{{ url_for('dashboard.hours') }}" class="mobile-more-item">🕐<span>营业时间</span></a>
-      <a href="{{ url_for('dashboard.blackouts') }}" class="mobile-more-item">🚫<span>休业时期</span></a>
-      <a href="{{ url_for('dashboard.blocks') }}" class="mobile-more-item">🔒<span>时段锁定</span></a>
-      <a href="{{ url_for('dashboard.settings') }}" class="mobile-more-item">⚙️<span>设置</span></a>
-      <a href="{{ url_for('dashboard.feedback') }}" class="mobile-more-item">💬<span>反馈问题</span></a>
+      <a href="{{ url_for('dashboard.analytics') }}" class="mobile-more-item">📊<span>{{ t('dash.more.analytics') }}</span></a>
+      <a href="{{ url_for('dashboard.services') }}" class="mobile-more-item">✂️<span>{{ t('dash.more.services') }}</span></a>
+      <a href="{{ url_for('dashboard.staff') }}" class="mobile-more-item">👥<span>{{ t('dash.more.staff') }}</span></a>
+      <a href="{{ url_for('dashboard.hours') }}" class="mobile-more-item">🕐<span>{{ t('dash.more.hours') }}</span></a>
+      <a href="{{ url_for('dashboard.blackouts') }}" class="mobile-more-item">🚫<span>{{ t('dash.more.blackouts') }}</span></a>
+      <a href="{{ url_for('dashboard.blocks') }}" class="mobile-more-item">🔒<span>{{ t('dash.more.blocks') }}</span></a>
+      <a href="{{ url_for('dashboard.settings') }}" class="mobile-more-item">⚙️<span>{{ t('dash.more.settings') }}</span></a>
+      <a href="{{ url_for('dashboard.feedback') }}" class="mobile-more-item">💬<span>{{ t('dash.more.feedback') }}</span></a>
     </div>
-    <a href="{{ url_for('auth.logout') }}" class="mobile-more-logout">退出登录</a>
+    <a href="{{ url_for('auth.logout') }}" class="mobile-more-logout">{{ t('dash.logout') }}</a>
   </div>
 </div>
 
@@ -83,23 +87,27 @@
     </div>
     <div class="sidebar-biz" title="{{ current_user.name }}">{{ current_user.name }}</div>
     <nav class="sidebar-nav">
-      <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">🏠 主页</a>
-      <a href="{{ url_for('dashboard.calendar') }}"     class="nav-item {% if request.endpoint == 'dashboard.calendar' %}active{% endif %}">🗓️ 日程日历</a>
-      <a href="{{ url_for('dashboard.analytics') }}"   class="nav-item {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">📊 分析报告</a>
-      <a href="{{ url_for('dashboard.appointments') }}" class="nav-item {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">📋 预约记录</a>
-      <a href="{{ url_for('dashboard.customers') }}" class="nav-item {% if request.endpoint == 'dashboard.customers' %}active{% endif %}">👥 客户列表</a>
-      <a href="{{ url_for('dashboard.broadcast') }}"   class="nav-item {% if request.endpoint == 'dashboard.broadcast' %}active{% endif %}">📣 群发短信</a>
-      <a href="{{ url_for('dashboard.services') }}"     class="nav-item {% if request.endpoint == 'dashboard.services' %}active{% endif %}">✂️ 服务项目</a>
-      <a href="{{ url_for('dashboard.staff') }}"        class="nav-item {% if request.endpoint == 'dashboard.staff' %}active{% endif %}">👥 员工</a>
-      <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">🕐 营业时间</a>
-      <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">🚫 休业时期</a>
-      <a href="{{ url_for('dashboard.blocks') }}"       class="nav-item {% if request.endpoint == 'dashboard.blocks' %}active{% endif %}">🔒 时段锁定</a>
-      <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">⚙️ 设置</a>
-      <a href="{{ url_for('dashboard.feedback') }}"     class="nav-item {% if request.endpoint == 'dashboard.feedback' %}active{% endif %}">💬 反馈问题</a>
+      <a href="{{ url_for('dashboard.index') }}"        class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">{{ t('dash.nav.home') }}</a>
+      <a href="{{ url_for('dashboard.calendar') }}"     class="nav-item {% if request.endpoint == 'dashboard.calendar' %}active{% endif %}">{{ t('dash.nav.calendar') }}</a>
+      <a href="{{ url_for('dashboard.analytics') }}"   class="nav-item {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">{{ t('dash.nav.analytics') }}</a>
+      <a href="{{ url_for('dashboard.appointments') }}" class="nav-item {% if request.endpoint == 'dashboard.appointments' %}active{% endif %}">{{ t('dash.nav.appointments') }}</a>
+      <a href="{{ url_for('dashboard.customers') }}" class="nav-item {% if request.endpoint == 'dashboard.customers' %}active{% endif %}">{{ t('dash.nav.customers') }}</a>
+      <a href="{{ url_for('dashboard.broadcast') }}"   class="nav-item {% if request.endpoint == 'dashboard.broadcast' %}active{% endif %}">{{ t('dash.nav.broadcast') }}</a>
+      <a href="{{ url_for('dashboard.services') }}"     class="nav-item {% if request.endpoint == 'dashboard.services' %}active{% endif %}">{{ t('dash.nav.services') }}</a>
+      <a href="{{ url_for('dashboard.staff') }}"        class="nav-item {% if request.endpoint == 'dashboard.staff' %}active{% endif %}">{{ t('dash.nav.staff') }}</a>
+      <a href="{{ url_for('dashboard.hours') }}"        class="nav-item {% if request.endpoint == 'dashboard.hours' %}active{% endif %}">{{ t('dash.nav.hours') }}</a>
+      <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">{{ t('dash.nav.blackouts') }}</a>
+      <a href="{{ url_for('dashboard.blocks') }}"       class="nav-item {% if request.endpoint == 'dashboard.blocks' %}active{% endif %}">{{ t('dash.nav.blocks') }}</a>
+      <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">{{ t('dash.nav.settings') }}</a>
+      <a href="{{ url_for('dashboard.feedback') }}"     class="nav-item {% if request.endpoint == 'dashboard.feedback' %}active{% endif %}">{{ t('dash.nav.feedback') }}</a>
     </nav>
     <div class="sidebar-bottom">
-      <a href="/book/{{ current_user.slug }}" target="_blank" class="booking-link-btn">查看预约页面 ↗</a>
-      <a href="{{ url_for('auth.logout') }}" class="logout-link">退出登录</a>
+      <div class="lang-switch" style="align-self:center;margin-bottom:4px">
+        <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+        <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+      </div>
+      <a href="/book/{{ current_user.slug }}" target="_blank" class="booking-link-btn">{{ t('dash.booking_link') }}</a>
+      <a href="{{ url_for('auth.logout') }}" class="logout-link">{{ t('dash.logout') }}</a>
     </div>
   </aside>
 
@@ -107,7 +115,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for cat, msg in messages %}
-          <div class="flash flash-{{ cat }}" style="margin-bottom:16px">{{ msg }}</div>
+          <div class="flash flash-{{ cat }}" style="margin-bottom:16px">{{ t(msg) }}</div>
         {% endfor %}
       {% endif %}
     {% endwith %}
@@ -119,13 +127,13 @@
 <!-- Crop Modal -->
 <div id="crop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center">
   <div style="background:white;border-radius:16px;padding:24px;width:90%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-    <div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#1A1209">裁切图片</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#1A1209">{{ t('dash.crop_title') }}</div>
     <div style="max-height:360px;overflow:hidden;border-radius:8px;background:#f0f0f0">
       <img id="crop-img" style="max-width:100%;display:block">
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap">
-      <button onclick="cancelCrop()" style="padding:12px 22px;min-height:44px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;font-size:14px">取消</button>
-      <button onclick="confirmCrop()" style="padding:12px 22px;min-height:44px;background:#C9A84C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">确认裁切</button>
+      <button onclick="cancelCrop()" style="padding:12px 22px;min-height:44px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;font-size:14px">{{ t('dash.crop_cancel') }}</button>
+      <button onclick="confirmCrop()" style="padding:12px 22px;min-height:44px;background:#C9A84C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">{{ t('dash.crop_confirm') }}</button>
     </div>
   </div>
 </div>

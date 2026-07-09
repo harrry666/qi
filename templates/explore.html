@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}浏览商家 — Hastrid Booking{% endblock %}
+{% block title %}{{ t('explore.title_tag') }}{% endblock %}
 {% block head %}
 <style>
   @media (max-width: 600px) {
@@ -19,15 +19,14 @@
 {% block content %}
 
 <div class="explore-header">
-  <h1><span class="explore-title-underline">附近的服务</span></h1>
-  <p>浏览本地商家，在线立即预约。</p>
+  <h1><span class="explore-title-underline">{{ t('explore.heading') }}</span></h1>
+  <p>{{ t('explore.subheading') }}</p>
 </div>
 
-{% set zh = {'Hair':'理发','Nails':'美甲','Massage':'按摩','Fitness & Yoga':'健身瑜伽','Medical':'医疗','Beauty':'美容','Skincare':'护肤','Private Chef':'私厨','Tattoo & Piercing':'纹身穿孔','Pet Grooming':'宠物美容','Photography':'摄影','Tutoring':'家教','Other':'其他'} %}
 <div class="explore-filters">
-  <a href="{{ url_for('auth.explore') }}" class="filter-chip {% if not active_cat %}active{% endif %}">全部</a>
+  <a href="{{ url_for('auth.explore') }}" class="filter-chip {% if not active_cat %}active{% endif %}">{{ t('explore.filter_all') }}</a>
   {% for cat in categories %}
-  <a href="{{ url_for('auth.explore', cat=cat) }}" class="filter-chip {% if active_cat == cat %}active{% endif %}">{{ zh.get(cat, cat) }}（{{ cat }}）</a>
+  <a href="{{ url_for('auth.explore', cat=cat) }}" class="filter-chip {% if active_cat == cat %}active{% endif %}">{{ t('category.' + cat) }}</a>
   {% endfor %}
 </div>
 
@@ -43,7 +42,7 @@
           {% else %}
           <div class="biz-avatar">{{ biz.name[0].upper() }}</div>
           {% endif %}
-          <span class="biz-category-badge">{% set bc = biz.category or 'Other' %}{{ zh.get(bc, bc) }}（{{ bc }}）</span>
+          <span class="biz-category-badge">{{ t('category.' + (biz.category or 'Other')) }}</span>
         </div>
         <div class="biz-name">{{ biz.name }}</div>
         {% if biz.address %}
@@ -51,23 +50,23 @@
         {% endif %}
         <div class="biz-svc-row">
           {% if biz.service_count > 0 %}
-          <span class="biz-service-count">{{ biz.service_count }} 项服务</span>
+          <span class="biz-service-count">{{ t('explore.service_count', n=biz.service_count) }}</span>
           {% else %}
-          <span class="biz-service-none">暂无服务</span>
+          <span class="biz-service-none">{{ t('explore.no_services') }}</span>
           {% endif %}
         </div>
         {% if biz.description %}
         <div class="biz-desc">{{ biz.description[:80] }}{% if biz.description|length > 80 %}...{% endif %}</div>
         {% endif %}
-        <div class="biz-book-btn">立即预约 →</div>
+        <div class="biz-book-btn">{{ t('explore.book_now') }}</div>
       </div>
     </a>
     {% endfor %}
   {% else %}
     <div class="explore-empty">
       <div class="explore-empty-icon">🔍</div>
-      <div>该类别暂无商家</div>
-      <div class="explore-empty-hint">试试其他分类，或稍后再来看看</div>
+      <div>{{ t('explore.empty_title') }}</div>
+      <div class="explore-empty-hint">{{ t('explore.empty_hint') }}</div>
     </div>
   {% endif %}
 </div>

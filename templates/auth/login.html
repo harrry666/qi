@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}登录 — Hastrid Booking{% endblock %}
+{% block title %}{{ t('auth.login.title_tag') }}{% endblock %}
 {% block content %}
 <div class="auth-container">
   <div class="auth-card">
-    <h1>登录</h1>
-    <p class="auth-sub">欢迎回来</p>
+    <h1>{{ t('auth.login.title') }}</h1>
+    <p class="auth-sub">{{ t('auth.login.subtitle') }}</p>
     <form method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label class="field-label">邮箱</label>
+      <label class="field-label">{{ t('auth.login.email') }}</label>
       <input class="form-input" type="email" name="email" placeholder="you@email.com" required autofocus>
-      <label class="field-label">密码</label>
-      <input class="form-input" type="password" name="password" placeholder="请输入密码" required>
-      <button type="submit" class="btn-primary-full">登录</button>
+      <label class="field-label">{{ t('auth.login.password') }}</label>
+      <input class="form-input" type="password" name="password" placeholder="{{ t('auth.login.password_ph') }}" required>
+      <button type="submit" class="btn-primary-full">{{ t('auth.login.submit') }}</button>
     </form>
-    <p class="auth-switch" style="margin-bottom:8px"><a href="{{ url_for('auth.forgot_password') }}">忘记密码？</a></p>
-    <p class="auth-switch">还没有账号？<a href="{{ url_for('auth.register') }}">免费注册</a></p>
+    <p class="auth-switch" style="margin-bottom:8px"><a href="{{ url_for('auth.forgot_password') }}">{{ t('auth.login.forgot') }}</a></p>
+    <p class="auth-switch">{{ t('auth.login.no_account') }}<a href="{{ url_for('auth.register') }}">{{ t('auth.login.register') }}</a></p>
   </div>
 </div>
 {% endblock %}

@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}设置{% endblock %}
+{% block title %}{{ t('dash.settings.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -9,69 +9,69 @@
 }
 </style>
 
-<div class="page-title">⚙️ 设置</div>
+<div class="page-title">{{ t('dash.settings.page_title') }}</div>
 
 <div class="settings-card">
-  <h2>商家信息</h2>
+  <h2>{{ t('dash.settings.biz_info') }}</h2>
   <form method="POST" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label class="dash-label">商家名称 *</label>
+    <label class="dash-label">{{ t('dash.settings.biz_name') }}</label>
     <input class="dash-input" type="text" name="name" value="{{ biz.name }}" required>
 
-    <label class="dash-label">地址</label>
-    <input class="dash-input" type="text" name="address" value="{{ biz.address or '' }}" placeholder="街道地址、城市、州">
+    <label class="dash-label">{{ t('dash.settings.address') }}</label>
+    <input class="dash-input" type="text" name="address" value="{{ biz.address or '' }}" placeholder="{{ t('dash.settings.address_ph') }}">
 
-    <label class="dash-label">电话</label>
+    <label class="dash-label">{{ t('dash.settings.phone') }}</label>
     <input class="dash-input" type="text" name="phone" value="{{ biz.phone or '' }}" placeholder="(555) 000-0000">
 
-    <label class="dash-label">类别</label>
+    <label class="dash-label">{{ t('dash.settings.category') }}</label>
     <select class="dash-input" name="category">
       {% for cat in categories %}
-      <option value="{{ cat }}" {% if biz.category == cat %}selected{% endif %}>{{ cat }}</option>
+      <option value="{{ cat }}" {% if biz.category == cat %}selected{% endif %}>{{ t('category.' + cat) }}</option>
       {% endfor %}
     </select>
 
-    <label class="dash-label">简介</label>
-    <textarea class="dash-input dash-textarea" name="description" placeholder="在预约页面显示的简介">{{ biz.description or '' }}</textarea>
+    <label class="dash-label">{{ t('dash.settings.description') }}</label>
+    <textarea class="dash-input dash-textarea" name="description" placeholder="{{ t('dash.settings.description_ph') }}">{{ biz.description or '' }}</textarea>
 
-    <label class="dash-label">有什么反馈？请发送至 <span style="color:#555;font-weight:400;font-size:12px">（微信号/电话，客户预约页会显示）</span></label>
-    <input class="dash-input" type="text" name="support_contact" value="{{ biz.support_contact or '' }}" placeholder="例：微信 hastrid_help 或 (555) 000-0000">
+    <label class="dash-label">{{ t('dash.settings.feedback_label') }} <span style="color:#555;font-weight:400;font-size:12px">{{ t('dash.settings.feedback_hint') }}</span></label>
+    <input class="dash-input" type="text" name="support_contact" value="{{ biz.support_contact or '' }}" placeholder="{{ t('dash.settings.feedback_ph') }}">
 
-    <label class="dash-label" style="margin-top:20px;display:block">头像 <span style="color:#555;font-weight:400;font-size:12px">（正方形，显示在浏览页）</span></label>
+    <label class="dash-label" style="margin-top:20px;display:block">{{ t('dash.settings.avatar_label') }} <span style="color:#555;font-weight:400;font-size:12px">{{ t('dash.settings.avatar_hint') }}</span></label>
     {% if biz.avatar_url %}
     <img src="{{ biz.avatar_url }}" style="width:72px;height:72px;border-radius:12px;object-fit:cover;margin-bottom:8px;display:block">
     {% endif %}
     <input class="dash-input" type="file" name="avatar" accept="image/*" data-crop data-crop-ratio="1" data-out-w="400" data-out-h="400">
 
-    <label class="dash-label" style="margin-top:16px;display:block">封面图片 <span style="color:#555;font-weight:400;font-size:12px">（宽幅横图，显示在预约页顶部）</span></label>
+    <label class="dash-label" style="margin-top:16px;display:block">{{ t('dash.settings.cover_label') }} <span style="color:#555;font-weight:400;font-size:12px">{{ t('dash.settings.cover_hint') }}</span></label>
     {% if biz.cover_url %}
     <img src="{{ biz.cover_url }}" style="width:100%;max-width:480px;height:120px;border-radius:10px;object-fit:cover;margin-bottom:8px;display:block">
     {% endif %}
     <input class="dash-input" type="file" name="cover" accept="image/*" data-crop data-crop-ratio="3" data-out-w="1200" data-out-h="400">
 
-    <button type="submit" class="btn-save" style="margin-top:20px">保存设置</button>
+    <button type="submit" class="btn-save" style="margin-top:20px">{{ t('dash.settings.save') }}</button>
   </form>
 </div>
 
 <div class="settings-card" style="margin-top:20px">
-  <h2>你的预约链接</h2>
+  <h2>{{ t('dash.settings.booking_link_heading') }}</h2>
   <div class="slug-display">{{ booking_url }}</div>
-  <button id="copy-link-btn" data-url="{{ booking_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">复制链接</button>
+  <button id="copy-link-btn" data-url="{{ booking_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">{{ t('dash.settings.copy_link') }}</button>
   <script>document.getElementById('copy-link-btn').onclick=function(){navigator.clipboard.writeText(this.dataset.url);};</script>
-  <p style="font-size:13px;color:#555;margin-top:8px">将此链接分享给你的客户。</p>
+  <p style="font-size:13px;color:#555;margin-top:8px">{{ t('dash.settings.share_hint') }}</p>
 </div>
 
 <div class="settings-card" style="margin-top:20px">
-  <h2>日历订阅</h2>
+  <h2>{{ t('dash.settings.calendar_heading') }}</h2>
   <p style="font-size:13px;color:#555;margin-bottom:8px">
-    把下面这个链接添加到 Google Calendar / Apple 日历 / Outlook 的"订阅日历"里，预约会自动同步显示（大约每 15 分钟刷新一次，只读，不能在外部日历里改）。
+    {{ t('dash.settings.calendar_desc') }}
   </p>
   <div class="slug-display">{{ calendar_url }}</div>
-  <button id="copy-cal-btn" data-url="{{ calendar_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">复制链接</button>
+  <button id="copy-cal-btn" data-url="{{ calendar_url }}" style="margin-top:8px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">{{ t('dash.settings.copy_link') }}</button>
   <script>document.getElementById('copy-cal-btn').onclick=function(){navigator.clipboard.writeText(this.dataset.url);};</script>
-  <form method="POST" action="{{ url_for('dashboard.regenerate_calendar_token') }}" onsubmit="return confirm('确认重新生成？之前的订阅链接会失效，已订阅的外部日历需要重新添加。')" style="margin-top:8px;display:inline">
+  <form method="POST" action="{{ url_for('dashboard.regenerate_calendar_token') }}" onsubmit="return confirm({{ t('dash.settings.confirm_regen')|tojson }})" style="margin-top:8px;display:inline">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" style="padding:6px 14px;font-size:13px;border:1px solid var(--red);color:var(--red);border-radius:6px;cursor:pointer;background:transparent">重新生成链接</button>
+    <button type="submit" style="padding:6px 14px;font-size:13px;border:1px solid var(--red);color:var(--red);border-radius:6px;cursor:pointer;background:transparent">{{ t('dash.settings.regenerate') }}</button>
   </form>
 </div>
 
