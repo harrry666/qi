@@ -87,6 +87,9 @@ def register():
         if password != password_confirm:
             flash('flash.auth.password_mismatch', 'error')
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+        if len(phone) != 10:
+            flash('flash.common.phone_invalid', 'error')
+            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
         db = get_db()
         if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():

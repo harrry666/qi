@@ -48,6 +48,11 @@ def normalize_phone(raw):
     return digits[-10:] if len(digits) >= 10 else digits
 
 
+def is_valid_phone(raw):
+    """归一化后恰好10位才算有效美国手机号，防止填错号导致短信静默发不出。"""
+    return len(normalize_phone(raw)) == 10
+
+
 def upsert_customer(db, business_id, phone, name):
     import uuid
     phone = normalize_phone(phone)

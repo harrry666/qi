@@ -481,6 +481,8 @@ def calendar_quick_appointment():
     comment = request.form.get('comment', '').strip()
     if not all([service_id, name, phone, date, time_]):
         return jsonify({'error': t('flash.calendar.fill_all_fields')}), 400
+    if len(phone) != 10:
+        return jsonify({'error': t('flash.common.phone_invalid')}), 400
     db = get_db()
     svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s', (service_id, current_user.id)).fetchone()
     if not svc:
@@ -847,6 +849,9 @@ def add_customer():
     if not name or not phone:
         flash('flash.customers.name_phone_required', 'error')
         return redirect(url_for('dashboard.customers'))
+    if len(phone) != 10:
+        flash('flash.common.phone_invalid', 'error')
+        return redirect(url_for('dashboard.customers'))
     db = get_db()
     existing = db.execute('SELECT id FROM customers WHERE business_id=%s AND phone=%s', (current_user.id, phone)).fetchone()
     if existing:
@@ -950,6 +955,9 @@ def customer_update_profile(cid):
     phone = normalize_phone(request.form.get('phone', '').strip())
     preferences = request.form.get('preferences', '').strip()
     private_note = request.form.get('private_note', '').strip()
+    if phone and len(phone) != 10:
+        flash('flash.common.phone_invalid', 'error')
+        return redirect(url_for('dashboard.customer_detail', cid=cid))
     db = get_db()
     if phone:
         clash = db.execute(
@@ -1067,6 +1075,10 @@ def settings():
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
         support_contact = request.form.get('support_contact', '').strip()
+
+        if len(phone) != 10:
+            flash('flash.common.phone_invalid', 'error')
+            return redirect(url_for('dashboard.settings'))
 
         avatar_url = current_user.avatar_url or ''
         cover_url = current_user.cover_url or ''

@@ -18,6 +18,7 @@ TRANSLATIONS = {
     'flash.auth.required_fields':  {'zh': '所有字段为必填项。', 'en': 'Please fill in all fields.'},
     'flash.auth.password_min':     {'zh': '密码至少 6 个字符。', 'en': 'Password must be at least 6 characters.'},
     'flash.auth.password_mismatch':{'zh': '两次输入的密码不一致。', 'en': "Passwords don't match."},
+    'flash.common.phone_invalid':  {'zh': '请输入有效的10位美国手机号。', 'en': 'Please enter a valid 10-digit US phone number.'},
     'flash.auth.slug_taken':       {'zh': '该链接地址已被使用。', 'en': 'That booking link is already taken.'},
     'flash.auth.email_taken':      {'zh': '该邮箱已被注册。', 'en': 'That email is already registered.'},
     'flash.auth.register_success': {'zh': '注册申请已提交，管理员审核通过后即可登录。', 'en': "Your application is in. You'll be able to log in once it's approved."},

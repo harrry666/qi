@@ -252,6 +252,8 @@ def api_create(slug):
 
     if not all([service_id, name, phone, apt_dt]):
         return jsonify({'error': 'Missing required fields'}), 400
+    if len(phone) != 10:
+        return jsonify({'error': t('flash.common.phone_invalid')}), 400
 
     try:
         apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')

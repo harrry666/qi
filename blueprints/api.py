@@ -208,6 +208,8 @@ def create_booking():
 
     if not all([slug, service_id, customer_name, phone, date, time]):
         return jsonify({'error': '缺少必填字段'}), 400
+    if len(phone) != 10:
+        return jsonify({'error': '请输入有效的10位手机号'}), 400
 
     if TWILIO_VERIFY_SID:
         if not verify_code:
@@ -875,8 +877,11 @@ def my_update_profile():
         fields.append('nickname=%s')
         params.append((data.get('nickname') or '').strip())
     if 'phone' in data:
+        _ph = normalize_phone((data.get('phone') or '').strip())
+        if _ph and len(_ph) != 10:
+            return jsonify({'error': '请输入有效的10位手机号'}), 400
         fields.append('phone=%s')
-        params.append(normalize_phone((data.get('phone') or '').strip()))
+        params.append(_ph)
     if 'preferences' in data:
         fields.append('preferences=%s')
         params.append((data.get('preferences') or '').strip())
@@ -942,6 +947,8 @@ def merchant_register():
     slug = slugify(data.get('slug') or name)
     if not all([name, slug, email, phone, password, category]):
         return jsonify({'error': '所有字段为必填项'}), 400
+    if len(phone) != 10:
+        return jsonify({'error': '请输入有效的10位手机号'}), 400
     if len(password) < 6:
         return jsonify({'error': '密码至少 6 个字符'}), 400
     db = get_db()
@@ -1470,6 +1477,8 @@ def merchant_add_customer():
     balance = data.get('balance')
     if not name or not phone:
         return jsonify({'error': '姓名和手机号必填'}), 400
+    if len(phone) != 10:
+        return jsonify({'error': '请输入有效的10位手机号'}), 400
     db = get_db()
     try:
         existing = db.execute('SELECT id FROM customers WHERE business_id=%s AND phone=%s', (biz['id'], phone)).fetchone()
@@ -1548,6 +1557,8 @@ def merchant_customer_update(cid):
     phone = normalize_phone((data.get('phone') or '').strip())
     preferences = (data.get('preferences') or '').strip()
     private_note = (data.get('private_note') or '').strip()
+    if phone and len(phone) != 10:
+        return jsonify({'error': '请输入有效的10位手机号'}), 400
     db = get_db()
     try:
         own = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, biz['id'])).fetchone()
@@ -1697,6 +1708,8 @@ def merchant_create_appointment():
     comment = (data.get('comment') or '').strip()
     if not all([service_id, name, date, time_]):
         return jsonify({'error': '请填写完整信息'}), 400
+    if phone and len(phone) != 10:
+        return jsonify({'error': '请输入有效的10位手机号'}), 400
     db = get_db()
     try:
         svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
