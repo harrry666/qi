@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}群发短信{% endblock %}
+{% block title %}{{ t('dash.broadcast.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -9,26 +9,25 @@
 }
 </style>
 
-<div class="page-title">📣 群发短信</div>
+<div class="page-title">{{ t('dash.broadcast.page_title') }}</div>
 
-<form method="POST" action="{{ url_for('dashboard.broadcast_send') }}" onsubmit="return confirm('确定提交群发申请？平台审核通过后才会发送。')">
+<form method="POST" action="{{ url_for('dashboard.broadcast_send') }}" onsubmit="return confirm({{ t('dash.broadcast.confirm_submit')|tojson }})">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <div class="add-service-form" style="margin-bottom:16px">
-    <h2>短信内容</h2>
+    <h2>{{ t('dash.broadcast.message_heading') }}</h2>
     <textarea class="dash-input" name="message" rows="5" maxlength="480" required
-      placeholder="例：亲爱的客人，本店本周末剪发 8 折，欢迎预约～ 也可以在微信小程序「哈瓜小约」直接约我。"></textarea>
+      placeholder="{{ t('dash.broadcast.message_ph') }}"></textarea>
     <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5">
-      发送时会自动在结尾加上「【店名】回复 STOP 退订」以符合运营商规范。<br>
-      每条约 $0.01，建议只发给在本店约过的客人。
+      {{ t('dash.broadcast.footer_note_html')|safe }}
     </div>
   </div>
 
   <div class="add-service-form">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <h2 style="margin:0">选择客人（<span id="sel-count">{{ customers|length }}</span> 位）</h2>
+      <h2 style="margin:0">{{ t('dash.broadcast.select_heading', n='<span id="sel-count">' ~ customers|length ~ '</span>')|safe }}</h2>
       <label style="font-size:14px;cursor:pointer;white-space:nowrap">
-        <input type="checkbox" id="check-all" checked onchange="toggleAll(this)"> 全选
+        <input type="checkbox" id="check-all" checked onchange="toggleAll(this)"> {{ t('dash.broadcast.select_all') }}
       </label>
     </div>
 
@@ -37,16 +36,16 @@
       {% for c in customers %}
       <label style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer">
         <input type="checkbox" name="customer_ids" value="{{ c.id }}" class="bc-check" checked onchange="updateCount()">
-        <span style="flex:1;font-weight:600">{{ c.name or '未命名' }}</span>
+        <span style="flex:1;font-weight:600">{{ c.name or t('dash.broadcast.unnamed') }}</span>
         <span style="color:var(--muted);font-size:13px">{{ c.phone }}</span>
       </label>
       {% endfor %}
     </div>
-    <button type="submit" class="btn-primary" style="margin-top:16px;width:100%">提交群发申请（需平台审核）</button>
-    <div style="font-size:12px;color:var(--muted);margin-top:8px;text-align:center">提交后由平台审核，通过后统一发送。</div>
+    <button type="submit" class="btn-primary" style="margin-top:16px;width:100%">{{ t('dash.broadcast.submit') }}</button>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px;text-align:center">{{ t('dash.broadcast.submit_hint') }}</div>
     {% else %}
     <div style="color:var(--muted);text-align:center;padding:24px 0">
-      还没有带手机号的客人。客人预约后会自动进客户档案。
+      {{ t('dash.broadcast.no_customers') }}
     </div>
     {% endif %}
   </div>
@@ -54,15 +53,15 @@
 
 {% if requests %}
 <div class="add-service-form" style="margin-top:16px">
-  <h2>我的群发申请</h2>
+  <h2>{{ t('dash.broadcast.history_heading') }}</h2>
   {% for r in requests %}
   <div style="padding:11px 4px;border-bottom:1px solid var(--line)">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
       <span style="font-size:13px;color:var(--muted)">
-        {{ r.recipient_count }} 人 · {{ r.created_at.strftime('%m-%d %H:%M') if r.created_at else '' }}
+        {{ t('dash.broadcast.people_count', n=r.recipient_count) }} · {{ r.created_at.strftime('%m-%d %H:%M') if r.created_at else '' }}
       </span>
       <span style="font-size:13px;font-weight:700;color:{% if r.status=='approved' %}#4CAF7D{% elif r.status=='rejected' %}#EF4444{% else %}#C9A84C{% endif %}">
-        {{ {'pending':'审核中','approved':'已通过 · 已发送','rejected':'已拒绝'}.get(r.status, r.status) }}
+        {% if r.status == 'pending' %}{{ t('dash.broadcast.status_pending') }}{% elif r.status == 'approved' %}{{ t('dash.broadcast.status_approved') }}{% elif r.status == 'rejected' %}{{ t('dash.broadcast.status_rejected') }}{% else %}{{ r.status }}{% endif %}
       </span>
     </div>
     <div style="font-size:13px;margin-top:4px;color:var(--text);white-space:pre-wrap">{{ r.message }}</div>

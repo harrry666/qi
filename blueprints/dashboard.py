@@ -179,8 +179,8 @@ def analytics():
         top_svc_values=[r['cnt'] for r in top_svcs],
         hour_labels=hour_labels, hour_values=hour_values,
         peak_hour_label=peak_hour_label,
-        this_month_label=now.strftime('%Y年%-m月'),
-        last_month_label=last_month_dt.strftime('%Y年%-m月'),
+        this_month_label=now.strftime('%b %Y') if getattr(g, 'lang', 'zh') == 'en' else now.strftime('%Y年%-m月'),
+        last_month_label=last_month_dt.strftime('%b %Y') if getattr(g, 'lang', 'zh') == 'en' else last_month_dt.strftime('%Y年%-m月'),
     )
 
 @dashboard_bp.route('/services')
@@ -303,7 +303,6 @@ def delete_service(svc_id):
 def hours():
     db = get_db()
     day_keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-    day_names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
     if request.method == 'POST':
         for i, key in enumerate(day_keys):
@@ -320,7 +319,7 @@ def hours():
                 (current_user.id, i, open_t, close_t, closed)
             )
         db.commit()
-        flash('营业时间已保存。', 'success')
+        flash('flash.hours.saved', 'success')
 
     rows = db.execute(
         'SELECT * FROM business_hours WHERE business_id=%s ORDER BY weekday',
@@ -329,7 +328,7 @@ def hours():
     db.close()
 
     hours_map = {r['weekday']: dict(r) for r in rows}
-    days = [{'key': day_keys[i], 'name': day_names[i], 'data': hours_map.get(i, {})} for i in range(7)]
+    days = [{'key': day_keys[i], 'name': t('weekday.' + day_keys[i]), 'data': hours_map.get(i, {})} for i in range(7)]
     return render_template('dashboard/hours.html', days=days)
 
 PALETTE = ['#C9A84C', '#7A9E7E', '#B0785C', '#6E8CAE', '#A56CA8', '#C97A7A', '#7EA0A8', '#A89A5C',
@@ -400,7 +399,7 @@ def calendar_events():
             continue
         end = start + timedelta(minutes=r['duration_mins'] or 30)
         color = _service_color(r['service_id'], r['service_color'])
-        title = r['customer_name'] or '未知客人'
+        title = r['customer_name'] or t('dash.calendar.unknown_customer')
         events.append({
             'id': r['id'],
             'title': title,
@@ -411,12 +410,12 @@ def calendar_events():
                 'type': 'appointment',
                 'customer': r['customer_name'],
                 'service': r['service_name'],
-                'staff': r['staff_name'] or '不限员工',
+                'staff': r['staff_name'] or t('dash.calendar.any_staff'),
             }
         })
 
     for b in blocks:
-        label = '🔒 ' + (b['reason'] or '已锁定')
+        label = '🔒 ' + (b['reason'] or t('dash.calendar.blocked_label'))
         if b['staff_name']:
             label += f"（{b['staff_name']}）"
         events.append({
@@ -441,7 +440,7 @@ def calendar_events():
             'allDay': True,
             'display': 'background',
             'color': 'transparent',
-            'title': '🔒 休业 ' + (bo['reason'] or ''),
+            'title': t('dash.calendar.blackout_label') + (bo['reason'] or ''),
             'extendedProps': {'type': 'blackout'},
         })
 
@@ -456,7 +455,7 @@ def calendar_quick_block():
     staff_id = request.form.get('staff_id', '').strip() or None
     reason = request.form.get('reason', '').strip()
     if not date or not start_time or not end_time or end_time <= start_time:
-        return jsonify({'error': '时间范围无效'}), 400
+        return jsonify({'error': t('flash.calendar.invalid_time_range')}), 400
     db = get_db()
     if staff_id:
         own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, current_user.id)).fetchone()
@@ -481,12 +480,12 @@ def calendar_quick_appointment():
     time_ = request.form.get('time', '').strip()
     comment = request.form.get('comment', '').strip()
     if not all([service_id, name, phone, date, time_]):
-        return jsonify({'error': '请填写完整信息'}), 400
+        return jsonify({'error': t('flash.calendar.fill_all_fields')}), 400
     db = get_db()
     svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s', (service_id, current_user.id)).fetchone()
     if not svc:
         db.close()
-        return jsonify({'error': '服务不存在'}), 404
+        return jsonify({'error': t('flash.calendar.service_not_found')}), 404
     if staff_id:
         own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, current_user.id)).fetchone()
         if not own:
@@ -658,11 +657,12 @@ def blackouts():
     ).fetchall()
     db.close()
     blackout_list = []
+    date_fmt = '%b %-d' if getattr(g, 'lang', 'zh') == 'en' else '%-m月%-d日'
     for row in rows:
         d = dict(row)
         try:
-            d['start_date_fmt'] = datetime.strptime(d['start_date'], '%Y-%m-%d').strftime('%-m月%-d日')
-            d['end_date_fmt'] = datetime.strptime(d['end_date'], '%Y-%m-%d').strftime('%-m月%-d日')
+            d['start_date_fmt'] = datetime.strptime(d['start_date'], '%Y-%m-%d').strftime(date_fmt)
+            d['end_date_fmt'] = datetime.strptime(d['end_date'], '%Y-%m-%d').strftime(date_fmt)
         except Exception:
             d['start_date_fmt'] = d['start_date']
             d['end_date_fmt'] = d['end_date']
@@ -676,7 +676,7 @@ def add_blackout():
     end = request.form.get('end_date', '').strip()
     reason = request.form.get('reason', '').strip()
     if not start or not end or end < start:
-        flash('日期范围无效。', 'error')
+        flash('flash.blackouts.invalid_range', 'error')
         return redirect(url_for('dashboard.blackouts'))
     db = get_db()
     db.execute(
@@ -685,7 +685,7 @@ def add_blackout():
     )
     db.commit()
     db.close()
-    flash('休业期已添加。', 'success')
+    flash('flash.blackouts.added', 'success')
     return redirect(url_for('dashboard.blackouts'))
 
 @dashboard_bp.route('/blackouts/<int:bo_id>/delete', methods=['POST'])
@@ -713,11 +713,12 @@ def blocks():
     ).fetchall()
     db.close()
     today = datetime.now().strftime('%Y-%m-%d')
+    date_fmt = '%b %-d' if getattr(g, 'lang', 'zh') == 'en' else '%-m月%-d日'
     block_list = []
     for r in rows:
         d = dict(r)
         try:
-            d['date_fmt'] = datetime.strptime(d['date'], '%Y-%m-%d').strftime('%-m月%-d日')
+            d['date_fmt'] = datetime.strptime(d['date'], '%Y-%m-%d').strftime(date_fmt)
         except Exception:
             d['date_fmt'] = d['date']
         block_list.append(d)
@@ -733,7 +734,7 @@ def add_block():
     reason = request.form.get('reason', '').strip()
     staff_id = request.form.get('staff_id', '').strip() or None
     if not start_date or not start_time or not end_time or end_time <= start_time or end_date < start_date:
-        flash('日期或时间范围无效。', 'error')
+        flash('flash.blocks.invalid_range', 'error')
         return redirect(url_for('dashboard.blocks'))
     db = get_db()
     if staff_id:
@@ -744,7 +745,7 @@ def add_block():
     d1 = datetime.strptime(end_date, '%Y-%m-%d').date()
     if (d1 - d0).days > 60:
         db.close()
-        flash('日期范围不能超过 60 天。', 'error')
+        flash('flash.blocks.range_too_long', 'error')
         return redirect(url_for('dashboard.blocks'))
     cur = d0
     while cur <= d1:
@@ -755,7 +756,7 @@ def add_block():
         cur += timedelta(days=1)
     db.commit()
     db.close()
-    flash('时段已锁定。', 'success')
+    flash('flash.blocks.locked', 'success')
     return redirect(url_for('dashboard.blocks'))
 
 @dashboard_bp.route('/blocks/<int:bid>/delete', methods=['POST'])
@@ -791,10 +792,10 @@ def broadcast_send():
     message = (request.form.get('message') or '').strip()
     ids = request.form.getlist('customer_ids')
     if not message:
-        flash('请输入要群发的内容', 'error')
+        flash('flash.broadcast.message_required', 'error')
         return redirect(url_for('dashboard.broadcast'))
     if not ids:
-        flash('请至少选择一位客人', 'error')
+        flash('flash.broadcast.pick_customer', 'error')
         return redirect(url_for('dashboard.broadcast'))
     db = get_db()
     rows = db.execute(
@@ -805,7 +806,7 @@ def broadcast_send():
     phones = [format_phone(r['phone']) for r in rows if r['phone']]
     if not phones:
         db.close()
-        flash('选中的客人没有有效手机号', 'error')
+        flash('flash.broadcast.no_valid_phones', 'error')
         return redirect(url_for('dashboard.broadcast'))
     db.execute(
         "INSERT INTO broadcast_requests (business_id, message, phones, recipient_count, status) "
@@ -814,7 +815,7 @@ def broadcast_send():
     )
     db.commit()
     db.close()
-    flash(f'已提交群发申请（{len(phones)} 位客人），等待平台审核通过后发送', 'success')
+    flash(t('flash.broadcast.submitted', n=len(phones)), 'success')
     return redirect(url_for('dashboard.broadcast'))
 
 @dashboard_bp.route('/customers')
@@ -844,13 +845,13 @@ def add_customer():
     private_note = request.form.get('private_note', '').strip()
     balance = request.form.get('balance', '').strip()
     if not name or not phone:
-        flash('姓名和手机号必填。', 'error')
+        flash('flash.customers.name_phone_required', 'error')
         return redirect(url_for('dashboard.customers'))
     db = get_db()
     existing = db.execute('SELECT id FROM customers WHERE business_id=%s AND phone=%s', (current_user.id, phone)).fetchone()
     if existing:
         db.close()
-        flash('该手机号已有客户档案。', 'error')
+        flash('flash.customers.phone_exists', 'error')
         return redirect(url_for('dashboard.customer_detail', cid=existing['id']))
     cid = upsert_customer(db, current_user.id, phone, name)
     try:
@@ -863,10 +864,10 @@ def add_customer():
     )
     if balance_val:
         db.execute('INSERT INTO balance_transactions (customer_id, delta, reason) VALUES (%s,%s,%s)',
-                   (cid, balance_val, '建档初始余额'))
+                   (cid, balance_val, t('flash.customers.initial_balance_reason')))
     db.commit()
     db.close()
-    flash('客户已添加。', 'success')
+    flash('flash.customers.added', 'success')
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/import', methods=['POST'])
@@ -875,12 +876,12 @@ def import_customers():
     from db import upsert_customer
     file = request.files.get('csv_file')
     if not file or not file.filename:
-        flash('请选择要上传的 CSV 文件。', 'error')
+        flash('flash.customers.csv_required', 'error')
         return redirect(url_for('dashboard.customers'))
     try:
         content = file.stream.read().decode('utf-8-sig')
     except UnicodeDecodeError:
-        flash('文件编码无法识别，请存成 UTF-8 格式的 CSV。', 'error')
+        flash('flash.customers.csv_encoding', 'error')
         return redirect(url_for('dashboard.customers'))
     rows = list(csv.reader(io.StringIO(content)))
     if rows and rows[0] and not any(ch.isdigit() for ch in rows[0][1] if len(rows[0]) > 1):
@@ -911,10 +912,10 @@ def import_customers():
             added += 1
             if balance_val:
                 db.execute('INSERT INTO balance_transactions (customer_id, delta, reason) VALUES (%s,%s,%s)',
-                           (cid, balance_val, '导入建档初始余额'))
+                           (cid, balance_val, t('flash.customers.import_balance_reason')))
     db.commit()
     db.close()
-    flash(f'导入完成：新增 {added} 位，更新 {updated} 位，跳过 {skipped} 行无效数据。', 'success')
+    flash(t('flash.customers.import_done', added=added, updated=updated, skipped=skipped), 'success')
     return redirect(url_for('dashboard.customers'))
 
 @dashboard_bp.route('/customers/<int:cid>')
@@ -924,7 +925,7 @@ def customer_detail(cid):
     cust = db.execute('SELECT * FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
     if not cust:
         db.close()
-        flash('未找到该客户。', 'error')
+        flash('flash.customers.not_found', 'error')
         return redirect(url_for('dashboard.customers'))
     visits = db.execute(
         "SELECT a.*, s.name as service_name FROM appointments a JOIN services s ON a.service_id=s.id "
@@ -957,7 +958,7 @@ def customer_update_profile(cid):
         ).fetchone()
         if clash:
             db.close()
-            flash('该手机号已被其他客户占用。', 'error')
+            flash('flash.customers.phone_taken', 'error')
             return redirect(url_for('dashboard.customer_detail', cid=cid))
     db.execute(
         'UPDATE customers SET name=%s, phone=%s, preferences=%s, private_note=%s WHERE id=%s AND business_id=%s',
@@ -965,7 +966,7 @@ def customer_update_profile(cid):
     )
     db.commit()
     db.close()
-    flash('客户档案已保存。', 'success')
+    flash('flash.customers.profile_saved', 'success')
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/delete', methods=['POST'])
@@ -975,7 +976,7 @@ def customer_delete(cid):
     own = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
     if not own:
         db.close()
-        flash('未找到该客户。', 'error')
+        flash('flash.customers.not_found', 'error')
         return redirect(url_for('dashboard.customers'))
     db.execute('DELETE FROM customer_photos WHERE customer_id=%s', (cid,))
     db.execute('DELETE FROM balance_transactions WHERE customer_id=%s', (cid,))
@@ -983,7 +984,7 @@ def customer_delete(cid):
     db.execute('DELETE FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id))
     db.commit()
     db.close()
-    flash('客户档案已删除。', 'success')
+    flash('flash.customers.deleted', 'success')
     return redirect(url_for('dashboard.customers'))
 
 @dashboard_bp.route('/customers/<int:cid>/avatar', methods=['POST'])
@@ -995,9 +996,9 @@ def customer_update_avatar(cid):
         db.execute('UPDATE customers SET avatar_url=%s WHERE id=%s AND business_id=%s', (avatar_url, cid, current_user.id))
         db.commit()
         db.close()
-        flash('头像已更新。', 'success')
+        flash('flash.customers.avatar_updated', 'success')
     else:
-        flash('请上传有效的图片文件。', 'error')
+        flash('flash.customers.avatar_invalid', 'error')
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/photo', methods=['POST'])
@@ -1014,10 +1015,10 @@ def customer_add_photo(cid):
                 (cid, photo_url, note)
             )
             db.commit()
-            flash('照片已添加。', 'success')
+            flash('flash.customers.photo_added', 'success')
         db.close()
     else:
-        flash('请上传有效的图片文件。', 'error')
+        flash('flash.customers.avatar_invalid', 'error')
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/photo/<int:pid>/delete', methods=['POST'])
@@ -1051,7 +1052,7 @@ def customer_adjust_balance(cid):
                 (cid, delta, reason)
             )
             db.commit()
-            flash('余额已更新。', 'success')
+            flash('flash.customers.balance_updated', 'success')
         db.close()
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
@@ -1130,12 +1131,11 @@ def feedback():
             )
             db.commit()
             db.close()
-            flash('反馈已提交，平台会尽快处理。', 'success')
+            flash('flash.feedback.submitted', 'success')
         return redirect(url_for('dashboard.feedback'))
     return render_template('dashboard/feedback.html')
 
 STAFF_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-STAFF_DAY_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
 @dashboard_bp.route('/staff')
 @login_required
@@ -1162,7 +1162,7 @@ def staff():
         s['hours_map'] = {hr['weekday']: dict(hr) for hr in hour_rows}
         staff_list.append(s)
     db.close()
-    days = [{'key': STAFF_DAY_KEYS[i], 'name': STAFF_DAY_NAMES[i], 'weekday': i} for i in range(7)]
+    days = [{'key': STAFF_DAY_KEYS[i], 'name': t('weekday.' + STAFF_DAY_KEYS[i]), 'weekday': i} for i in range(7)]
     return render_template('dashboard/staff.html', staff_list=staff_list, all_services=all_services, days=days)
 
 @dashboard_bp.route('/staff/add', methods=['POST'])
@@ -1172,7 +1172,7 @@ def add_staff():
     emoji = request.form.get('emoji', '').strip()
     bio = request.form.get('bio', '').strip()
     if not name:
-        flash('员工姓名为必填项。', 'error')
+        flash('flash.staff.name_required', 'error')
         return redirect(url_for('dashboard.staff'))
     avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/staff', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}]) or ''
     db = get_db()
@@ -1182,7 +1182,7 @@ def add_staff():
     )
     db.commit()
     db.close()
-    flash('员工已添加。', 'success')
+    flash('flash.staff.added', 'success')
     return redirect(url_for('dashboard.staff'))
 
 @dashboard_bp.route('/staff/<int:sid>/edit', methods=['POST'])
@@ -1192,7 +1192,7 @@ def edit_staff(sid):
     emoji = request.form.get('emoji', '').strip()
     bio = request.form.get('bio', '').strip()
     if not name:
-        flash('员工姓名为必填项。', 'error')
+        flash('flash.staff.name_required', 'error')
         return redirect(url_for('dashboard.staff'))
     avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/staff', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
     db = get_db()
@@ -1208,7 +1208,7 @@ def edit_staff(sid):
         )
     db.commit()
     db.close()
-    flash('员工信息已更新。', 'success')
+    flash('flash.staff.updated', 'success')
     return redirect(url_for('dashboard.staff'))
 
 @dashboard_bp.route('/staff/<int:sid>/delete', methods=['POST'])
@@ -1222,7 +1222,7 @@ def delete_staff(sid):
         db.execute('DELETE FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id))
         db.commit()
     db.close()
-    flash('员工已删除。', 'success')
+    flash('flash.staff.deleted', 'success')
     return redirect(url_for('dashboard.staff'))
 
 @dashboard_bp.route('/staff/<int:sid>/toggle', methods=['POST'])
@@ -1235,7 +1235,7 @@ def toggle_staff(sid):
     )
     db.commit()
     db.close()
-    flash('员工状态已更新。', 'success')
+    flash('flash.staff.status_updated', 'success')
     return redirect(url_for('dashboard.staff'))
 
 @dashboard_bp.route('/staff/<int:sid>/services', methods=['POST'])
@@ -1245,7 +1245,7 @@ def staff_services(sid):
     row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id)).fetchone()
     if not row:
         db.close()
-        flash('员工不存在。', 'error')
+        flash('flash.staff.not_found', 'error')
         return redirect(url_for('dashboard.staff'))
     service_ids = request.form.getlist('service_ids')
     db.execute('DELETE FROM staff_services WHERE staff_id=%s', (sid,))
@@ -1255,7 +1255,7 @@ def staff_services(sid):
             db.execute('INSERT INTO staff_services (staff_id, service_id) VALUES (%s,%s) ON CONFLICT (staff_id, service_id) DO NOTHING', (sid, svc_id))
     db.commit()
     db.close()
-    flash('可做服务已更新。', 'success')
+    flash('flash.staff.services_updated', 'success')
     return redirect(url_for('dashboard.staff'))
 
 @dashboard_bp.route('/staff/<int:sid>/hours', methods=['POST'])
@@ -1265,7 +1265,7 @@ def staff_hours(sid):
     row = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id)).fetchone()
     if not row:
         db.close()
-        flash('员工不存在。', 'error')
+        flash('flash.staff.not_found', 'error')
         return redirect(url_for('dashboard.staff'))
     for i, key in enumerate(STAFF_DAY_KEYS):
         open_t = request.form.get(f'{key}_open', '09:00')
@@ -1282,5 +1282,5 @@ def staff_hours(sid):
         )
     db.commit()
     db.close()
-    flash('排班已保存。', 'success')
+    flash('flash.staff.hours_saved', 'success')
     return redirect(url_for('dashboard.staff'))

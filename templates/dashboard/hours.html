@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}营业时间{% endblock %}
+{% block title %}{{ t('dash.hours.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -13,7 +13,7 @@
 }
 </style>
 
-<div class="page-title">🕐 营业时间</div>
+<div class="page-title">{{ t('dash.hours.page_title') }}</div>
 
 <div class="hours-form">
   <form method="POST">
@@ -24,18 +24,18 @@
       <label class="hours-closed-wrap">
         <input type="checkbox" name="{{ day.key }}_active" {% if not day.data.get('is_closed') %}checked{% endif %}
                onchange="toggleDay('{{ day.key }}', this.checked)">
-        营业
+        {{ t('dash.hours.open_label') }}
       </label>
       <div class="time-range" id="range-{{ day.key }}" {% if day.data.get('is_closed') %}style="opacity:0.3;pointer-events:none"{% endif %}>
         <input class="dash-input" type="time" name="{{ day.key }}_open"
                value="{{ day.data.get('open_time', '09:00') }}" style="width:120px">
-        <span>至</span>
+        <span>{{ t('dash.hours.to') }}</span>
         <input class="dash-input" type="time" name="{{ day.key }}_close"
                value="{{ day.data.get('close_time', '18:00') }}" style="width:120px">
       </div>
     </div>
     {% endfor %}
-    <button type="submit" class="btn-save">保存</button>
+    <button type="submit" class="btn-save">{{ t('dash.hours.save') }}</button>
   </form>
 </div>
 

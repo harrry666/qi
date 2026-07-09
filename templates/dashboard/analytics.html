@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}分析报告{% endblock %}
+{% block title %}{{ t('dash.analytics.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -11,62 +11,62 @@
 }
 </style>
 
-<div class="page-title">📊 分析报告</div>
-<p style="color:#666;font-size:14px;margin-bottom:24px">{{ this_month_label }} · 已确认预约统计</p>
+<div class="page-title">{{ t('dash.analytics.page_title') }}</div>
+<p style="color:#666;font-size:14px;margin-bottom:24px">{{ t('dash.analytics.subtitle', month=this_month_label) }}</p>
 
 <div class="stats-row analytics-stats" style="margin-bottom:16px">
   <div class="stat-card">
     <div class="stat-label">{{ this_month_label }}</div>
     <div class="stat-value">${{ '%.0f'|format(rev_this) }}</div>
     <div class="stat-sub" style="color:{% if rev_delta >= 0 %}#4ADE80{% else %}#F87171{% endif %}">
-      {% if rev_delta >= 0 %}+{% endif %}${{ '%.0f'|format(rev_delta) }} vs 上月
+      {% if rev_delta >= 0 %}+{% endif %}${{ '%.0f'|format(rev_delta) }} {{ t('dash.analytics.vs_last_month') }}
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-label">{{ last_month_label }}</div>
     <div class="stat-value">${{ '%.0f'|format(rev_last) }}</div>
-    <div class="stat-sub">上月收入</div>
+    <div class="stat-sub">{{ t('dash.analytics.last_month_revenue') }}</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">累计收入</div>
+    <div class="stat-label">{{ t('dash.analytics.total_revenue') }}</div>
     <div class="stat-value">${{ '%.0f'|format(rev_total) }}</div>
-    <div class="stat-sub">所有已确认预约</div>
+    <div class="stat-sub">{{ t('dash.analytics.total_revenue_sub') }}</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">本月预约数</div>
+    <div class="stat-label">{{ t('dash.analytics.this_month_count') }}</div>
     <div class="stat-value">{{ cnt_this }}</div>
     <div class="stat-sub" style="color:{% if cnt_delta >= 0 %}#4ADE80{% else %}#F87171{% endif %}">
-      {% if cnt_delta >= 0 %}+{% endif %}{{ cnt_delta }} vs 上月
+      {% if cnt_delta >= 0 %}+{% endif %}{{ cnt_delta }} {{ t('dash.analytics.vs_last_month') }}
     </div>
   </div>
 </div>
 {% if no_price_count > 0 %}
 <p style="font-size:12px;color:var(--muted);margin-bottom:20px">
-  ⚠️ {{ no_price_count }} 个预约的服务未设置价格，收入统计可能偏低。
-  <a href="{{ url_for('dashboard.services') }}" style="color:var(--gold-h)">去设置价格 →</a>
+  {{ t('dash.analytics.no_price_warning', n=no_price_count) }}
+  <a href="{{ url_for('dashboard.services') }}" style="color:var(--gold-h)">{{ t('dash.analytics.set_price_link') }}</a>
 </p>
 {% endif %}
 
 <div class="chart-grid">
   <div class="settings-card" style="padding:20px">
-    <div class="section-heading" style="margin-bottom:16px">近 30 天预约量</div>
+    <div class="section-heading" style="margin-bottom:16px">{{ t('dash.analytics.daily_chart_heading') }}</div>
     <canvas id="dailyChart" height="180"></canvas>
   </div>
   <div class="settings-card" style="padding:20px">
-    <div class="section-heading" style="margin-bottom:16px">热门服务</div>
+    <div class="section-heading" style="margin-bottom:16px">{{ t('dash.analytics.top_services_heading') }}</div>
     {% if top_svc_labels %}
       <canvas id="topSvcsChart" height="180"></canvas>
     {% else %}
-      <p style="color:#555;font-size:14px;padding-top:8px">暂无数据。</p>
+      <p style="color:#555;font-size:14px;padding-top:8px">{{ t('dash.analytics.no_data') }}</p>
     {% endif %}
   </div>
 </div>
 
 <div class="settings-card" style="padding:20px;margin-bottom:20px">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
-    <div class="section-heading" style="margin-bottom:0">高峰时段</div>
+    <div class="section-heading" style="margin-bottom:0">{{ t('dash.analytics.peak_hours_heading') }}</div>
     {% if peak_hour_label != '—' %}
-      <span style="font-size:13px;color:#C9A84C">高峰：{{ peak_hour_label }}</span>
+      <span style="font-size:13px;color:#C9A84C">{{ t('dash.analytics.peak_label', hour=peak_hour_label) }}</span>
     {% endif %}
   </div>
   <canvas id="hourChart" height="100"></canvas>

@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}休业时期{% endblock %}
+{% block title %}{{ t('dash.blackouts.title_tag') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -10,38 +10,38 @@
 }
 </style>
 
-<div class="page-title">🚫 休业时期</div>
-<p style="color:#666;font-size:14px;margin-bottom:24px">设定休业期间后，客户将看不到该段时间内的可预约时间段。</p>
+<div class="page-title">{{ t('dash.blackouts.page_title') }}</div>
+<p style="color:#666;font-size:14px;margin-bottom:24px">{{ t('dash.blackouts.desc') }}</p>
 
 <div class="settings-card settings-card-action" style="max-width:700px;margin-bottom:28px">
-  <h2>添加休业期</h2>
+  <h2>{{ t('dash.blackouts.add_heading') }}</h2>
   <form method="POST" action="{{ url_for('dashboard.add_blackout') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div>
-      <label class="field-label" style="font-size:13px;color:#888">开始日期</label>
+      <label class="field-label" style="font-size:13px;color:#888">{{ t('dash.blackouts.start_date') }}</label>
       <input class="dash-input" type="date" name="start_date" required style="width:160px">
     </div>
     <div>
-      <label class="field-label" style="font-size:13px;color:#888">结束日期</label>
+      <label class="field-label" style="font-size:13px;color:#888">{{ t('dash.blackouts.end_date') }}</label>
       <input class="dash-input" type="date" name="end_date" required style="width:160px">
     </div>
     <div style="flex:1;min-width:160px">
-      <label class="field-label" style="font-size:13px;color:#888">原因（选填）</label>
-      <input class="dash-input" type="text" name="reason" placeholder="例：假期、节假日" style="width:100%">
+      <label class="field-label" style="font-size:13px;color:#888">{{ t('dash.blackouts.reason') }}</label>
+      <input class="dash-input" type="text" name="reason" placeholder="{{ t('dash.blackouts.reason_ph') }}" style="width:100%">
     </div>
-    <button type="submit" class="btn-save" style="margin-top:0">添加</button>
+    <button type="submit" class="btn-save" style="margin-top:0">{{ t('dash.blackouts.add_btn') }}</button>
   </form>
 </div>
 
 <div class="settings-card" style="max-width:700px">
-  <h2>已设休业期</h2>
+  <h2>{{ t('dash.blackouts.list_heading') }}</h2>
   {% if blackouts %}
     <table class="apt-table blackout-table">
       <thead>
         <tr>
-          <th>开始</th>
-          <th>结束</th>
-          <th>原因</th>
+          <th>{{ t('dash.blackouts.col_start') }}</th>
+          <th>{{ t('dash.blackouts.col_end') }}</th>
+          <th>{{ t('dash.blackouts.col_reason') }}</th>
           <th></th>
         </tr>
       </thead>
@@ -53,9 +53,9 @@
           <td style="color:#555">{{ bo.reason or '—' }}</td>
           <td style="text-align:right">
             <form method="POST" action="{{ url_for('dashboard.delete_blackout', bo_id=bo.id) }}"
-                  onsubmit="return confirm('确认删除此休业期？')">
+                  onsubmit="return confirm({{ t('dash.blackouts.confirm_delete')|tojson }})">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="btn-cancel">删除</button>
+              <button type="submit" class="btn-cancel">{{ t('dash.blackouts.delete') }}</button>
             </form>
           </td>
         </tr>
@@ -63,7 +63,7 @@
       </tbody>
     </table>
   {% else %}
-    <p style="color:#555;font-size:14px;padding:8px 0">暂无休业期。</p>
+    <p style="color:#555;font-size:14px;padding:8px 0">{{ t('dash.blackouts.empty') }}</p>
   {% endif %}
 </div>
 
