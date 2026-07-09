@@ -1073,19 +1073,19 @@ def settings():
 
         avatar_file = request.files.get('avatar')
         if avatar_file and avatar_file.filename:
-            try:
-                result = cloudinary.uploader.upload(avatar_file, folder='qi/avatars', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
-                avatar_url = result['secure_url']
-            except Exception as e:
-                flash(t('flash.settings.avatar_failed', error=e), 'error')
+            uploaded = _upload_to_cloudinary(avatar_file, folder='qi/avatars', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
+            if uploaded:
+                avatar_url = uploaded
+            else:
+                flash('flash.settings.avatar_failed', 'error')
 
         cover_file = request.files.get('cover')
         if cover_file and cover_file.filename:
-            try:
-                result = cloudinary.uploader.upload(cover_file, folder='qi/covers', transformation=[{'width': 1200, 'height': 400, 'crop': 'fill'}])
-                cover_url = result['secure_url']
-            except Exception as e:
-                flash(t('flash.settings.cover_failed', error=e), 'error')
+            uploaded = _upload_to_cloudinary(cover_file, folder='qi/covers', transformation=[{'width': 1200, 'height': 400, 'crop': 'fill'}])
+            if uploaded:
+                cover_url = uploaded
+            else:
+                flash('flash.settings.cover_failed', 'error')
 
         if name:
             db.execute(

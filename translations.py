@@ -337,8 +337,8 @@ TRANSLATIONS = {
     'dash.settings.confirm_regen': {'zh': '确认重新生成？之前的订阅链接会失效，已订阅的外部日历需要重新添加。', 'en': "Regenerate the link? The old one will stop working and any calendars you've subscribed will need to be re-added."},
     'dash.settings.regenerate':  {'zh': '重新生成链接', 'en': 'Regenerate link'},
 
-    'flash.settings.avatar_failed': {'zh': '头像上传失败: {error}', 'en': 'Avatar upload failed: {error}'},
-    'flash.settings.cover_failed':  {'zh': '封面上传失败: {error}', 'en': 'Cover upload failed: {error}'},
+    'flash.settings.avatar_failed': {'zh': '头像上传失败，请检查图片格式。', 'en': 'Avatar upload failed. Please check the image format.'},
+    'flash.settings.cover_failed':  {'zh': '封面上传失败，请检查图片格式。', 'en': 'Cover upload failed. Please check the image format.'},
     'flash.settings.saved':         {'zh': '设置已保存。', 'en': 'Settings saved.'},
     'flash.settings.calendar_regenerated': {'zh': '订阅链接已重新生成，之前的链接会失效。', 'en': 'Link regenerated. The old one no longer works.'},
 
