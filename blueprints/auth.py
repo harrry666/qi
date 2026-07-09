@@ -75,6 +75,7 @@ def register():
         from db import normalize_phone
         phone = normalize_phone(request.form.get('phone', '').strip())
         password = request.form.get('password', '')
+        password_confirm = request.form.get('password_confirm', '')
         category = request.form.get('category', '').strip()
 
         if not all([name, slug, email, phone, password, category]):
@@ -82,7 +83,10 @@ def register():
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
         if len(password) < 6:
             flash('密码至少 6 个字符。', 'error')
-            return render_template('auth/register.html', form=request.form)
+            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+        if password != password_confirm:
+            flash('两次输入的密码不一致。', 'error')
+            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
         db = get_db()
         if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():
@@ -214,9 +218,14 @@ def reset_password(token):
 
     if request.method == 'POST':
         password = request.form.get('password', '')
+        password_confirm = request.form.get('password_confirm', '')
         if len(password) < 6:
             db.close()
             flash('密码至少 6 个字符。', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        if password != password_confirm:
+            db.close()
+            flash('两次输入的密码不一致。', 'error')
             return render_template('auth/reset_password.html', token=token)
         db.execute(
             'UPDATE businesses SET password_hash=%s WHERE id=%s',

@@ -304,6 +304,22 @@ a:hover { text-decoration: underline; }
 .form-input:focus { border-color: var(--gold); }
 .form-input::placeholder { color: #BFB3A6; }
 
+.pw-field { position: relative; }
+.pw-field .form-input { padding-right: 44px; }
+.pw-toggle {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; padding: 6px;
+  color: var(--muted); display: flex; align-items: center;
+}
+.pw-toggle:hover { color: var(--text); }
+.pw-toggle.showing { color: var(--gold); }
+.pw-toggle.showing::after {
+  content: ''; position: absolute; left: 5px; right: 5px; top: 50%; height: 1.5px;
+  background: currentColor; transform: rotate(-45deg);
+}
+.field-error { display: none; color: #991B1B; font-size: 12px; margin-top: 6px; }
+.field-error.show { display: block; }
+
 .slug-preview { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
 .slug-preview:focus-within { border-color: var(--gold); }
 .slug-prefix { padding: 12px 10px 12px 14px; font-size: 13px; color: var(--muted); white-space: nowrap; background: var(--bg); border-right: 1px solid var(--border); }
