@@ -42,7 +42,8 @@
           {% else %}
           <div class="biz-avatar">{{ biz.name[0].upper() }}</div>
           {% endif %}
-          <span class="biz-category-badge">{{ t('category.' + (biz.category or 'Other')) }}</span>
+          {% set _clbl = t('category.' + (biz.category or 'Other')) %}
+          <span class="biz-category-badge">{{ (biz.category or 'Other') if _clbl.startswith('category.') else _clbl }}</span>
         </div>
         <div class="biz-name">{{ biz.name }}</div>
         {% if biz.address %}
