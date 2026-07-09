@@ -314,7 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (p.type === 'block') {
         if (confirm(I18N.unlockConfirm)) {
           fetch('/dashboard/blocks/' + p.blockId + '/delete', { method: 'POST' })
-            .then(function() { calendar.refetchEvents(); });
+            .then(function(r) { if (r.ok) { calendar.refetchEvents(); } else { alert('解锁失败，请重试。'); } })
+            .catch(function() { alert('解锁失败，请重试。'); });
         }
         return;
       }
@@ -345,10 +346,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!activeAptId) return;
     if (!confirm(I18N.cancelAptConfirm)) return;
     fetch('/dashboard/appointments/' + activeAptId + '/cancel', { method: 'POST' })
-      .then(function() {
+      .then(function(r) {
+        if (!r.ok) { alert('取消失败，请重试。'); return; }
         document.getElementById('apt-modal').style.display = 'none';
         calendar.refetchEvents();
-      });
+      })
+      .catch(function() { alert('取消失败，请重试。'); });
   });
 
   document.getElementById('apt-modal-reschedule-btn').addEventListener('click', function() {
