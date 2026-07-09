@@ -1014,7 +1014,8 @@ def save_upload(file, kind):
     ext = os.path.splitext(secure_filename(file.filename or ''))[1].lower() or '.jpg'
     fname = f'{kind}_{uuid.uuid4().hex}{ext}'
     file.save(os.path.join(upload_dir, fname))
-    return url_for('static', filename=f'uploads/{fname}', _external=True)
+    _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+    return f"{_base}{url_for('static', filename=f'uploads/{fname}')}"
 
 
 @api_bp.route('/merchant/upload', methods=['POST'])

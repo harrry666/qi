@@ -1097,8 +1097,9 @@ def settings():
         biz = db.execute('SELECT * FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
     db.close()
     from flask import url_for
-    booking_url = url_for('booking.book_page', slug=biz['slug'], _external=True)
-    calendar_url = url_for('booking.calendar_feed', token=biz['calendar_token'], _external=True)
+    _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+    booking_url = f"{_base}{url_for('booking.book_page', slug=biz['slug'])}"
+    calendar_url = f"{_base}{url_for('booking.calendar_feed', token=biz['calendar_token'])}"
     return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url, calendar_url=calendar_url, categories=CATEGORIES)
 
 @dashboard_bp.route('/settings/calendar_token/regenerate', methods=['POST'])

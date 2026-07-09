@@ -179,7 +179,8 @@ def forgot_password():
                 ).fetchone()
             if row:
                 token = _issue_reset_token(db, row['id'])
-                reset_url = url_for('auth.reset_password', token=token, _external=True)
+                _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+                reset_url = f"{_base}{url_for('auth.reset_password', token=token)}"
                 _msg = f'【Hastrid Booking】重置密码链接（1小时内有效）：{reset_url}'
                 threading.Thread(target=send_sms, args=(format_phone(raw), _msg), daemon=True).start()
             db.close()
@@ -190,7 +191,8 @@ def forgot_password():
             row = db.execute('SELECT * FROM businesses WHERE email=%s', (email,)).fetchone()
             if row:
                 token = _issue_reset_token(db, row['id'])
-                reset_url = url_for('auth.reset_password', token=token, _external=True)
+                _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+                reset_url = f"{_base}{url_for('auth.reset_password', token=token)}"
                 _body = f'你好，\n\n点击以下链接重置密码（1小时内有效）：\n\n{reset_url}\n\n如果不是你本人操作，请忽略此邮件。'
                 threading.Thread(target=send_email, args=(email, '重置你的 Hastrid Booking 密码', _body), daemon=True).start()
             db.close()
