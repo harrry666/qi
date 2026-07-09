@@ -1,7 +1,43 @@
 const SLUG = document.body.dataset.slug;
+const LANG = document.body.dataset.lang === 'en' ? 'en' : 'zh';
 const DAY_LETTERS = ['M','T','W','T','F','S','S'];
-const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const MONTHS_ZH = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS = LANG === 'en' ? MONTHS_EN : MONTHS_ZH;
+const WEEKDAYS = LANG === 'en'
+  ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  : ['周日','周一','周二','周三','周四','周五','周六'];
 const ICONS = ['✂️','💇','💈','💅','🧖','💆','🪮'];
+
+const T = {
+  zh: {
+    step_staff: '② 选员工', step_time: '② 选时间', step_time_s: '③ 选时间',
+    step_info: '③ 填信息', step_info_s: '④ 填信息', step_confirm: '④ 确认', step_confirm_s: '⑤ 确认',
+    no_services: '暂无可用服务。', popular: '热门', price_tbd: '价格面议', any_staff: '任意可用',
+    phone_invalid: '请先输入有效的10位美国手机号', sending: '发送中...', resend: '重新发送',
+    send_code: '获取验证码', send_fail: '发送失败，请重试',
+    need_name: '请填写姓名。', need_code: '请先点击「获取验证码」并输入收到的验证码',
+    need_consent: '请勾选短信同意框以确认预约。',
+    lbl_service: '服务', lbl_staff: '服务人员', lbl_datetime: '日期时间', lbl_price: '价格',
+    lbl_name: '姓名', lbl_phone: '手机号', lbl_note: '备注',
+    submit_confirm: '✅ 确认提交', submitting: '提交中...', book_fail: '预约失败，请重试。',
+    net_err: '网络错误，请重试。', next: '下一步 →',
+  },
+  en: {
+    step_staff: '② Staff', step_time: '② Time', step_time_s: '③ Time',
+    step_info: '③ Info', step_info_s: '④ Info', step_confirm: '④ Confirm', step_confirm_s: '⑤ Confirm',
+    no_services: 'No services available yet.', popular: 'Popular', price_tbd: 'Price on request', any_staff: 'Any available',
+    phone_invalid: 'Please enter a valid 10-digit US phone number', sending: 'Sending...', resend: 'Resend',
+    send_code: 'Send code', send_fail: 'Failed to send, please try again',
+    need_name: 'Please enter your name.', need_code: 'Please tap "Send code" and enter the code you receive',
+    need_consent: 'Please check the SMS consent box to confirm your appointment.',
+    lbl_service: 'Service', lbl_staff: 'Staff', lbl_datetime: 'Date & time', lbl_price: 'Price',
+    lbl_name: 'Name', lbl_phone: 'Phone', lbl_note: 'Note',
+    submit_confirm: '✅ Confirm booking', submitting: 'Submitting...', book_fail: 'Booking failed, please try again.',
+    net_err: 'Network error, please try again.', next: 'Next →',
+  },
+};
+function L(k) { return (T[LANG] && T[LANG][k]) || T.zh[k] || k; }
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -35,18 +71,27 @@ function fmtDate(d) {
 
 function fmtDisplay(dateStr, time) {
   const [y,m,d] = dateStr.split('-').map(Number);
-  const days = ['周日','周一','周二','周三','周四','周五','周六'];
   const dt = new Date(y, m-1, d);
-  return `${MONTHS[m-1]}${d}日 ${days[dt.getDay()]}  ${time}`;
+  if (LANG === 'en') return `${MONTHS_EN[m-1]} ${d}, ${WEEKDAYS[dt.getDay()]}  ${time}`;
+  return `${MONTHS_ZH[m-1]}${d}日 ${WEEKDAYS[dt.getDay()]}  ${time}`;
 }
 
 function fmtDuration(mins) {
+  if (LANG === 'en') {
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins/60), m = mins % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
   if (mins < 60) return `${mins}分钟`;
   const h = Math.floor(mins/60), m = mins % 60;
   return m ? `${h}小时${m}分钟` : `${h}小时`;
 }
 function fmtSvcDuration(s) {
-  if (s.duration_min_mins) return `${s.duration_min_mins}-${s.duration_mins}分钟`;
+  if (s.duration_min_mins) {
+    return LANG === 'en'
+      ? `${s.duration_min_mins}-${s.duration_mins} min`
+      : `${s.duration_min_mins}-${s.duration_mins}分钟`;
+  }
   return fmtDuration(s.duration_mins);
 }
 
@@ -79,10 +124,10 @@ function setStaffStepVisible(on) {
   const lineStaff = document.getElementById('line-staff');
   if (stepStaff) stepStaff.style.display = on ? '' : 'none';
   if (lineStaff) lineStaff.style.display = on ? '' : 'none';
-  if (stepStaff) stepStaff.textContent = '② 选员工';
-  document.getElementById('step-2').textContent = on ? '③ 选时间' : '② 选时间';
-  document.getElementById('step-3').textContent = on ? '④ 填信息' : '③ 填信息';
-  document.getElementById('step-4').textContent = on ? '⑤ 确认' : '④ 确认';
+  if (stepStaff) stepStaff.textContent = L('step_staff');
+  document.getElementById('step-2').textContent = on ? L('step_time_s') : L('step_time');
+  document.getElementById('step-3').textContent = on ? L('step_info_s') : L('step_info');
+  document.getElementById('step-4').textContent = on ? L('step_confirm_s') : L('step_confirm');
 }
 
 // ── Services ─────────────────────────────────────────────────────────────────
@@ -98,14 +143,14 @@ async function loadServices() {
 function renderServices() {
   const list = document.getElementById('service-list');
   if (!state.services.length) {
-    list.innerHTML = '<p style="color:var(--muted);padding:20px 0">暂无可用服务。</p>';
+    list.innerHTML = `<p style="color:var(--muted);padding:20px 0">${L('no_services')}</p>`;
     return;
   }
   list.innerHTML = state.services.map((s, i) => {
-    const hotBadge = i === 0 ? '<span style="display:inline-block;background:#FBF4E3;color:#A8882A;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;border:1px solid #E8D59A;">热门</span>' : '';
+    const hotBadge = i === 0 ? `<span style="display:inline-block;background:#FBF4E3;color:#A8882A;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;border:1px solid #E8D59A;">${L('popular')}</span>` : '';
     const priceHtml = s.price
       ? `<div class="svc-price-main">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>`
-      : '<div class="svc-price-tbd">价格面议</div>';
+      : `<div class="svc-price-tbd">${L('price_tbd')}</div>`;
     const iconSrc = s.icon_url && s.icon_url.startsWith('http') ? s.icon_url : null;
     const iconHtml = iconSrc
       ? `<img src="${iconSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`
@@ -193,7 +238,7 @@ function renderStaff() {
       : `<div class="staff-ava">${s.emoji ? esc(s.emoji) : esc(String(s.name).slice(0,1))}</div>`;
     return `<div class="staff-card" data-id="${s.id}" onclick="selectStaff(${s.id})">${av}<div class="staff-name">${esc(s.name)}</div></div>`;
   }).join('');
-  const anyCard = `<div class="staff-card staff-any selected" data-id="" onclick="selectStaff('')"><div class="staff-ava">✨</div><div class="staff-name">任意可用</div></div>`;
+  const anyCard = `<div class="staff-card staff-any selected" data-id="" onclick="selectStaff('')"><div class="staff-ava">✨</div><div class="staff-name">${L('any_staff')}</div></div>`;
   wrap.innerHTML = anyCard + cards;
   state.selected.staff = null;
 }
@@ -339,14 +384,14 @@ async function sendVerifyCode() {
   const phoneValid = phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits[0] === '1');
   const phoneError = document.getElementById('phone-error');
   if (!phoneValid) {
-    phoneError.textContent = '请先输入有效的10位美国手机号';
+    phoneError.textContent = L('phone_invalid');
     phoneError.style.display = 'block';
     return;
   }
   phoneError.style.display = 'none';
   const btn = document.getElementById('btn-send-code');
   btn.disabled = true;
-  btn.textContent = '发送中...';
+  btn.textContent = L('sending');
   try {
     const res = await fetch('/api/verify/send', {
       method: 'POST',
@@ -362,18 +407,18 @@ async function sendVerifyCode() {
         _codeCountdown--;
         if (_codeCountdown <= 0) {
           clearInterval(_codeTimer); _codeTimer = null;
-          btn.disabled = false; btn.textContent = '重新发送';
+          btn.disabled = false; btn.textContent = L('resend');
         } else {
           btn.textContent = `${_codeCountdown}s`;
         }
       }, 1000);
     } else {
-      btn.disabled = false; btn.textContent = '获取验证码';
-      alert(data.error || '发送失败，请重试');
+      btn.disabled = false; btn.textContent = L('send_code');
+      alert(data.error || L('send_fail'));
     }
   } catch {
-    btn.disabled = false; btn.textContent = '获取验证码';
-    alert('发送失败，请重试');
+    btn.disabled = false; btn.textContent = L('send_code');
+    alert(L('send_fail'));
   }
 }
 
@@ -384,9 +429,9 @@ function showConfirmScreen() {
   const phoneDigits = phone.replace(/\D/g, '');
   const phoneValid = phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits[0] === '1');
   const phoneError = document.getElementById('phone-error');
-  if (!name) { alert('请填写姓名。'); return; }
+  if (!name) { alert(L('need_name')); return; }
   if (!phoneValid) {
-    phoneError.textContent = '请输入有效的10位美国手机号';
+    phoneError.textContent = L('phone_invalid');
     phoneError.style.display = 'block';
     return;
   }
@@ -395,27 +440,27 @@ function showConfirmScreen() {
   if (codeRow) {
     const code = (document.getElementById('cust-code').value || '').trim();
     if (!code) {
-      phoneError.textContent = '请先点击「获取验证码」并输入收到的验证码';
+      phoneError.textContent = L('need_code');
       phoneError.style.display = 'block';
       return;
     }
   }
-  if (!smsConsent) { alert('Please check the SMS consent box to confirm your appointment.'); return; }
+  if (!smsConsent) { alert(L('need_consent')); return; }
 
   const svc = state.selected.service;
-  const priceText = svc.price ? `$${svc.price % 1 === 0 ? svc.price|0 : svc.price}` : '价格面议';
+  const priceText = svc.price ? `$${svc.price % 1 === 0 ? svc.price|0 : svc.price}` : L('price_tbd');
   const staffName = selectedStaffName();
   const rows = [
-    { label: '服务', value: esc(svc.name) },
+    { label: L('lbl_service'), value: esc(svc.name) },
   ];
-  if (staffName) rows.push({ label: '服务人员', value: esc(staffName) });
+  if (staffName) rows.push({ label: L('lbl_staff'), value: esc(staffName) });
   rows.push(
-    { label: '日期时间', value: fmtDisplay(state.selected.date, state.selected.time) },
-    { label: '价格', value: priceText },
-    { label: '姓名', value: esc(name) },
-    { label: '手机号', value: esc(phone) },
+    { label: L('lbl_datetime'), value: fmtDisplay(state.selected.date, state.selected.time) },
+    { label: L('lbl_price'), value: priceText },
+    { label: L('lbl_name'), value: esc(name) },
+    { label: L('lbl_phone'), value: esc(phone) },
   );
-  if (state.selected.comment) rows.push({ label: '备注', value: esc(state.selected.comment) });
+  if (state.selected.comment) rows.push({ label: L('lbl_note'), value: esc(state.selected.comment) });
 
   document.getElementById('confirm-rows').innerHTML = rows.map(r =>
     `<div class="confirm-row"><span class="confirm-label">${r.label}</span><span class="confirm-value">${r.value}</span></div>`
@@ -423,7 +468,7 @@ function showConfirmScreen() {
 
   const submitBtn = document.getElementById('btn-confirm-submit');
   submitBtn.disabled = false;
-  submitBtn.textContent = '✅ 确认提交';
+  submitBtn.textContent = L('submit_confirm');
   showScreen('screen-confirm');
 }
 
@@ -431,7 +476,7 @@ async function submitBooking() {
   const name = document.getElementById('cust-name').value.trim();
   const phone = document.getElementById('cust-phone').value.trim();
   const btn = document.getElementById('btn-confirm-submit');
-  btn.disabled = true; btn.textContent = '提交中...';
+  btn.disabled = true; btn.textContent = L('submitting');
 
   try {
     const res = await fetch(`/api/book/${SLUG}/create`, {
@@ -462,12 +507,12 @@ async function submitBooking() {
       showScreen('screen-success');
       launchConfetti();
     } else {
-      alert(data.error || '预约失败，请重试。');
-      btn.disabled = false; btn.textContent = '✅ 确认提交';
+      alert(data.error || L('book_fail'));
+      btn.disabled = false; btn.textContent = L('submit_confirm');
     }
   } catch {
-    alert('网络错误，请重试。');
-    btn.disabled = false; btn.textContent = '✅ 确认提交';
+    alert(L('net_err'));
+    btn.disabled = false; btn.textContent = L('submit_confirm');
   }
 }
 
@@ -494,7 +539,7 @@ function resetBooking() {
   document.getElementById('cust-phone').value = '';
   document.getElementById('sms-consent').checked = false;
   document.getElementById('btn-book').disabled = false;
-  document.getElementById('btn-book').textContent = '下一步 →';
+  document.getElementById('btn-book').textContent = L('next');
   const phoneError = document.getElementById('phone-error');
   if (phoneError) { phoneError.style.display = 'none'; phoneError.textContent = ''; }
   if (_codeTimer) { clearInterval(_codeTimer); _codeTimer = null; }
@@ -503,7 +548,7 @@ function resetBooking() {
   const codeRow = document.getElementById('code-row');
   if (codeRow) codeRow.style.display = 'none';
   const sendBtn = document.getElementById('btn-send-code');
-  if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '获取验证码'; }
+  if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = L('send_code'); }
   showScreen('screen-services');
 }
 
