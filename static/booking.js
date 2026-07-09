@@ -22,6 +22,7 @@ const T = {
     lbl_name: '姓名', lbl_phone: '手机号', lbl_note: '备注',
     submit_confirm: '✅ 确认提交', submitting: '提交中...', book_fail: '预约失败，请重试。',
     net_err: '网络错误，请重试。', next: '下一步 →',
+    load_error: '加载失败，请检查网络后重试', retry: '重试',
   },
   en: {
     step_staff: '② Staff', step_time: '② Time', step_time_s: '③ Time',
@@ -35,6 +36,7 @@ const T = {
     lbl_name: 'Name', lbl_phone: 'Phone', lbl_note: 'Note',
     submit_confirm: '✅ Confirm booking', submitting: 'Submitting...', book_fail: 'Booking failed, please try again.',
     net_err: 'Network error, please try again.', next: 'Next →',
+    load_error: 'Failed to load. Check your connection and try again.', retry: 'Retry',
   },
 };
 function L(k) { return (T[LANG] && T[LANG][k]) || T.zh[k] || k; }
@@ -135,9 +137,14 @@ function setStaffStepVisible(on) {
 async function loadServices() {
   const list = document.getElementById('service-list');
   list.innerHTML = [1,2,3].map(()=>'<div class="skel-item"></div>').join('');
-  const res = await fetch(`/api/book/${SLUG}/services`);
-  state.services = await res.json();
-  renderServices();
+  try {
+    const res = await fetch(`/api/book/${SLUG}/services`);
+    if (!res.ok) throw new Error('bad status');
+    state.services = await res.json();
+    renderServices();
+  } catch {
+    list.innerHTML = `<p style="color:var(--muted);padding:24px 0;text-align:center">${L('load_error')}<br><button class="btn-primary-full" style="margin-top:12px" onclick="loadServices()">${L('retry')}</button></p>`;
+  }
 }
 
 function renderServices() {
@@ -272,9 +279,15 @@ async function loadWeekSlots() {
   const startStr = fmtDate(state.weekStart);
   let url = `/api/book/${SLUG}/week_slots?start=${startStr}&service_id=${state.selected.service.id}`;
   if (state.selected.staff != null) url += `&staff_id=${state.selected.staff}`;
-  const res = await fetch(url);
-  const slots = await res.json();
-  renderCalendar(slots);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('bad status');
+    const slots = await res.json();
+    renderCalendar(slots);
+  } catch {
+    const grid = document.getElementById('week-grid');
+    if (grid) grid.innerHTML = `<p style="color:var(--muted);padding:24px 8px;grid-column:1/-1;text-align:center">${L('load_error')}<br><button class="btn-primary-full" style="margin-top:12px;max-width:220px;margin-left:auto;margin-right:auto" onclick="loadWeekSlots()">${L('retry')}</button></p>`;
+  }
 }
 
 function renderCalendar(slots) {
