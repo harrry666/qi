@@ -1,16 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>取消预约 · Hastrid Booking</title>
+  <title>{{ t('cancel.title_tag') }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .cancel-wrap {
       min-height: 100vh;
       display: flex; align-items: center; justify-content: center;
       padding: 24px;
+      position: relative;
     }
+    .cancel-lang { position: absolute; top: 16px; right: 16px; }
     .cancel-card {
       background: var(--white); border-radius: 20px; padding: 40px 32px;
       max-width: 440px; width: 100%;
@@ -74,49 +76,53 @@
 </head>
 <body class="book-body">
 <div class="cancel-wrap">
+<div class="cancel-lang lang-switch">
+  <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+  <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+</div>
 <div class="cancel-card">
 
 {% if error %}
   <div class="state-icon state-icon-red">✕</div>
-  <h1>链接无效</h1>
-  <p class="cancel-sub">此取消链接无效或已过期，请联系商家获取帮助。</p>
+  <h1>{{ t('cancel.invalid_title') }}</h1>
+  <p class="cancel-sub">{{ t('cancel.invalid_sub') }}</p>
 
 {% elif success %}
   <div class="state-icon state-icon-green">✓</div>
-  <h1>预约已取消</h1>
-  <p class="cancel-sub">你的预约已成功取消，商家已收到通知。</p>
+  <h1>{{ t('cancel.success_title') }}</h1>
+  <p class="cancel-sub">{{ t('cancel.success_sub') }}</p>
   {% if apt %}
   <div class="apt-detail">
-    <div class="apt-row"><span class="apt-label">服务</span><span class="apt-val">{{ apt.service_name }}</span></div>
-    <div class="apt-row"><span class="apt-label">时间</span><span class="apt-val">{{ apt.dt_display }}</span></div>
-    <div class="apt-row"><span class="apt-label">商家</span><span class="apt-val">{{ apt.biz_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">{{ t('cancel.row_service') }}</span><span class="apt-val">{{ apt.service_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">{{ t('cancel.row_time') }}</span><span class="apt-val">{{ apt.dt_display }}</span></div>
+    <div class="apt-row"><span class="apt-label">{{ t('cancel.row_business') }}</span><span class="apt-val">{{ apt.biz_name }}</span></div>
   </div>
   {% endif %}
 
 {% elif already_cancelled %}
   <div class="state-icon state-icon-info">ℹ</div>
-  <h1>预约已取消</h1>
-  <p class="cancel-sub">此预约之前已经取消，无需再次操作。</p>
+  <h1>{{ t('cancel.already_title') }}</h1>
+  <p class="cancel-sub">{{ t('cancel.already_sub') }}</p>
 
 {% else %}
   <div class="state-icon state-icon-gold">📅</div>
-  <h1>取消预约</h1>
-  <p class="cancel-sub">确认后将取消以下预约，此操作无法撤销。</p>
+  <h1>{{ t('cancel.confirm_title') }}</h1>
+  <p class="cancel-sub">{{ t('cancel.confirm_sub') }}</p>
   {% if apt %}
   <div class="apt-detail">
-    <div class="apt-row"><span class="apt-label">姓名</span><span class="apt-val">{{ apt.customer_name }}</span></div>
-    <div class="apt-row"><span class="apt-label">服务</span><span class="apt-val">{{ apt.service_name }}</span></div>
-    <div class="apt-row"><span class="apt-label">时间</span><span class="apt-val">{{ apt.dt_display }}</span></div>
-    <div class="apt-row"><span class="apt-label">商家</span><span class="apt-val">{{ apt.biz_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">{{ t('cancel.row_name') }}</span><span class="apt-val">{{ apt.customer_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">{{ t('cancel.row_service') }}</span><span class="apt-val">{{ apt.service_name }}</span></div>
+    <div class="apt-row"><span class="apt-label">{{ t('cancel.row_time') }}</span><span class="apt-val">{{ apt.dt_display }}</span></div>
+    <div class="apt-row"><span class="apt-label">{{ t('cancel.row_business') }}</span><span class="apt-val">{{ apt.biz_name }}</span></div>
   </div>
   <form method="POST">
-    <button type="submit" class="btn-danger">确认取消预约</button>
+    <button type="submit" class="btn-danger">{{ t('cancel.confirm_btn') }}</button>
   </form>
-  <a href="javascript:window.close()" class="btn-ghost">关闭页面</a>
+  <a href="javascript:window.close()" class="btn-ghost">{{ t('cancel.close_btn') }}</a>
   {% endif %}
 {% endif %}
 
-<p class="qi-brand">由 <strong>Hastrid Booking</strong> 提供服务</p>
+<p class="qi-brand">{{ t('cancel.brand_footer')|safe }}</p>
 </div>
 </div>
 </body>

@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的档案 · {{ c.biz_name }}</title>
+  <title>{{ t('myprofile.title_tag', name=c.biz_name) }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .my-wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px 60px; }
+    .my-wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px 60px; position: relative; }
+    .my-lang { position: absolute; top: 24px; right: 20px; }
     .my-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow); }
     .my-card h2 { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
     .my-head { display: flex; align-items: center; gap: 14px; }
@@ -26,9 +27,13 @@
 </head>
 <body class="book-body">
 <div class="my-wrap">
+  <div class="my-lang lang-switch">
+    <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+    <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+  </div>
 
   {% if request.args.get('saved') %}
-  <div style="background:#E7F4EC;color:#2E9E63;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;margin-bottom:14px;text-align:center">✓ 已保存</div>
+  <div style="background:#E7F4EC;color:#2E9E63;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;margin-bottom:14px;text-align:center">{{ t('myprofile.saved') }}</div>
   {% endif %}
 
   <div class="my-card">
@@ -39,35 +44,35 @@
         <div class="my-avatar">{{ (c.name or '?')[:1] }}</div>
       {% endif %}
       <div>
-        <div style="font-size:18px;font-weight:800;color:var(--text)">{{ c.name or '未命名' }}</div>
-        <div style="font-size:13px;color:var(--muted)">{{ c.biz_name }} 的客户档案</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text)">{{ c.name or t('myprofile.unnamed') }}</div>
+        <div style="font-size:13px;color:var(--muted)">{{ t('myprofile.customer_of', name=c.biz_name) }}</div>
       </div>
       <div style="margin-left:auto;text-align:right">
-        <div style="font-size:11px;color:var(--muted)">储值余额</div>
+        <div style="font-size:11px;color:var(--muted)">{{ t('myprofile.balance_label') }}</div>
         <div class="my-balance">${{ c.balance }}</div>
       </div>
     </div>
   </div>
 
   <div class="my-card">
-    <h2>我的资料</h2>
+    <h2>{{ t('myprofile.profile_heading') }}</h2>
     <form method="POST" action="{{ url_for('booking.my_profile_update', token=c.profile_token) }}" enctype="multipart/form-data">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">头像（选填，选图后点下方保存）</label>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('myprofile.avatar_label') }}</label>
       <input type="file" name="avatar" accept="image/*" style="font-size:12px;margin-bottom:14px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">称呼</label>
-      <input class="book-input" type="text" name="name" value="{{ c.name or '' }}" placeholder="你的称呼" style="margin-bottom:12px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">偏好备注</label>
-      <textarea class="book-input" name="preferences" rows="3" placeholder="例：37分/6度发色，喜欢偏软的烫发">{{ c.preferences or '' }}</textarea>
-      <button type="submit" class="btn-primary" style="width:auto;padding:9px 22px;margin-top:8px">✓ 保存更新</button>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('myprofile.name_label') }}</label>
+      <input class="book-input" type="text" name="name" value="{{ c.name or '' }}" placeholder="{{ t('myprofile.name_ph') }}" style="margin-bottom:12px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('myprofile.prefs_label') }}</label>
+      <textarea class="book-input" name="preferences" rows="3" placeholder="{{ t('myprofile.prefs_ph') }}">{{ c.preferences or '' }}</textarea>
+      <button type="submit" class="btn-primary" style="width:auto;padding:9px 22px;margin-top:8px">{{ t('myprofile.save_btn') }}</button>
     </form>
   </div>
 
   <div class="my-card">
-    <h2>我的照片</h2>
+    <h2>{{ t('myprofile.photos_heading') }}</h2>
     <form method="POST" action="{{ url_for('booking.my_profile_photo', token=c.profile_token) }}" enctype="multipart/form-data">
       <input type="file" name="photo" accept="image/*" style="font-size:12px">
-      <input class="book-input" type="text" name="note" placeholder="备注（选填）" style="margin-top:8px">
-      <button type="submit" class="btn-primary" style="width:auto;padding:9px 22px;margin-top:8px">+ 上传照片</button>
+      <input class="book-input" type="text" name="note" placeholder="{{ t('myprofile.photo_note_ph') }}" style="margin-top:8px">
+      <button type="submit" class="btn-primary" style="width:auto;padding:9px 22px;margin-top:8px">{{ t('myprofile.upload_photo_btn') }}</button>
     </form>
     {% if photos %}
     <div class="my-photo-grid">
@@ -79,7 +84,7 @@
   </div>
 
   <div class="my-card">
-    <h2>预约历史</h2>
+    <h2>{{ t('myprofile.history_heading') }}</h2>
     {% if visits %}
       {% for v in visits %}
       <div class="my-visit-row">
@@ -88,14 +93,14 @@
       </div>
       {% endfor %}
     {% else %}
-      <div style="color:var(--muted);font-size:13px">暂无预约记录</div>
+      <div style="color:var(--muted);font-size:13px">{{ t('myprofile.no_history') }}</div>
     {% endif %}
   </div>
 
   <p style="text-align:center;font-size:12.5px;margin-top:-8px;margin-bottom:16px">
-    <a href="{{ url_for('booking.public_feedback', biz=c.biz_slug) }}" style="color:var(--gold-h)">📝 对网站/小程序有意见反馈？</a>
+    <a href="{{ url_for('booking.public_feedback', biz=c.biz_slug) }}" style="color:var(--gold-h)">{{ t('myprofile.feedback_link') }}</a>
   </p>
-  <p class="qi-brand" style="text-align:center">由 <strong>Hastrid Booking</strong> 提供服务</p>
+  <p class="qi-brand" style="text-align:center">{{ t('cancel.brand_footer')|safe }}</p>
 </div>
 </body>
 </html>

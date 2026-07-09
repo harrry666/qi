@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, Response
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, Response, g
 from db import get_db
 from extensions import limiter
+from translations import t
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -475,7 +476,7 @@ def cancel_by_token(token):
     apt = dict(row)
     try:
         dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
-        apt['dt_display'] = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+        apt['dt_display'] = dt.strftime('%b %-d, %Y %-H:%M') if getattr(g, 'lang', 'zh') == 'en' else dt.strftime('%Y年%-m月%-d日 %-H:%M')
     except Exception:
         apt['dt_display'] = apt['appointment_dt']
 
@@ -558,7 +559,7 @@ def my_request(slug):
             threading.Thread(target=send_sms, args=(format_phone(phone), msg), daemon=True).start()
             sent = True
         else:
-            error = '未找到你的预约记录，请先完成一次预约后再来设置档案。'
+            error = t('flash.myrequest.not_found')
 
     return render_template('my_request.html', biz=biz, sent=sent, error=error)
 

@@ -1,25 +1,32 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>404 — 页面不存在 | Hastrid Booking</title>
+  <title>{{ t('error404.title_tag') }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #FAF8F5; color: #1A1209; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 40px 24px; }
+    body { background: #FAF8F5; color: #1A1209; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 40px 24px; position: relative; }
     .error-code { font-family: 'Noto Serif SC', serif; font-size: clamp(80px, 20vw, 140px); font-weight: 900; color: #C9A84C; line-height: 1; letter-spacing: -4px; }
     .error-title { font-size: 22px; font-weight: 600; margin: 16px 0 8px; }
     .error-sub { color: #6B5C3E; font-size: 15px; margin-bottom: 32px; }
     .btn-home { display: inline-block; background: #C9A84C; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; }
     .btn-home:hover { background: #A8882A; }
+    .err-lang { position: absolute; top: 20px; right: 20px; display: flex; gap: 2px; background: #fff; border: 1px solid #EDE8E0; border-radius: 20px; padding: 3px; font-size: 12px; font-weight: 700; }
+    .err-lang a { padding: 4px 10px; border-radius: 16px; color: #8B7A6A; text-decoration: none; }
+    .err-lang a.active { background: #C9A84C; color: #1A1209; }
   </style>
 </head>
 <body>
+  <div class="err-lang">
+    <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+    <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+  </div>
   <div class="error-code">404</div>
-  <div class="error-title">页面不存在</div>
-  <div class="error-sub">你要找的内容可能已经移动或删除了。</div>
-  <a href="/" class="btn-home">返回首页</a>
+  <div class="error-title">{{ t('error404.title') }}</div>
+  <div class="error-sub">{{ t('error404.sub') }}</div>
+  <a href="/" class="btn-home">{{ t('error.back_home') }}</a>
 </body>
 </html>

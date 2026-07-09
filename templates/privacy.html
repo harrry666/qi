@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}隐私政策 — Hastrid Booking{% endblock %}
+{% block title %}{{ t('privacy.title_tag') }}{% endblock %}
 {% block head %}
 <style>
   @media (max-width: 600px) {
@@ -10,39 +10,39 @@
 {% endblock %}
 {% block content %}
 <section class="privacy-section" style="max-width:680px;margin:60px auto 80px;padding:0 24px">
-  <h1 style="font-family:'Noto Serif SC',serif;font-size:32px;font-weight:900;margin-bottom:8px">隐私政策</h1>
-  <p style="color:#6B5C3E;font-size:14px;margin-bottom:40px">最后更新：2026年6月</p>
+  <h1 style="font-family:'Noto Serif SC',serif;font-size:32px;font-weight:900;margin-bottom:8px">{{ t('privacy.heading') }}</h1>
+  <p style="color:#6B5C3E;font-size:14px;margin-bottom:40px">{{ t('privacy.updated') }}</p>
 
   <div style="line-height:1.8;color:#2D1F0A;font-size:15px">
-    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">1. 我们收集什么信息</h2>
-    <p>当你通过 Hastrid Booking 平台进行预约时，我们收集你的姓名和手机号码，用于发送预约确认和提醒短信。</p>
-    <p style="margin-top:10px">商家注册时，我们收集商家的姓名、电子邮件、手机号和商家信息（地址、服务介绍等）。</p>
+    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">{{ t('privacy.s1_title') }}</h2>
+    <p>{{ t('privacy.s1_p1') }}</p>
+    <p style="margin-top:10px">{{ t('privacy.s1_p2') }}</p>
 
-    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">2. 我们如何使用这些信息</h2>
-    <p>客户信息仅用于：</p>
+    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">{{ t('privacy.s2_title') }}</h2>
+    <p>{{ t('privacy.s2_p1') }}</p>
     <ul style="margin:10px 0 10px 20px">
-      <li>发送预约确认短信</li>
-      <li>发送预约提醒短信（提前24小时）</li>
-      <li>让商家联系到客户</li>
+      <li>{{ t('privacy.s2_li1') }}</li>
+      <li>{{ t('privacy.s2_li2') }}</li>
+      <li>{{ t('privacy.s2_li3') }}</li>
     </ul>
-    <p>我们不会将你的信息出售给第三方，也不会用于营销目的。</p>
+    <p>{{ t('privacy.s2_p2') }}</p>
 
-    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">3. 短信服务（SMS）</h2>
-    <p>通过 Hastrid Booking 平台预约时，你将收到短信确认和提醒。短信由 Twilio 发送。</p>
-    <p style="margin-top:10px">你可以在任何时候回复 STOP 退订短信。退订后将不再收到来自该商家的 Hastrid Booking 平台短信。</p>
-    <p style="margin-top:10px">短信和数据费用可能由你的运营商收取（Msg &amp; data rates may apply）。</p>
+    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">{{ t('privacy.s3_title') }}</h2>
+    <p>{{ t('privacy.s3_p1') }}</p>
+    <p style="margin-top:10px">{{ t('privacy.s3_p2') }}</p>
+    <p style="margin-top:10px">{{ t('privacy.s3_p3')|safe }}</p>
 
-    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">4. 数据存储与安全</h2>
-    <p>数据存储在 Railway 托管的 PostgreSQL 数据库中，位于美国。我们采用业界标准的安全措施保护你的数据，包括 HTTPS 传输加密。</p>
+    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">{{ t('privacy.s4_title') }}</h2>
+    <p>{{ t('privacy.s4_p1') }}</p>
 
-    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">5. 数据保留</h2>
-    <p>预约记录保留用于商家经营需要。你可以联系对应商家要求删除你的预约信息。</p>
+    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">{{ t('privacy.s5_title') }}</h2>
+    <p>{{ t('privacy.s5_p1') }}</p>
 
-    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">6. Cookies</h2>
-    <p>我们使用 session cookie 维持登录状态。这些 cookie 不用于追踪目的。</p>
+    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">{{ t('privacy.s6_title') }}</h2>
+    <p>{{ t('privacy.s6_p1') }}</p>
 
-    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">7. 联系我们</h2>
-    <p>如有隐私方面的问题，请发邮件至 <a href="mailto:yaocan.yin@gmail.com" style="color:#C9A84C">yaocan.yin@gmail.com</a>。</p>
+    <h2 style="font-size:18px;font-weight:700;margin:28px 0 10px">{{ t('privacy.s7_title') }}</h2>
+    <p>{{ t('privacy.s7_p1') }} <a href="mailto:yaocan.yin@gmail.com" style="color:#C9A84C">yaocan.yin@gmail.com</a>{{ '。' if lang == 'zh' else '.' }}</p>
   </div>
 </section>
 {% endblock %}

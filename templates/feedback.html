@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>意见反馈 · Hastrid Booking</title>
+  <title>{{ t('pubfeedback.title_tag') }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .cancel-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .cancel-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; position: relative; }
+    .cancel-lang { position: absolute; top: 16px; right: 16px; }
     .cancel-card { background: var(--white); border-radius: 20px; padding: 40px 32px; max-width: 440px; width: 100%; border: 1px solid var(--border); box-shadow: 0 4px 32px rgba(26,18,9,0.07); text-align: center; }
     .state-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px; }
     .state-icon-gold { background: var(--gold-light); color: var(--gold-h); }
@@ -22,27 +23,31 @@
 </head>
 <body class="book-body">
 <div class="cancel-wrap">
+<div class="cancel-lang lang-switch">
+  <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">{{ t('lang.zh') }}</a>
+  <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('lang.en') }}</a>
+</div>
 <div class="cancel-card">
 
 {% if sent %}
   <div class="state-icon state-icon-green">✓</div>
-  <h1>已收到</h1>
-  <p class="cancel-sub">感谢反馈，平台会尽快查看处理。</p>
+  <h1>{{ t('pubfeedback.received_title') }}</h1>
+  <p class="cancel-sub">{{ t('pubfeedback.received_sub') }}</p>
 {% else %}
   <div class="state-icon state-icon-gold">💬</div>
-  <h1>意见反馈</h1>
-  <p class="cancel-sub">对网站或小程序有什么不满意、想要的功能，直接告诉我们{% if biz %}（会一并标注你使用的商家：{{ biz.name }}）{% endif %}。</p>
+  <h1>{{ t('pubfeedback.title') }}</h1>
+  <p class="cancel-sub">{{ t('pubfeedback.desc') }}{% if biz %}{{ t('pubfeedback.desc_biz_suffix', name=biz.name) }}{% endif %}。</p>
   <form method="POST">
     <input type="text" id="hp_website" name="hp" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" autocomplete="off" aria-hidden="true">
     {% if biz %}<input type="hidden" name="biz" value="{{ biz.slug }}">{% endif %}
-    <input class="book-input" type="text" name="name" placeholder="称呼（选填）" style="margin-bottom:12px">
-    <input class="book-input" type="text" name="contact" placeholder="手机号/微信（选填，方便我们回复你）" style="margin-bottom:12px">
-    <textarea class="book-input fb-textarea" name="message" placeholder="说说你遇到的问题或想要的功能" required style="margin-bottom:14px"></textarea>
-    <button type="submit" class="btn-primary" style="width:100%">提交反馈</button>
+    <input class="book-input" type="text" name="name" placeholder="{{ t('pubfeedback.name_ph') }}" style="margin-bottom:12px">
+    <input class="book-input" type="text" name="contact" placeholder="{{ t('pubfeedback.contact_ph') }}" style="margin-bottom:12px">
+    <textarea class="book-input fb-textarea" name="message" placeholder="{{ t('pubfeedback.message_ph') }}" required style="margin-bottom:14px"></textarea>
+    <button type="submit" class="btn-primary" style="width:100%">{{ t('pubfeedback.submit') }}</button>
   </form>
 {% endif %}
 
-<p class="qi-brand">由 <strong>Hastrid Booking</strong> 提供服务</p>
+<p class="qi-brand">{{ t('cancel.brand_footer')|safe }}</p>
 </div>
 </div>
 </body>
