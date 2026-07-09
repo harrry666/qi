@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="{{ lang }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>群发审核 · 管理后台</title>
+<title>{{ t('admin.broadcasts.title') }}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1120; color: #e8e0f0; font-family: system-ui, sans-serif; min-height: 100vh; padding: 2rem; }
   h1 { color: #C9A84C; font-size: 1.5rem; margin-bottom: 1.5rem; }
   .back { color: #7c6a90; font-size: .85rem; text-decoration: none; float: right; }
   .back:hover { color: #C9A84C; }
+  .admin-lang { float: right; font-size: .8rem; margin-left: 16px; }
+  .admin-lang a { color: #7c6a90; text-decoration: none; margin-left: 6px; }
+  .admin-lang a.active { color: #C9A84C; font-weight: 700; }
   .bc-card { background: #241830; border-radius: 12px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
   .bc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   .bc-biz { font-weight: 700; font-size: 1rem; color: #e8e0f0; }
@@ -35,41 +38,47 @@
 </style>
 </head>
 <body>
-<h1>群发审核 <a class="back" href="/admin">← 返回商家审核</a></h1>
+<h1>{{ t('admin.broadcasts.heading') }}
+  <span class="admin-lang">
+    <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">中</a>
+    <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">EN</a>
+  </span>
+  <a class="back" href="/admin">{{ t('admin.back_to_merchants') }}</a>
+</h1>
 
 {% if items %}
   {% for b in items %}
   <div class="bc-card">
     <div class="bc-top">
       <div>
-        <span class="bc-biz">{{ b.biz_name or '未知商家' }}</span>
+        <span class="bc-biz">{{ b.biz_name or t('admin.broadcasts.unknown_biz') }}</span>
         <div class="bc-meta">
-          发送对象 {{ b.recipient_count }} 人
-          {% if b.status == 'approved' %} · 已发 {{ b.sent_count }} 条{% endif %}
+          {{ t('admin.broadcasts.recipients', n=b.recipient_count) }}
+          {% if b.status == 'approved' %}{{ t('admin.broadcasts.sent_count', n=b.sent_count) }}{% endif %}
           · {{ b.created_at.strftime('%Y-%m-%d %H:%M') if b.created_at else '' }}
         </div>
       </div>
       <span class="bc-status st-{{ b.status }}">
-        {{ {'pending':'待审核','approved':'已通过','rejected':'已拒绝'}.get(b.status, b.status) }}
+        {% if b.status == 'pending' %}{{ t('admin.broadcasts.status_pending') }}{% elif b.status == 'approved' %}{{ t('admin.broadcasts.status_approved') }}{% elif b.status == 'rejected' %}{{ t('admin.broadcasts.status_rejected') }}{% else %}{{ b.status }}{% endif %}
       </span>
     </div>
     <div class="bc-msg">{{ b.message }}</div>
     {% if b.status == 'pending' %}
     <div class="bc-actions">
-      <form method="POST" action="/admin/broadcasts/{{ b.id }}/approve" onsubmit="return confirm('确认批准并立即发送给 {{ b.recipient_count }} 位客人？会产生短信费用。')">
+      <form method="POST" action="/admin/broadcasts/{{ b.id }}/approve" onsubmit="return confirm({{ t('admin.broadcasts.confirm_approve', n=b.recipient_count)|tojson }})">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn-approve" type="submit">批准并发送</button>
+        <button class="btn-approve" type="submit">{{ t('admin.broadcasts.approve_send') }}</button>
       </form>
       <form method="POST" action="/admin/broadcasts/{{ b.id }}/reject">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn-reject" type="submit">拒绝</button>
+        <button class="btn-reject" type="submit">{{ t('admin.broadcasts.reject') }}</button>
       </form>
     </div>
     {% endif %}
   </div>
   {% endfor %}
 {% else %}
-  <div class="empty">暂无群发申请</div>
+  <div class="empty">{{ t('admin.broadcasts.empty') }}</div>
 {% endif %}
 </body>
 </html>

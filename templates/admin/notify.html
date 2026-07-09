@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="{{ lang }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>群发店家邮件 · 管理后台</title>
+<title>{{ t('admin.notify.title') }}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1120; color: #e8e0f0; font-family: system-ui, sans-serif; min-height: 100vh; padding: 2rem; }
   h1 { color: #C9A84C; font-size: 1.5rem; margin-bottom: 1.2rem; }
   .back { color: #7c6a90; font-size: .85rem; text-decoration: none; float: right; }
   .back:hover { color: #C9A84C; }
+  .admin-lang { float: right; font-size: .8rem; margin-left: 16px; }
+  .admin-lang a { color: #7c6a90; text-decoration: none; margin-left: 6px; }
+  .admin-lang a.active { color: #C9A84C; font-weight: 700; }
   .card { background: #241830; border-radius: 12px; padding: 1.4rem 1.5rem; max-width: 640px; }
   .sub { color: #9a8ab0; font-size: .9rem; margin-bottom: 1.2rem; }
   label { display: block; font-size: .85rem; color: #b7a8cc; margin: 1rem 0 .4rem; }
@@ -22,19 +25,25 @@
 </style>
 </head>
 <body>
-<h1>群发店家邮件 <a class="back" href="/admin">← 返回商家审核</a></h1>
+<h1>{{ t('admin.notify.heading') }}
+  <span class="admin-lang">
+    <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">中</a>
+    <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">EN</a>
+  </span>
+  <a class="back" href="/admin">{{ t('admin.back_to_merchants') }}</a>
+</h1>
 
 <div class="card">
-  {% if sent %}<div class="ok">✓ 已开始群发给 {{ sent }} 位店家，邮件稍后陆续送达</div>{% endif %}
-  <div class="sub">发给所有已通过审核的店家（当前 <b style="color:#C9A84C">{{ count }}</b> 位）。适合通知新版本、新功能、维护公告等。</div>
+  {% if sent %}<div class="ok">{{ t('admin.notify.sent_msg', n=sent) }}</div>{% endif %}
+  <div class="sub">{{ t('admin.notify.desc', n='<b style="color:#C9A84C">' ~ count ~ '</b>')|safe }}</div>
 
-  <form method="POST" action="/admin/notify/send" onsubmit="return confirm('确定群发给 {{ count }} 位店家？')">
+  <form method="POST" action="/admin/notify/send" onsubmit="return confirm({{ t('admin.notify.confirm_send', n=count)|tojson }})">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>邮件标题</label>
-    <input type="text" name="subject" maxlength="120" required placeholder="例：哈瓜小约 新增员工提成统计功能 🎉">
-    <label>邮件内容</label>
-    <textarea name="body" required placeholder="亲爱的店家，&#10;&#10;我们上线了新功能……&#10;&#10;— 哈瓜小约团队"></textarea>
-    <button type="submit" class="send-btn">发送给 {{ count }} 位店家</button>
+    <label>{{ t('admin.notify.subject_label') }}</label>
+    <input type="text" name="subject" maxlength="120" required placeholder="{{ t('admin.notify.subject_ph') }}">
+    <label>{{ t('admin.notify.body_label') }}</label>
+    <textarea name="body" required placeholder="{{ t('admin.notify.body_ph') }}"></textarea>
+    <button type="submit" class="send-btn">{{ t('admin.notify.send_btn', n=count) }}</button>
   </form>
 </div>
 </body>

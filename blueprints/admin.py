@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from db import get_db
 from extensions import limiter
+from translations import t
 import os
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -14,14 +15,14 @@ def _check_secret():
 def index():
     secret = os.environ.get('ADMIN_SECRET', '')
     if not secret:
-        return '未配置 ADMIN_SECRET 环境变量', 500
+        return 'ADMIN_SECRET environment variable is not set', 500
 
     if request.method == 'POST':
         entered = request.form.get('secret', '')
         if entered == secret:
             session['admin_authed'] = secret
             return redirect(url_for('admin.index'))
-        return render_template('admin/index.html', error='密码错误', merchants=None)
+        return render_template('admin/index.html', error=t('admin.wrong_password'), merchants=None)
 
     if not _check_secret():
         return render_template('admin/index.html', error=None, merchants=None)

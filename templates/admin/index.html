@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="{{ lang }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>哈瓜小约 · 管理后台</title>
+<title>{{ t('admin.title') }}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1120; color: #e8e0f0; font-family: system-ui, sans-serif; min-height: 100vh; padding: 2rem; }
@@ -24,10 +24,14 @@
   .logout { float: right; color: #7c6a90; font-size: .85rem; text-decoration: none; }
   .logout:hover { color: #C9A84C; }
   .meta { font-size: .8rem; color: #7c6a90; }
+  .admin-lang { float: right; font-size: .8rem; margin-left: 16px; }
+  .admin-lang a { color: #7c6a90; text-decoration: none; margin-left: 6px; }
+  .admin-lang a.active { color: #C9A84C; font-weight: 700; }
   @media (max-width: 600px) {
     body { padding: 1rem; overflow-x: hidden; }
     h1 { font-size: 1.2rem; }
     .logout { float: none; display: inline-block; margin: 8px 14px 0 0 !important; }
+    .admin-lang { float: none; display: inline-block; }
     .login-box { max-width: 100%; }
     table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
     .btn-approve, .btn-reject { min-height: 32px; }
@@ -35,12 +39,16 @@
 </style>
 </head>
 <body>
-<h1>哈瓜小约 · 管理后台
+<h1>{{ t('admin.title') }}
+  <span class="admin-lang">
+    <a href="{{ url_for('set_lang', lang='zh') }}" class="{% if lang == 'zh' %}active{% endif %}">中</a>
+    <a href="{{ url_for('set_lang', lang='en') }}" class="{% if lang == 'en' %}active{% endif %}">EN</a>
+  </span>
   {% if merchants is not none %}
-  <a class="logout" href="/admin/logout">退出</a>
-  <a class="logout" href="/admin/feedback" style="margin-right:16px">意见反馈 →</a>
-  <a class="logout" href="/admin/broadcasts" style="margin-right:16px">群发审核 →</a>
-  <a class="logout" href="/admin/notify" style="margin-right:16px">群发店家邮件 →</a>
+  <a class="logout" href="/admin/logout">{{ t('admin.logout') }}</a>
+  <a class="logout" href="/admin/feedback" style="margin-right:16px">{{ t('admin.nav.feedback') }}</a>
+  <a class="logout" href="/admin/broadcasts" style="margin-right:16px">{{ t('admin.nav.broadcasts') }}</a>
+  <a class="logout" href="/admin/notify" style="margin-right:16px">{{ t('admin.nav.notify') }}</a>
   {% endif %}
 </h1>
 
@@ -49,21 +57,21 @@
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="password" name="secret" placeholder="管理员密码" autofocus>
-    <button type="submit">进入后台</button>
+    <input type="password" name="secret" placeholder="{{ t('admin.password_ph') }}" autofocus>
+    <button type="submit">{{ t('admin.login_btn') }}</button>
   </form>
 </div>
 {% else %}
 <table>
   <thead>
     <tr>
-      <th>商家名称</th>
-      <th>邮箱</th>
-      <th>电话</th>
-      <th>分类</th>
-      <th>注册时间</th>
-      <th>状态</th>
-      <th>操作</th>
+      <th>{{ t('admin.col_name') }}</th>
+      <th>{{ t('admin.col_email') }}</th>
+      <th>{{ t('admin.col_phone') }}</th>
+      <th>{{ t('admin.col_category') }}</th>
+      <th>{{ t('admin.col_created') }}</th>
+      <th>{{ t('admin.col_status') }}</th>
+      <th>{{ t('admin.col_actions') }}</th>
     </tr>
   </thead>
   <tbody>
@@ -76,24 +84,24 @@
       <td class="meta">{{ m.created_at.strftime('%Y-%m-%d') if m.created_at else '-' }}</td>
       <td>
         {% if m.is_approved == 1 %}
-          <span class="badge-approved">已批准</span>
+          <span class="badge-approved">{{ t('admin.status_approved') }}</span>
         {% elif m.is_approved == -1 %}
-          <span class="badge-rejected">已拒绝</span>
+          <span class="badge-rejected">{{ t('admin.status_rejected') }}</span>
         {% else %}
-          <span class="badge-pending">待审核</span>
+          <span class="badge-pending">{{ t('admin.status_pending') }}</span>
         {% endif %}
       </td>
       <td>
         {% if m.is_approved != 1 %}
         <form method="POST" action="/admin/merchants/{{ m.id }}/approve" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn-approve" type="submit">批准</button>
+          <button class="btn-approve" type="submit">{{ t('admin.approve') }}</button>
         </form>
         {% endif %}
         {% if m.is_approved != -1 %}
         <form method="POST" action="/admin/merchants/{{ m.id }}/reject" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn-reject" type="submit">拒绝</button>
+          <button class="btn-reject" type="submit">{{ t('admin.reject') }}</button>
         </form>
         {% endif %}
       </td>
