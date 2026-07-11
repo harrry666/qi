@@ -106,7 +106,7 @@ def set_security_headers(response):
         "img-src 'self' data: https: blob:; "
         "connect-src 'self'; "
         "frame-ancestors 'none'; "
-        "form-action 'self'; "
+        "form-action 'self' https://checkout.stripe.com https://billing.stripe.com; "
         "base-uri 'self'"
     )
     return response
