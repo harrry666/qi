@@ -177,6 +177,9 @@ def book_page(slug):
     biz = get_biz_by_slug(slug)
     if not biz:
         return '<h2 style="font-family:sans-serif;padding:40px">Business not found.</h2>', 404
+    from billing import has_access
+    if not has_access(biz.get('subscription_status'), biz.get('trial_ends_at')):
+        return render_template('book_paused.html', biz=biz), 403
     return render_template('book.html', biz=biz, verify_enabled=bool(TWILIO_VERIFY_SID))
 
 @booking_bp.route('/api/book/<slug>/services')
@@ -239,6 +242,9 @@ def api_create(slug):
     biz = get_biz_by_slug(slug)
     if not biz:
         return jsonify({'error': 'Not found'}), 404
+    from billing import has_access
+    if not has_access(biz.get('subscription_status'), biz.get('trial_ends_at')):
+        return jsonify({'error': t('flash.booking.paused')}), 403
 
     data = request.json or {}
     if data.get('hp'):

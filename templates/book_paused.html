@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ t('book.paused.title_tag') }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .paused-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .paused-card { max-width:420px; text-align:center; background:#fff; border:1px solid var(--gold-border,#E8D59A); border-radius:20px; padding:44px 32px; box-shadow:0 4px 32px rgba(26,18,9,0.07); }
+    .paused-icon { font-size:44px; margin-bottom:14px; }
+    .paused-card h1 { font-size:22px; font-weight:800; margin-bottom:10px; color:var(--text,#1A1209); }
+    .paused-card p { color:var(--muted,#8a8378); font-size:15px; line-height:1.6; }
+  </style>
+</head>
+<body class="book-body">
+  <div class="paused-wrap">
+    <div class="paused-card">
+      <div class="paused-icon">🗓️</div>
+      <h1>{{ t('book.paused.heading') }}</h1>
+      <p>{{ t('book.paused.desc', name=biz.name) }}</p>
+    </div>
+  </div>
+</body>
+</html>

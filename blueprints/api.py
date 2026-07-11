@@ -235,6 +235,10 @@ def create_booking():
         if not biz:
             return jsonify({'error': '商家不存在'}), 400
         biz = dict(biz)
+        from billing import has_access
+        if not has_access(biz.get('subscription_status'), biz.get('trial_ends_at')):
+            db.close()
+            return jsonify({'error': '该商家暂停接受预约'}), 403
 
         svc = db.execute(
             'SELECT * FROM services WHERE id=%s AND business_id=%s AND is_active=1',
