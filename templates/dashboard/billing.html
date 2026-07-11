@@ -45,6 +45,8 @@
   </ul>
   {% if sub.active %}
     <div class="billing-active-note">{{ t('dash.billing.active_note') }}</div>
+  {% elif sub.subscribed %}
+    <div class="billing-active-note">{{ t('dash.billing.subscribed_trialing', n=sub.days_left) }}</div>
   {% else %}
     <form method="POST" action="{{ url_for('stripe_billing.checkout') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
