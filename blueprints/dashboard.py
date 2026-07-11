@@ -16,6 +16,16 @@ from flask import g
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
+@dashboard_bp.before_request
+def _gate_subscription():
+    if not current_user.is_authenticated or not hasattr(current_user, 'subscription_status'):
+        return
+    if request.endpoint == 'dashboard.billing':
+        return
+    from billing import sub_state
+    if not sub_state(current_user)['has_access']:
+        return redirect(url_for('dashboard.billing'))
+
 _WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 _WEEKDAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 

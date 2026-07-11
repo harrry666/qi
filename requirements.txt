@@ -10,3 +10,4 @@ flask-wtf>=1.2
 flask-limiter>=3.5
 limits[redis]>=3.6
 apscheduler>=3.10
+stripe>=9.0

@@ -71,14 +71,17 @@ from blueprints.dashboard import dashboard_bp
 from blueprints.booking import booking_bp
 from blueprints.api import api_bp
 from blueprints.admin import admin_bp
+from blueprints.stripe_billing import stripe_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(booking_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(stripe_bp)
 csrf.exempt(booking_bp)
 csrf.exempt(api_bp)
+csrf.exempt(app.view_functions['stripe_billing.webhook'])
 
 from flask import send_from_directory
 
