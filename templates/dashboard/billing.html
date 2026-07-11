@@ -17,13 +17,17 @@
   .billing-feats li::before { content:'✓'; color:var(--gold-h); font-weight:800; margin-right:10px; }
   .billing-note { text-align:center; color:var(--muted); font-size:13px; margin-top:14px; line-height:1.5; }
   .billing-active-note { text-align:center; padding:12px; border-radius:12px; background:#DCFCE7; color:#166534; font-weight:700; font-size:14px; }
+  .billing-active-note.comp { background:var(--gold-light); color:var(--gold-h); border:1px solid var(--gold-border); }
+  .billing-badge.comp { background:var(--gold-light); color:var(--gold-h); border:1px solid var(--gold-border); }
 </style>
 
 <div class="page-title">{{ t('dash.billing.page_title') }}</div>
 
 <div class="billing-status">
   <span>{{ t('dash.billing.status_label') }}</span>
-  {% if sub.in_trial %}
+  {% if sub.comp %}
+    <span class="billing-badge comp">{{ t('dash.billing.status_comp', n=sub.days_left) }}</span>
+  {% elif sub.in_trial %}
     <span class="billing-badge trialing">{{ t('dash.billing.status_trialing', n=sub.days_left) }}</span>
   {% elif sub.active %}
     <span class="billing-badge active">{{ t('dash.billing.status_active') }}</span>
@@ -43,7 +47,9 @@
     <li>{{ t('dash.billing.feat3') }}</li>
     <li>{{ t('dash.billing.feat4') }}</li>
   </ul>
-  {% if sub.active %}
+  {% if sub.comp %}
+    <div class="billing-active-note comp">{{ t('dash.billing.comp_note', n=sub.days_left) }}</div>
+  {% elif sub.active %}
     <div class="billing-active-note">{{ t('dash.billing.active_note') }}</div>
   {% elif sub.subscribed %}
     <div class="billing-active-note">{{ t('dash.billing.subscribed_trialing', n=sub.days_left) }}</div>

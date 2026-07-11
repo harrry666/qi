@@ -214,6 +214,8 @@ TRANSLATIONS = {
     'dash.billing.subscribe_now': {'zh': '订阅', 'en': 'Subscribe'},
     'dash.billing.subscribe_note': {'zh': '安全支付由 Stripe 提供。试用期内订阅不会立即扣费，试用结束后才开始按月收费，随时可取消。', 'en': 'Secure payment by Stripe. Subscribing during your trial will not charge you now — billing starts after your trial ends. Cancel anytime.'},
     'dash.billing.active_note': {'zh': '✓ 订阅生效中，感谢你的支持！', 'en': '✓ Your subscription is active. Thank you!'},
+    'dash.billing.status_comp': {'zh': '已获赠免费会员（还剩 {n} 天）', 'en': 'Complimentary member ({n} days left)'},
+    'dash.billing.comp_note': {'zh': '🎁 你已获赠免费会员权限，全部功能免费使用，还剩 {n} 天。', 'en': "🎁 You've been gifted free membership — all features unlocked, {n} days left."},
     'dash.billing.subscribed_trialing': {'zh': '✓ 已订阅，卡已绑定。试用还剩 {n} 天，结束后才开始按月扣费。', 'en': '✓ Subscribed — card on file. {n} days of trial left; billing starts after it ends.'},
     'flash.billing.not_configured': {'zh': '支付暂时不可用，请稍后再试。', 'en': 'Payment is temporarily unavailable. Please try again later.'},
     'flash.billing.subscribe_success': {'zh': '订阅成功，感谢你的支持！', 'en': 'Subscription successful. Thank you!'},

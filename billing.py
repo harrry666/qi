@@ -19,13 +19,15 @@ def sub_state(business):
     days = trial_days_left(business)
     in_trial = status == 'trialing' and days > 0
     active = status == 'active'
+    comp = status == 'comp' and days > 0
     subscribed = bool(getattr(business, 'stripe_subscription_id', None))
     return {
         'status': status,
         'days_left': days,
         'in_trial': in_trial,
         'active': active,
+        'comp': comp,
         'subscribed': subscribed,
         'trial_expired': status == 'trialing' and days <= 0,
-        'has_access': active or in_trial,
+        'has_access': active or in_trial or comp,
     }
