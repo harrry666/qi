@@ -1,5 +1,4 @@
 import os
-import time
 import stripe
 from flask import Blueprint, request, redirect, url_for, jsonify, flash
 from flask_login import login_required, current_user
@@ -13,8 +12,14 @@ def _init():
 def _base():
     return os.environ.get('BASE_URL', request.host_url).rstrip('/')
 
+def _g(obj, key, default=None):
+    # stripe 库对象不支持 .get()，用 bracket 访问兜底（同时兼容普通 dict）
+    try:
+        return obj[key]
+    except (KeyError, TypeError):
+        return default
+
 def _map_status(sub_status):
-    # Stripe 订阅状态 → 我们库里的 subscription_status
     if sub_status in ('active', 'trialing', 'past_due', 'canceled'):
         return sub_status
     if sub_status in ('unpaid', 'incomplete_expired'):
@@ -23,19 +28,19 @@ def _map_status(sub_status):
 
 def _sync_subscription(business_id, sub):
     """把一个 Stripe 订阅对象同步进 businesses 表。"""
-    status = _map_status(sub.get('status'))
-    end_ts = sub.get('trial_end') or sub.get('current_period_end')
+    status = _map_status(_g(sub, 'status'))
+    end_ts = _g(sub, 'trial_end') or _g(sub, 'current_period_end')
     db = get_db()
     if end_ts:
         db.execute(
             "UPDATE businesses SET subscription_status=%s, stripe_subscription_id=%s, "
             "trial_ends_at=to_timestamp(%s) WHERE id=%s",
-            (status, sub.get('id'), end_ts, business_id)
+            (status, _g(sub, 'id'), end_ts, business_id)
         )
     else:
         db.execute(
             "UPDATE businesses SET subscription_status=%s, stripe_subscription_id=%s WHERE id=%s",
-            (status, sub.get('id'), business_id)
+            (status, _g(sub, 'id'), business_id)
         )
     db.commit()
     db.close()
@@ -60,11 +65,10 @@ def checkout():
     db.close()
 
     sub_data = {'metadata': {'business_id': str(current_user.id)}}
-    ends = getattr(current_user, 'trial_ends_at', None)
-    if ends:
-        ts = int(ends.timestamp())
-        if ts > int(time.time()) + 2 * 24 * 3600:
-            sub_data['trial_end'] = ts
+    from billing import sub_state
+    days = sub_state(current_user)['days_left']
+    if days >= 1:
+        sub_data['trial_period_days'] = days
 
     session = stripe.checkout.Session.create(
         mode='subscription',
@@ -86,8 +90,8 @@ def success():
     if sid and stripe.api_key:
         try:
             session = stripe.checkout.Session.retrieve(sid, expand=['subscription'])
-            sub = session.get('subscription')
-            if sub and str(session.get('client_reference_id')) == str(current_user.id):
+            sub = _g(session, 'subscription')
+            if sub and str(_g(session, 'client_reference_id')) == str(current_user.id):
                 _sync_subscription(current_user.id, sub)
         except Exception:
             pass
@@ -108,30 +112,33 @@ def webhook():
     except Exception:
         return jsonify({'error': 'invalid'}), 400
 
-    typ = event['type']
+    typ = _g(event, 'type')
     obj = event['data']['object']
 
+    def _biz_from_customer(cust_id):
+        db = get_db()
+        row = db.execute('SELECT id FROM businesses WHERE stripe_customer_id=%s', (cust_id,)).fetchone()
+        db.close()
+        return row['id'] if row else None
+
     if typ == 'checkout.session.completed':
-        bid = (obj.get('metadata') or {}).get('business_id') or obj.get('client_reference_id')
-        sub_id = obj.get('subscription')
+        md = _g(obj, 'metadata') or {}
+        bid = _g(md, 'business_id') or _g(obj, 'client_reference_id')
+        sub_id = _g(obj, 'subscription')
         if bid and sub_id:
             sub = stripe.Subscription.retrieve(sub_id)
             _sync_subscription(int(bid), sub)
     elif typ in ('customer.subscription.updated', 'customer.subscription.created', 'customer.subscription.deleted'):
-        bid = (obj.get('metadata') or {}).get('business_id')
-        if not bid:
-            db = get_db()
-            row = db.execute('SELECT id FROM businesses WHERE stripe_customer_id=%s', (obj.get('customer'),)).fetchone()
-            db.close()
-            bid = row['id'] if row else None
+        md = _g(obj, 'metadata') or {}
+        bid = _g(md, 'business_id') or _biz_from_customer(_g(obj, 'customer'))
         if bid:
             _sync_subscription(int(bid), obj)
     elif typ == 'invoice.payment_failed':
-        db = get_db()
-        row = db.execute('SELECT id FROM businesses WHERE stripe_customer_id=%s', (obj.get('customer'),)).fetchone()
-        if row:
-            db.execute("UPDATE businesses SET subscription_status='past_due' WHERE id=%s", (row['id'],))
+        bid = _biz_from_customer(_g(obj, 'customer'))
+        if bid:
+            db = get_db()
+            db.execute("UPDATE businesses SET subscription_status='past_due' WHERE id=%s", (bid,))
             db.commit()
-        db.close()
+            db.close()
 
     return jsonify({'received': True}), 200
