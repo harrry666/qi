@@ -959,7 +959,8 @@ def merchant_register():
             return jsonify({'error': '该邮箱已被注册'}), 400
         token = str(uuid.uuid4())
         cur = db.execute(
-            'INSERT INTO businesses (name, slug, email, password_hash, phone, category, api_token, is_approved) VALUES (%s,%s,%s,%s,%s,%s,%s,0) RETURNING id',
+            "INSERT INTO businesses (name, slug, email, password_hash, phone, category, api_token, is_approved, trial_ends_at, subscription_status) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,0, NOW() + INTERVAL '30 days', 'trialing') RETURNING id",
             (name, slug, email, generate_password_hash(password), phone, category, token)
         )
         biz_id = cur.fetchone()['id']

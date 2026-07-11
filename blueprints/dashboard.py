@@ -1064,6 +1064,12 @@ def customer_adjust_balance(cid):
         db.close()
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
+@dashboard_bp.route('/billing')
+@login_required
+def billing():
+    from billing import PLAN_PRICE
+    return render_template('dashboard/billing.html', price=PLAN_PRICE)
+
 @dashboard_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():

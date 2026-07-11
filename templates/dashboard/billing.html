@@ -1,0 +1,48 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}{{ t('dash.billing.title_tag') }}{% endblock %}
+{% block content %}
+<style>
+  .billing-status { display:flex; align-items:center; gap:12px; margin-bottom:22px; font-size:14px; color:var(--muted); }
+  .billing-badge { padding:5px 12px; border-radius:20px; font-weight:700; font-size:13px; }
+  .billing-badge.trialing { background:var(--gold-light); color:var(--gold-h); border:1px solid var(--gold-border); }
+  .billing-badge.active { background:#DCFCE7; color:#166534; }
+  .billing-badge.expired { background:#FEE2E2; color:#991B1B; }
+  .billing-card { max-width:420px; background:var(--white); border:1px solid var(--gold-border); border-radius:20px; padding:34px 32px; box-shadow:0 4px 32px rgba(26,18,9,0.06); }
+  .billing-plan-name { font-size:18px; font-weight:800; text-align:center; }
+  .billing-price { text-align:center; margin:10px 0 4px; }
+  .billing-amount { font-size:52px; font-weight:800; color:var(--gold-h); }
+  .billing-period { color:var(--muted); font-size:16px; }
+  .billing-feats { list-style:none; padding:0; margin:22px 0; }
+  .billing-feats li { padding:9px 0; border-bottom:1px solid var(--border); font-size:14px; }
+  .billing-feats li::before { content:'✓'; color:var(--gold-h); font-weight:800; margin-right:10px; }
+  .billing-note { text-align:center; color:var(--muted); font-size:13px; margin-top:14px; line-height:1.5; }
+</style>
+
+<div class="page-title">{{ t('dash.billing.page_title') }}</div>
+
+<div class="billing-status">
+  <span>{{ t('dash.billing.status_label') }}</span>
+  {% if sub.in_trial %}
+    <span class="billing-badge trialing">{{ t('dash.billing.status_trialing', n=sub.days_left) }}</span>
+  {% elif sub.active %}
+    <span class="billing-badge active">{{ t('dash.billing.status_active') }}</span>
+  {% elif sub.trial_expired %}
+    <span class="billing-badge expired">{{ t('dash.billing.status_expired') }}</span>
+  {% else %}
+    <span class="billing-badge">{{ t('dash.billing.status_none') }}</span>
+  {% endif %}
+</div>
+
+<div class="billing-card">
+  <div class="billing-plan-name">{{ t('dash.billing.plan_name') }}</div>
+  <div class="billing-price"><span class="billing-amount">${{ price }}</span><span class="billing-period">{{ t('dash.billing.per_month') }}</span></div>
+  <ul class="billing-feats">
+    <li>{{ t('dash.billing.feat1') }}</li>
+    <li>{{ t('dash.billing.feat2') }}</li>
+    <li>{{ t('dash.billing.feat3') }}</li>
+    <li>{{ t('dash.billing.feat4') }}</li>
+  </ul>
+  <button class="btn-primary-full" disabled style="opacity:.55;cursor:not-allowed">{{ t('dash.billing.subscribe_btn') }}</button>
+  <p class="billing-note">{{ t('dash.billing.coming_note') }}</p>
+</div>
+{% endblock %}

@@ -40,6 +40,14 @@ def _set_lang():
 def _inject_i18n():
     return dict(lang=getattr(g, 'lang', 'zh'), t=t)
 
+@app.context_processor
+def _inject_sub():
+    from flask_login import current_user
+    if current_user.is_authenticated and hasattr(current_user, 'subscription_status'):
+        from billing import sub_state
+        return dict(sub=sub_state(current_user))
+    return {}
+
 @app.route('/set-lang/<lang>')
 def set_lang(lang):
     from flask import redirect, make_response, url_for

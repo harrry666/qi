@@ -102,7 +102,8 @@ def register():
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
         db.execute(
-            'INSERT INTO businesses (name, slug, email, password_hash, phone, category, is_approved) VALUES (%s,%s,%s,%s,%s,%s,0)',
+            "INSERT INTO businesses (name, slug, email, password_hash, phone, category, is_approved, trial_ends_at, subscription_status) "
+            "VALUES (%s,%s,%s,%s,%s,%s,0, NOW() + INTERVAL '30 days', 'trialing')",
             (name, slug, email, generate_password_hash(password), phone, category)
         )
         db.commit()

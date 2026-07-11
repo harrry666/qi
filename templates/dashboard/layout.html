@@ -99,6 +99,7 @@
       <a href="{{ url_for('dashboard.blackouts') }}"    class="nav-item {% if request.endpoint == 'dashboard.blackouts' %}active{% endif %}">{{ t('dash.nav.blackouts') }}</a>
       <a href="{{ url_for('dashboard.blocks') }}"       class="nav-item {% if request.endpoint == 'dashboard.blocks' %}active{% endif %}">{{ t('dash.nav.blocks') }}</a>
       <a href="{{ url_for('dashboard.settings') }}"     class="nav-item {% if request.endpoint == 'dashboard.settings' %}active{% endif %}">{{ t('dash.nav.settings') }}</a>
+      <a href="{{ url_for('dashboard.billing') }}"      class="nav-item {% if request.endpoint == 'dashboard.billing' %}active{% endif %}">{{ t('dash.nav.billing') }}</a>
       <a href="{{ url_for('dashboard.feedback') }}"     class="nav-item {% if request.endpoint == 'dashboard.feedback' %}active{% endif %}">{{ t('dash.nav.feedback') }}</a>
     </nav>
     <div class="sidebar-bottom">
@@ -112,6 +113,11 @@
   </aside>
 
   <main class="dash-main">
+    {% if sub and sub.in_trial %}
+      <a href="{{ url_for('dashboard.billing') }}" class="trial-banner">{{ t('dash.trial_banner', n=sub.days_left) }}</a>
+    {% elif sub and sub.trial_expired %}
+      <a href="{{ url_for('dashboard.billing') }}" class="trial-banner expired">{{ t('dash.trial_expired_banner') }}</a>
+    {% endif %}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for cat, msg in messages %}
