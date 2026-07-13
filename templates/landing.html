@@ -72,6 +72,24 @@
   <span class="trust-pill">{{ t('landing.trust3') }}</span>
 </div>
 
+<section class="wechat-section">
+  <div class="wechat-inner">
+    <div class="wechat-copy">
+      <span class="hero-eyebrow">{{ t('landing.wechat_eyebrow') }}</span>
+      <h2>{{ t('landing.wechat_heading') }}</h2>
+      <p>{{ t('landing.wechat_sub') }}</p>
+      <ul class="wechat-points">
+        <li>{{ t('landing.wechat_point1') }}</li>
+        <li>{{ t('landing.wechat_point2') }}</li>
+      </ul>
+    </div>
+    <div class="wechat-qr">
+      <img src="{{ url_for('static', filename='img/miniprogram-qr.png') }}" alt="{{ t('landing.wechat_qr_alt') }}">
+      <span>{{ t('landing.wechat_qr_caption') }}</span>
+    </div>
+  </div>
+</section>
+
 <section class="features-section">
   <h2 class="features-heading">{{ t('landing.features_heading') }}</h2>
   <div class="features-grid">

@@ -223,6 +223,32 @@ a:hover { text-decoration: underline; }
 }
 .trust-sep { color: var(--border); font-size: 16px; }
 
+/* ── WeChat Mini Program ── */
+.wechat-section { padding: 56px 24px; max-width: 1120px; margin: 0 auto; }
+.wechat-inner {
+  display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center;
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 44px 48px;
+}
+.wechat-copy h2 {
+  font-family: 'Noto Serif SC', serif; font-size: 26px; font-weight: 800; color: var(--text);
+  margin: 0 0 14px; letter-spacing: -0.5px;
+}
+.wechat-copy p { font-size: 15px; color: var(--muted); line-height: 1.7; margin: 0 0 20px; max-width: 440px; }
+.wechat-points { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.wechat-points li { font-size: 14.5px; color: var(--text); font-weight: 600; padding-left: 16px; position: relative; }
+.wechat-points li::before {
+  content: ''; position: absolute; left: 0; top: 7px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+}
+.wechat-qr { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.wechat-qr img {
+  width: 168px; height: 168px; border-radius: 12px;
+  border: 1px solid var(--gold-border); padding: 10px; background: var(--white);
+  box-shadow: var(--shadow);
+}
+.wechat-qr span { font-size: 12.5px; font-weight: 700; color: var(--gold-h); letter-spacing: 0.04em; text-align: center; }
+
 /* ── Features ── */
 .features-section {
   padding: 56px 24px; max-width: 940px; margin: 0 auto;
@@ -759,6 +785,11 @@ a:hover { text-decoration: underline; }
   .hero-rich .hero-actions { justify-content: center; }
   .hero-rich .hero-sub { margin-left: auto; margin-right: auto; }
   .qi-phone { width: 240px; }
+  .wechat-inner { grid-template-columns: 1fr; padding: 32px 24px; text-align: center; }
+  .wechat-copy p { margin-left: auto; margin-right: auto; }
+  .wechat-points { align-items: center; }
+  .wechat-points li { padding-left: 0; }
+  .wechat-points li::before { display: none; }
 }
 /* ── Mobile top bar & bottom nav (hidden on desktop) ─────── */
 .mobile-topbar { display: none; }
