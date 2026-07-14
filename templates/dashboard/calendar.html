@@ -168,7 +168,8 @@ var I18N = {
   cancelAptConfirm: {{ t('dash.calendar.js.cancel_apt_confirm')|tojson }},
   selectNewTime: {{ t('dash.calendar.js.select_new_time')|tojson }},
   customerCommentPrefix: {{ t('dash.calendar.js.customer_comment_prefix')|tojson }},
-  noteFailed: {{ t('dash.calendar.js.note_failed')|tojson }}
+  noteFailed: {{ t('dash.calendar.js.note_failed')|tojson }},
+  viewProfile: {{ t('dash.calendar.js.view_profile')|tojson }}
 };
 var calendar;
 var slotState = { date: '', time: '' };
@@ -338,8 +339,19 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('apt-note-box').style.display = 'none';
       document.getElementById('apt-new-dt').value = toLocalInputValue(info.event.start);
       document.getElementById('apt-note-input').value = p.note || '';
-      document.getElementById('apt-modal-title').textContent = p.customer;
       var esc = function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+      if (p.customer_id) {
+        document.getElementById('apt-modal-title').innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+          '<span>' + esc(p.customer) + '</span>' +
+          '<a href="/dashboard/customers/' + p.customer_id + '" ' +
+          'style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:5px 12px;' +
+          'background:var(--gold);color:#fff;border-radius:999px;font-size:13px;font-weight:700;' +
+          'text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,0.15)">' +
+          '👤 ' + esc(I18N.viewProfile) + ' →</a></div>';
+      } else {
+        document.getElementById('apt-modal-title').textContent = p.customer;
+      }
       var bodyHtml =
         I18N.servicePrefix + esc(p.service) + '<br>' +
         I18N.staffPrefix + esc(p.staff) + '<br>' +
