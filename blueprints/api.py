@@ -345,7 +345,7 @@ def verify_send():
         from twilio.rest import Client
         client = Client(TWILIO_SID, TWILIO_TOKEN)
         client.verify.v2.services(TWILIO_VERIFY_SID).verifications.create(
-            to=format_phone(phone), channel='sms', locale='zh'
+            to=format_phone(phone), channel='sms', locale='en'
         )
         return jsonify({'sent': True})
     except Exception as e:
