@@ -373,7 +373,7 @@ def calendar_events():
         sf = None
     db = get_db()
     apt_sql = (
-        "SELECT a.id, a.customer_name, a.appointment_dt, a.status, a.staff_id, "
+        "SELECT a.id, a.customer_name, a.appointment_dt, a.status, a.staff_id, a.comment, a.merchant_note, "
         "s.id as service_id, s.name as service_name, s.duration_mins, s.color as service_color, "
         "st.name as staff_name "
         "FROM appointments a JOIN services s ON a.service_id=s.id "
@@ -421,6 +421,8 @@ def calendar_events():
                 'customer': r['customer_name'],
                 'service': r['service_name'],
                 'staff': r['staff_name'] or t('dash.calendar.any_staff'),
+                'comment': r['comment'] or '',
+                'note': r['merchant_note'] or '',
             }
         })
 

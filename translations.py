@@ -613,6 +613,9 @@ TRANSLATIONS = {
     'dash.calendar.close': {'zh': '关闭', 'en': 'Close'},
     'dash.calendar.cancel': {'zh': '取消', 'en': 'Cancel'},
     'dash.calendar.reschedule_btn': {'zh': '✏️ 改期', 'en': '✏️ Reschedule'},
+    'dash.calendar.edit_note_btn': {'zh': '📝 备注', 'en': '📝 Note'},
+    'dash.calendar.note_label': {'zh': '商家备注（仅自己可见）', 'en': 'Staff note (only you can see)'},
+    'dash.calendar.save_note': {'zh': '保存备注', 'en': 'Save note'},
     'dash.calendar.cancel_apt_btn': {'zh': '取消预约', 'en': 'Cancel booking'},
     'dash.calendar.new_time_label': {'zh': '新时间', 'en': 'New time'},
     'dash.calendar.save_new_time': {'zh': '保存新时间', 'en': 'Save new time'},
@@ -651,6 +654,8 @@ TRANSLATIONS = {
     'dash.calendar.js.time_prefix': {'zh': '时间：', 'en': 'Time: '},
     'dash.calendar.js.cancel_apt_confirm': {'zh': '确认取消这条预约？会短信通知客人和你。', 'en': 'Cancel this booking? You and the customer will be notified by text.'},
     'dash.calendar.js.select_new_time': {'zh': '请选择新时间', 'en': 'Please choose a new time'},
+    'dash.calendar.js.customer_comment_prefix': {'zh': '客户备注：', 'en': 'Customer note: '},
+    'dash.calendar.js.note_failed': {'zh': '备注保存失败，请重试', 'en': 'Failed to save note, please try again'},
 
     'dash.calendar.unknown_customer': {'zh': '未知客人', 'en': 'Unknown customer'},
     'dash.calendar.any_staff': {'zh': '不限员工', 'en': 'Any staff'},

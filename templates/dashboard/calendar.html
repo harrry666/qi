@@ -62,7 +62,17 @@
       </div>
     </div>
 
+    <div id="apt-note-box" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.note_label') }}</label>
+      <textarea id="apt-note-input" class="dash-input" rows="3" style="margin-bottom:10px;resize:vertical"></textarea>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button onclick="document.getElementById('apt-note-box').style.display='none'" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:13px">{{ t('dash.calendar.cancel') }}</button>
+        <button id="apt-note-save-btn" style="padding:6px 14px;border:none;border-radius:8px;background:var(--gold);color:white;cursor:pointer;font-size:13px;font-weight:600">{{ t('dash.calendar.save_note') }}</button>
+      </div>
+    </div>
+
     <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+      <button id="apt-modal-note-btn" style="padding:10px 18px;min-height:44px;border:1px solid var(--gold-border);color:var(--gold-h);border-radius:8px;background:white;cursor:pointer;font-size:14px">{{ t('dash.calendar.edit_note_btn') }}</button>
       <button id="apt-modal-reschedule-btn" style="padding:10px 18px;min-height:44px;border:1px solid var(--gold-border);color:var(--gold-h);border-radius:8px;background:white;cursor:pointer;font-size:14px">{{ t('dash.calendar.reschedule_btn') }}</button>
       <button id="apt-modal-cancel-btn" style="padding:10px 18px;min-height:44px;border:1px solid var(--red);color:var(--red);border-radius:8px;background:white;cursor:pointer;font-size:14px">{{ t('dash.calendar.cancel_apt_btn') }}</button>
       <button onclick="document.getElementById('apt-modal').style.display='none'" style="padding:10px 18px;min-height:44px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">{{ t('dash.calendar.close') }}</button>
@@ -155,7 +165,9 @@ var I18N = {
   staffPrefix: {{ t('dash.calendar.js.staff_prefix')|tojson }},
   timePrefix: {{ t('dash.calendar.js.time_prefix')|tojson }},
   cancelAptConfirm: {{ t('dash.calendar.js.cancel_apt_confirm')|tojson }},
-  selectNewTime: {{ t('dash.calendar.js.select_new_time')|tojson }}
+  selectNewTime: {{ t('dash.calendar.js.select_new_time')|tojson }},
+  customerCommentPrefix: {{ t('dash.calendar.js.customer_comment_prefix')|tojson }},
+  noteFailed: {{ t('dash.calendar.js.note_failed')|tojson }}
 };
 var calendar;
 var slotState = { date: '', time: '' };
@@ -322,12 +334,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (p.type !== 'appointment') return;
       activeAptId = info.event.id;
       document.getElementById('apt-reschedule-box').style.display = 'none';
+      document.getElementById('apt-note-box').style.display = 'none';
       document.getElementById('apt-new-dt').value = toLocalInputValue(info.event.start);
+      document.getElementById('apt-note-input').value = p.note || '';
       document.getElementById('apt-modal-title').textContent = p.customer;
-      document.getElementById('apt-modal-body').innerHTML =
-        I18N.servicePrefix + p.service + '<br>' +
-        I18N.staffPrefix + p.staff + '<br>' +
+      var esc = function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+      var bodyHtml =
+        I18N.servicePrefix + esc(p.service) + '<br>' +
+        I18N.staffPrefix + esc(p.staff) + '<br>' +
         I18N.timePrefix + info.event.start.toLocaleString(CAL_LOCALE, {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+      if (p.comment) bodyHtml += '<br>' + I18N.customerCommentPrefix + esc(p.comment);
+      if (p.note) bodyHtml += '<br>📝 ' + esc(p.note);
+      document.getElementById('apt-modal-body').innerHTML = bodyHtml;
       document.getElementById('apt-modal').style.display = 'flex';
     },
     dateClick: function(info) {
@@ -367,6 +385,27 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('apt-modal').style.display = 'none';
       calendar.refetchEvents();
     }, function() { alert(I18N.rescheduleFailed); });
+  });
+
+  document.getElementById('apt-modal-note-btn').addEventListener('click', function() {
+    document.getElementById('apt-note-box').style.display = 'block';
+    document.getElementById('apt-note-input').focus();
+  });
+
+  document.getElementById('apt-note-save-btn').addEventListener('click', function() {
+    if (!activeAptId) return;
+    var btn = document.getElementById('apt-note-save-btn');
+    var fd = new FormData();
+    fd.append('note', document.getElementById('apt-note-input').value);
+    btn.disabled = true;
+    fetch('/dashboard/appointments/' + activeAptId + '/note', { method: 'POST', body: fd })
+      .then(function(r) {
+        btn.disabled = false;
+        if (!r.ok) { alert(I18N.noteFailed); return; }
+        document.getElementById('apt-modal').style.display = 'none';
+        calendar.refetchEvents();
+      })
+      .catch(function() { btn.disabled = false; alert(I18N.noteFailed); });
   });
 });
 </script>
