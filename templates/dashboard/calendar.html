@@ -22,19 +22,10 @@
     .fc .fc-toolbar.fc-header-toolbar { flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .fc .fc-toolbar-title { font-size: 16px; }
     .fc .fc-button { padding: 6px 10px; }
-    /* 周网格：给一个最小宽度，让每列够宽；在视图区内横向滚动（工具栏不受影响） */
-    .fc-timeGridWeek-view .fc-scrollgrid { min-width: 720px; }
-    #cal .fc-view-harness { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    /* 冻结时间轴（第一列）：往右划时时间列钉在左边不动，像 Excel 冻结首列 */
-    .fc-timegrid-axis,
-    .fc-timegrid-slot-label,
-    .fc-timegrid-axis-frame {
-      position: sticky !important;
-      left: 0;
-      z-index: 6;
-      background: var(--white, #fff);
-    }
-    .fc-timegrid-slot-label { box-shadow: 2px 0 5px rgba(26,18,9,0.10); }
+    /* 手机端：日历整屏放下、不横向滚动，时间轴始终可见（周视图列变窄，时间不丢） */
+    .fc .fc-timegrid-slot-label-cushion { font-size: 11px; padding: 0 2px; }
+    .fc .fc-col-header-cell-cushion { font-size: 12px; }
+    .fc .fc-event-title, .fc .fc-event-time { font-size: 11px; }
   }
 </style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
@@ -267,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var calEl = document.getElementById('cal');
   var isMobile = window.matchMedia('(max-width: 768px)').matches;
   calendar = new FullCalendar.Calendar(calEl, {
-    initialView: isMobile ? 'timeGridWeek' : 'timeGridWeek',
+    initialView: isMobile ? 'timeGridDay' : 'timeGridWeek',
     height: 'auto',
     locale: CAL_FC_LOCALE,
     firstDay: 1,
