@@ -312,8 +312,10 @@ def api_create(slug):
     try:
         dt = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
         dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+        dt_display_en = dt.strftime('%b %-d, %Y %-H:%M')
     except Exception:
         dt_display = apt_dt
+        dt_display_en = apt_dt
 
     _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
     cancel_url = f"{_base}/cancel/{cancel_token}"
@@ -327,11 +329,19 @@ def api_create(slug):
         + (f"地址：{biz['address']}\n" if biz['address'] else '')
         + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
         + f"\n如需取消：{cancel_url}"
-        + "\n或直接回复本短信「取消」"
+        + "\n或直接回复本短信「取消」\n\n"
+        + f"[Appointment Confirmed] Hi {name}, your appointment at {biz['name']} is confirmed.\n"
+        f"Service: {svc['name']}\n"
+        f"Time: {dt_display_en}\n"
+        + (f"Address: {biz['address']}\n" if biz['address'] else '')
+        + (f"Questions? Call {biz_phone}\n" if biz_phone else '')
+        + f"\nCancel: {cancel_url}"
+        + "\nOr reply CANCEL to this text"
     )
     threading.Thread(target=send_sms, args=(formatted_phone, customer_msg), daemon=True).start()
 
     if biz_phone:
+        last4 = re.sub(r'[^0-9]', '', phone)[-4:]
         owner_msg = (
             f"【新预约】{biz['name']}\n\n"
             f"客人：{name}\n"
@@ -339,7 +349,14 @@ def api_create(slug):
             f"服务：{svc['name']}\n"
             f"时间：{dt_display}\n"
             + (f"备注：{comment}\n" if comment else '')
-            + f"\n如需取消，回复「取消 {re.sub(r'[^0-9]', '', phone)[-4:]}」"
+            + f"\n如需取消，回复「取消 {last4}」\n\n"
+            + f"[New Booking] {biz['name']}\n\n"
+            f"Customer: {name}\n"
+            f"Phone: {phone}\n"
+            f"Service: {svc['name']}\n"
+            f"Time: {dt_display_en}\n"
+            + (f"Note: {comment}\n" if comment else '')
+            + f"\nTo cancel, reply \"CANCEL {last4}\""
         )
         threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
@@ -378,7 +395,7 @@ def sms_incoming():
 
         cancel_keywords = ['取消', 'cancel', 'c', 'quit', '1']
         is_cancel = any(k in body.lower() for k in cancel_keywords)
-        merchant_cmd = re.search(r'取消\s*(\d{4})', body) if merchant else None
+        merchant_cmd = re.search(r'(?:取消|cancel)\s*(\d{4})', body, re.IGNORECASE) if merchant else None
 
         if merchant_cmd:
             # 商家明确指定了客人后4位 → 走商家取消流程
@@ -403,13 +420,19 @@ def sms_incoming():
                 try:
                     dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
                     dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+                    dt_display_en = dt.strftime('%b %-d, %Y %-H:%M')
                 except Exception:
                     dt_display = apt['appointment_dt']
+                    dt_display_en = apt['appointment_dt']
                 customer_msg = (
                     f"【商家取消】{apt['customer_name']}，您在【{merchant['name']}】的预约已被商家取消。\n\n"
                     f"服务：{apt['service_name']}\n"
                     f"原定时间：{dt_display}\n"
                     + (f"如有疑问请致电：{merchant['phone']}" if merchant.get('phone') else '')
+                    + f"\n\n[Cancelled by Business] {apt['customer_name']}, your appointment at {merchant['name']} has been cancelled by the business.\n"
+                    f"Service: {apt['service_name']}\n"
+                    f"Was scheduled: {dt_display_en}\n"
+                    + (f"Questions? Call {merchant['phone']}" if merchant.get('phone') else '')
                 )
                 threading.Thread(target=send_sms, args=(format_phone(apt['phone']), customer_msg), daemon=True).start()
                 resp.message(f'已取消 {apt["customer_name"]}（尾号{last4}）的预约（{dt_display}）。')
@@ -438,14 +461,20 @@ def sms_incoming():
                 try:
                     dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
                     dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+                    dt_display_en = dt.strftime('%b %-d, %Y %-H:%M')
                 except Exception:
                     dt_display = apt['appointment_dt']
+                    dt_display_en = apt['appointment_dt']
                 if apt.get('biz_phone'):
                     owner_msg = (
                         f"【预约取消】{apt['biz_name']}\n\n"
                         f"客人：{apt['customer_name']}\n"
                         f"服务：{apt['service_name']}\n"
-                        f"原定时间：{dt_display}"
+                        f"原定时间：{dt_display}\n\n"
+                        f"[Booking Cancelled] {apt['biz_name']}\n\n"
+                        f"Customer: {apt['customer_name']}\n"
+                        f"Service: {apt['service_name']}\n"
+                        f"Was scheduled: {dt_display_en}"
                     )
                     threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), owner_msg), daemon=True).start()
                 resp.message(f'已取消您在【{apt["biz_name"]}】的预约（{dt_display}）。如需重新预约，请打开哈瓜小约。')
@@ -485,8 +514,12 @@ def cancel_by_token(token):
     try:
         dt = datetime.strptime(apt['appointment_dt'], '%Y-%m-%d %H:%M')
         apt['dt_display'] = dt.strftime('%b %-d, %Y %-H:%M') if getattr(g, 'lang', 'zh') == 'en' else dt.strftime('%Y年%-m月%-d日 %-H:%M')
+        apt['dt_display_zh'] = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+        apt['dt_display_en'] = dt.strftime('%b %-d, %Y %-H:%M')
     except Exception:
         apt['dt_display'] = apt['appointment_dt']
+        apt['dt_display_zh'] = apt['appointment_dt']
+        apt['dt_display_en'] = apt['appointment_dt']
 
     if request.method == 'POST':
         if apt['status'] != 'confirmed':
@@ -505,7 +538,11 @@ def cancel_by_token(token):
                 f"【预约取消】{apt['biz_name']}\n\n"
                 f"客人：{apt['customer_name']}\n"
                 f"服务：{apt['service_name']}\n"
-                f"原定时间：{apt['dt_display']}"
+                f"原定时间：{apt['dt_display_zh']}\n\n"
+                f"[Booking Cancelled] {apt['biz_name']}\n\n"
+                f"Customer: {apt['customer_name']}\n"
+                f"Service: {apt['service_name']}\n"
+                f"Was scheduled: {apt['dt_display_en']}"
             )
             threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), msg), daemon=True).start()
 

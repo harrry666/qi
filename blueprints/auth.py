@@ -189,7 +189,10 @@ def forgot_password():
                 token = _issue_reset_token(db, row['id'])
                 _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
                 reset_url = f"{_base}{url_for('auth.reset_password', token=token)}"
-                _msg = f'【Hastrid Booking】重置密码链接（1小时内有效）：{reset_url}'
+                _msg = (
+                    f'【Hastrid Booking】重置密码链接（1小时内有效）：{reset_url}\n\n'
+                    f'[Hastrid Booking] Reset your password (link valid for 1 hour): {reset_url}'
+                )
                 threading.Thread(target=send_sms, args=(format_phone(raw), _msg), daemon=True).start()
             db.close()
             flash('flash.auth.reset_sent_phone', 'success')

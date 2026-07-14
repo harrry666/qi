@@ -273,8 +273,10 @@ def create_booking():
 
         try:
             dt_display = apt_dt_obj.strftime('%Y年%-m月%-d日 %-H:%M')
+            dt_display_en = apt_dt_obj.strftime('%b %-d, %Y %-H:%M')
         except Exception:
             dt_display = appointment_dt
+            dt_display_en = appointment_dt
 
         biz_phone = biz.get('phone') or ''
         formatted_customer_phone = format_phone(phone)
@@ -288,7 +290,14 @@ def create_booking():
             + (f"地址：{biz['address']}\n" if biz.get('address') else '')
             + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
             + (f"\n如需取消：{cancel_url}" if cancel_url else '')
-            + "\n或直接回复本短信「取消」"
+            + "\n或直接回复本短信「取消」\n\n"
+            + f"[Appointment Confirmed] Hi {customer_name}, your appointment at {biz['name']} is confirmed.\n"
+            f"Service: {svc['name']}\n"
+            f"Time: {dt_display_en}\n"
+            + (f"Address: {biz['address']}\n" if biz.get('address') else '')
+            + (f"Questions? Call {biz_phone}\n" if biz_phone else '')
+            + (f"\nCancel: {cancel_url}" if cancel_url else '')
+            + "\nOr reply CANCEL to this text"
         )
         threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg), daemon=True).start()
 
@@ -302,7 +311,14 @@ def create_booking():
                 f"服务：{svc['name']}\n"
                 f"时间：{dt_display}\n"
                 + (f"备注：{comment}\n" if comment else '')
-                + f"\n如需取消，回复「取消 {last4}」"
+                + f"\n如需取消，回复「取消 {last4}」\n\n"
+                + f"[New Booking] {biz['name']}\n\n"
+                f"Customer: {customer_name}\n"
+                f"Phone: {phone}\n"
+                f"Service: {svc['name']}\n"
+                f"Time: {dt_display_en}\n"
+                + (f"Note: {comment}\n" if comment else '')
+                + f"\nTo cancel, reply \"CANCEL {last4}\""
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
@@ -362,15 +378,21 @@ def cancel_booking(cancel_token):
         try:
             dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
             dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+            dt_display_en = dt.strftime('%b %-d, %Y %-H:%M')
         except Exception:
             dt_display = row['appointment_dt']
+            dt_display_en = row['appointment_dt']
 
         if row.get('biz_phone'):
             owner_msg = (
                 f"【预约取消】{row['biz_name']}\n\n"
                 f"客人：{row['customer_name']}\n"
                 f"服务：{row['service_name']}\n"
-                f"原定时间：{dt_display}"
+                f"原定时间：{dt_display}\n\n"
+                f"[Booking Cancelled] {row['biz_name']}\n\n"
+                f"Customer: {row['customer_name']}\n"
+                f"Service: {row['service_name']}\n"
+                f"Was scheduled: {dt_display_en}"
             )
             threading.Thread(target=send_sms, args=(format_phone(row['biz_phone']), owner_msg), daemon=True).start()
 
@@ -378,7 +400,10 @@ def cancel_booking(cancel_token):
             customer_msg = (
                 f"【取消确认】{row['customer_name']}，您在【{row['biz_name']}】的预约已成功取消。\n\n"
                 f"服务：{row['service_name']}\n"
-                f"原定时间：{dt_display}"
+                f"原定时间：{dt_display}\n\n"
+                f"[Cancellation Confirmed] Hi {row['customer_name']}, your appointment at {row['biz_name']} has been cancelled.\n"
+                f"Service: {row['service_name']}\n"
+                f"Was scheduled: {dt_display_en}"
             )
             threading.Thread(target=send_sms, args=(format_phone(row['phone']), customer_msg), daemon=True).start()
 
@@ -542,8 +567,10 @@ def merchant_cancel_appointment(apt_id):
         try:
             dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
             dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
+            dt_display_en = dt.strftime('%b %-d, %Y %-H:%M')
         except Exception:
             dt_display = row['appointment_dt']
+            dt_display_en = row['appointment_dt']
 
         biz_phone = biz.get('phone') or ''
         cust_phone = row.get('phone') or ''
@@ -553,12 +580,18 @@ def merchant_cancel_appointment(apt_id):
                 f"服务：{row['service_name']}\n"
                 f"时间：{dt_display}\n\n"
                 + (f"如需重新预约请致电：{biz_phone}" if biz_phone else "如需重新预约请联系商家。")
+                + f"\n\n[Booking Cancelled] {row['customer_name']}, your appointment at {biz['name']} has been cancelled.\n"
+                f"Service: {row['service_name']}\n"
+                f"Time: {dt_display_en}\n\n"
+                + (f"To rebook, call {biz_phone}" if biz_phone else "To rebook, please contact the business.")
             )
             threading.Thread(target=send_sms, args=(format_phone(cust_phone), message), daemon=True).start()
         if biz_phone:
             biz_msg = (
                 f"【取消提醒】客人 {row['customer_name']} 的预约已取消。\n"
-                f"服务：{row['service_name']}\n时间：{dt_display}"
+                f"服务：{row['service_name']}\n时间：{dt_display}\n\n"
+                f"[Cancellation Alert] {row['customer_name']}'s booking has been cancelled.\n"
+                f"Service: {row['service_name']}\nTime: {dt_display_en}"
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
 
@@ -1743,9 +1776,12 @@ def merchant_create_appointment():
         db.close()
 
     try:
-        dt_display = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M').strftime('%Y年%-m月%-d日 %-H:%M')
+        _apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
+        dt_display = _apt_dt_obj.strftime('%Y年%-m月%-d日 %-H:%M')
+        dt_display_en = _apt_dt_obj.strftime('%b %-d, %Y %-H:%M')
     except ValueError:
         dt_display = apt_dt
+        dt_display_en = apt_dt
     _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
     cancel_url = f"{_base}/cancel/{cancel_token}" if _base else ''
     biz_phone = biz.get('phone') or ''
@@ -1755,7 +1791,13 @@ def merchant_create_appointment():
         f"时间：{dt_display}\n"
         + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
         + (f"\n如需取消：{cancel_url}" if cancel_url else '')
-        + "\n或直接回复本短信「取消」"
+        + "\n或直接回复本短信「取消」\n\n"
+        + f"[Appointment Confirmed] Hi {name}, your appointment at {biz['name']} is confirmed.\n"
+        f"Service: {svc['name']}\n"
+        f"Time: {dt_display_en}\n"
+        + (f"Questions? Call {biz_phone}\n" if biz_phone else '')
+        + (f"\nCancel: {cancel_url}" if cancel_url else '')
+        + "\nOr reply CANCEL to this text"
     )
     if phone:
         threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
@@ -1799,10 +1841,14 @@ def merchant_reschedule_appointment(apt_id):
 
     from blueprints.booking import send_sms, format_phone
     try:
-        old_disp = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M').strftime('%Y年%-m月%-d日 %-H:%M')
+        _old_dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
+        old_disp = _old_dt.strftime('%Y年%-m月%-d日 %-H:%M')
+        old_disp_en = _old_dt.strftime('%b %-d, %Y %-H:%M')
     except Exception:
         old_disp = row.get('appointment_dt')
+        old_disp_en = row.get('appointment_dt')
     new_disp = new_dt.strftime('%Y年%-m月%-d日 %-H:%M')
+    new_disp_en = new_dt.strftime('%b %-d, %Y %-H:%M')
     biz_name = biz.get('name') or ''
     biz_phone = biz.get('phone') or ''
     cust_phone = row.get('phone') or ''
@@ -1811,12 +1857,17 @@ def merchant_reschedule_appointment(apt_id):
             f"【预约改期】{row['customer_name']}，您在【{biz_name}】的预约时间已更改。\n\n"
             f"服务：{row['service_name']}\n原时间：{old_disp}\n新时间：{new_disp}\n\n"
             + (f"如有疑问请致电：{biz_phone}" if biz_phone else "如有疑问请联系商家。")
+            + f"\n\n[Booking Rescheduled] {row['customer_name']}, your appointment at {biz_name} has been rescheduled.\n\n"
+            f"Service: {row['service_name']}\nOld time: {old_disp_en}\nNew time: {new_disp_en}\n\n"
+            + (f"Questions? Call {biz_phone}" if biz_phone else "Questions? Contact the business.")
         )
         threading.Thread(target=send_sms, args=(format_phone(cust_phone), cust_msg), daemon=True).start()
     if biz_phone:
         biz_msg = (
             f"【改期提醒】客人 {row['customer_name']} 的预约已改期。\n"
-            f"服务：{row['service_name']}\n{old_disp} → {new_disp}"
+            f"服务：{row['service_name']}\n{old_disp} → {new_disp}\n\n"
+            f"[Reschedule Alert] {row['customer_name']}'s booking has been rescheduled.\n"
+            f"Service: {row['service_name']}\n{old_disp_en} -> {new_disp_en}"
         )
         threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
     return jsonify({'success': True})
