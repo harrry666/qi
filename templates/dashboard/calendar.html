@@ -25,6 +25,16 @@
     /* 周网格：给一个最小宽度，让每列够宽；在视图区内横向滚动（工具栏不受影响） */
     .fc-timeGridWeek-view .fc-scrollgrid { min-width: 720px; }
     #cal .fc-view-harness { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* 冻结时间轴（第一列）：往右划时时间列钉在左边不动，像 Excel 冻结首列 */
+    .fc-timegrid-axis,
+    .fc-timegrid-slot-label,
+    .fc-timegrid-axis-frame {
+      position: sticky !important;
+      left: 0;
+      z-index: 6;
+      background: var(--white, #fff);
+    }
+    .fc-timegrid-slot-label { box-shadow: 2px 0 5px rgba(26,18,9,0.10); }
   }
 </style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
