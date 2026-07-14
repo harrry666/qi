@@ -262,10 +262,12 @@ def create_booking():
             return jsonify({'error': '该时段已被预约或不可用，请重新选择时间'}), 409
         staff_id = resolve_staff_id(biz['id'], service_id, date, time, svc['duration_mins'], data.get('staff_id') or None)
 
+        from db import upsert_customer
+        customer_id = upsert_customer(db, biz['id'], phone, customer_name)
         cancel_token = str(uuid.uuid4())
         db.execute(
-            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid, subscribe_authed, staff_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token, openid, subscribe_authed, staff_id)
+            'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid, subscribe_authed, staff_id, customer_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+            (biz['id'], service_id, customer_name, phone, appointment_dt, comment, 'confirmed', cancel_token, openid, subscribe_authed, staff_id, customer_id)
         )
         db.commit()
 

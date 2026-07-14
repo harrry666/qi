@@ -249,6 +249,19 @@ def init_db():
             created_at TIMESTAMPTZ DEFAULT NOW(),
             reviewed_at TIMESTAMPTZ
         )''',
+        # Backfill: some old appointments (e.g. WeChat mini-program bookings before
+        # create_booking() linked customers) have phone/name but no customer_id.
+        '''INSERT INTO customers (business_id, phone, name, profile_token)
+            SELECT DISTINCT ON (a.business_id, a.phone) a.business_id, a.phone, a.customer_name,
+                md5(random()::text || clock_timestamp()::text)
+            FROM appointments a
+            WHERE a.customer_id IS NULL AND a.phone IS NOT NULL AND a.phone <> ''
+            ORDER BY a.business_id, a.phone, a.appointment_dt DESC
+            ON CONFLICT (business_id, phone) DO NOTHING''',
+        '''UPDATE appointments a SET customer_id = c.id
+            FROM customers c
+            WHERE a.customer_id IS NULL AND a.phone IS NOT NULL AND a.phone <> ''
+            AND c.business_id = a.business_id AND c.phone = a.phone''',
     ]:
         db.execute(stmt)
     db.commit()
