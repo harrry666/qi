@@ -26,9 +26,12 @@
     .fc .fc-toolbar-title { font-size: 16px; }
     .fc .fc-button { padding: 6px 10px; }
     /* 手机端：日历整屏放下、不横向滚动，时间轴始终可见（周视图列变窄，时间不丢） */
-    .fc .fc-timegrid-slot-label-cushion { font-size: 11px; padding: 0 2px; }
+    .fc .fc-timegrid-slot-label-cushion { font-size: 10px; padding: 0 1px; }
+    .fc .fc-timegrid-axis-frame { min-width: 0; }
     .fc .fc-col-header-cell-cushion { font-size: 12px; }
     .fc .fc-event-title, .fc .fc-event-time { font-size: 11px; }
+    .fc-apt .fc-apt-name { font-size: 11px; }
+    .fc-apt .fc-apt-time { font-size: 9px; }
   }
 </style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
@@ -284,6 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
       right: 'timeGridWeek,timeGridDay,dayGridMonth'
     },
     buttonText: { today: I18N.today, week: I18N.week, day: I18N.day, month: I18N.month, list: I18N.list },
+    allDaySlot: false,
     views: { listWeek: { buttonText: I18N.list } },
     eventClassNames: function(arg) {
       var kind = arg.event.extendedProps.type;
