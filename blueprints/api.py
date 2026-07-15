@@ -1828,6 +1828,27 @@ def merchant_reschedule_appointment(apt_id):
         if not row:
             return jsonify({'error': '预约不存在'}), 404
         row = dict(row)
+        raw_service = data.get('service_id')
+        if isinstance(raw_service, str):
+            raw_service = raw_service.strip()
+        new_service_id = raw_service if raw_service is not None else ''
+        if new_service_id:
+            svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s',
+                             (new_service_id, biz['id'])).fetchone()
+            if svc:
+                db.execute('UPDATE appointments SET service_id=%s WHERE id=%s AND business_id=%s',
+                           (svc['id'], apt_id, biz['id']))
+                row['service_name'] = svc['name']
+        if 'staff_id' in data:
+            raw_staff = (data.get('staff_id') or '')
+            raw_staff = raw_staff.strip() if isinstance(raw_staff, str) else raw_staff
+            new_staff_id = None
+            if raw_staff:
+                st = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s',
+                                (raw_staff, biz['id'])).fetchone()
+                new_staff_id = st['id'] if st else None
+            db.execute('UPDATE appointments SET staff_id=%s WHERE id=%s AND business_id=%s',
+                       (new_staff_id, apt_id, biz['id']))
         db.execute(
             'UPDATE appointments SET appointment_dt=%s WHERE id=%s AND business_id=%s',
             (new_dt_str, apt_id, biz['id'])
@@ -1852,22 +1873,49 @@ def merchant_reschedule_appointment(apt_id):
     biz_name = biz.get('name') or ''
     biz_phone = biz.get('phone') or ''
     cust_phone = row.get('phone') or ''
+    time_changed = (row['appointment_dt'] != new_dt_str)
+    time_line = (f"原时间：{old_disp}\n新时间：{new_disp}" if time_changed else f"时间：{new_disp}")
+    time_line_en = (f"Old time: {old_disp_en}\nNew time: {new_disp_en}" if time_changed else f"Time: {new_disp_en}")
     if cust_phone:
         cust_msg = (
-            f"【预约改期】{row['customer_name']}，您在【{biz_name}】的预约时间已更改。\n\n"
-            f"服务：{row['service_name']}\n原时间：{old_disp}\n新时间：{new_disp}\n\n"
+            f"【预约更新】{row['customer_name']}，您在【{biz_name}】的预约有更新。\n\n"
+            f"服务：{row['service_name']}\n{time_line}\n\n"
             + (f"如有疑问请致电：{biz_phone}" if biz_phone else "如有疑问请联系商家。")
-            + f"\n\n[Booking Rescheduled] {row['customer_name']}, your appointment at {biz_name} has been rescheduled.\n\n"
-            f"Service: {row['service_name']}\nOld time: {old_disp_en}\nNew time: {new_disp_en}\n\n"
+            + f"\n\n[Booking Updated] {row['customer_name']}, your appointment at {biz_name} has been updated.\n\n"
+            f"Service: {row['service_name']}\n{time_line_en}\n\n"
             + (f"Questions? Call {biz_phone}" if biz_phone else "Questions? Contact the business.")
         )
         threading.Thread(target=send_sms, args=(format_phone(cust_phone), cust_msg), daemon=True).start()
     if biz_phone:
+        biz_time = (f"{old_disp} → {new_disp}" if time_changed else new_disp)
+        biz_time_en = (f"{old_disp_en} -> {new_disp_en}" if time_changed else new_disp_en)
         biz_msg = (
-            f"【改期提醒】客人 {row['customer_name']} 的预约已改期。\n"
-            f"服务：{row['service_name']}\n{old_disp} → {new_disp}\n\n"
-            f"[Reschedule Alert] {row['customer_name']}'s booking has been rescheduled.\n"
-            f"Service: {row['service_name']}\n{old_disp_en} -> {new_disp_en}"
+            f"【预约更新】客人 {row['customer_name']} 的预约有更新。\n"
+            f"服务：{row['service_name']}\n{biz_time}\n\n"
+            f"[Booking Updated] {row['customer_name']}'s booking was updated.\n"
+            f"Service: {row['service_name']}\n{biz_time_en}"
         )
         threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
     return jsonify({'success': True})
+
+
+@api_bp.route('/merchant/appointments/<int:apt_id>/note', methods=['POST'])
+def merchant_save_appointment_note(apt_id):
+    biz, err = require_merchant()
+    if err:
+        return err
+    data = request.json or {}
+    note = (data.get('note') or '').strip()
+    db = get_db()
+    try:
+        db.execute(
+            'UPDATE appointments SET merchant_note=%s WHERE id=%s AND business_id=%s',
+            (note, apt_id, biz['id'])
+        )
+        db.commit()
+    except Exception as e:
+        print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
+        return jsonify({'error': '服务器繁忙，请稍后再试'}), 500
+    finally:
+        db.close()
+    return jsonify({'ok': True})
