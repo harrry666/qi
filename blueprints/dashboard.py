@@ -361,8 +361,25 @@ def calendar():
         'SELECT id, name, duration_mins FROM services WHERE business_id=%s AND is_active=1 ORDER BY sort_order, id',
         (current_user.id,)
     ).fetchall()
+    biz = db.execute('SELECT snap_minutes FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
     db.close()
-    return render_template('dashboard/calendar.html', staff=staff_rows, services=service_rows)
+    snap_minutes = (biz['snap_minutes'] if biz and biz['snap_minutes'] else 15)
+    return render_template('dashboard/calendar.html', staff=staff_rows, services=service_rows, snap_minutes=snap_minutes)
+
+@dashboard_bp.route('/settings/snap', methods=['POST'])
+@login_required
+def save_snap_minutes():
+    try:
+        val = int(request.form.get('snap_minutes', 15))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'invalid'}), 400
+    if val not in (5, 10, 15, 30):
+        return jsonify({'error': 'invalid'}), 400
+    db = get_db()
+    db.execute('UPDATE businesses SET snap_minutes=%s WHERE id=%s', (val, current_user.id))
+    db.commit()
+    db.close()
+    return jsonify({'ok': True, 'snap_minutes': val})
 
 @dashboard_bp.route('/calendar/events')
 @login_required
@@ -420,6 +437,8 @@ def calendar_events():
                 'type': 'appointment',
                 'customer': r['customer_name'],
                 'customer_id': r['customer_id'],
+                'service_id': r['service_id'],
+                'staff_id': r['staff_id'],
                 'service': r['service_name'],
                 'staff': r['staff_name'] or t('dash.calendar.any_staff'),
                 'comment': r['comment'] or '',
@@ -637,6 +656,26 @@ def reschedule_appointment(apt_id):
         "JOIN services s ON a.service_id=s.id WHERE a.id=%s AND a.business_id=%s",
         (apt_id, current_user.id)
     ).fetchone()
+    # 可选改服务：校验属于本商家，改动则用新服务名发短信
+    new_service_id = (request.form.get('service_id') or '').strip()
+    if new_service_id:
+        svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s',
+                         (new_service_id, current_user.id)).fetchone()
+        if svc:
+            db.execute('UPDATE appointments SET service_id=%s WHERE id=%s AND business_id=%s',
+                       (svc['id'], apt_id, current_user.id))
+            if row:
+                row = dict(row); row['service_name'] = svc['name']
+    # 可选改员工：空字符串=不限员工
+    if 'staff_id' in request.form:
+        raw_staff = (request.form.get('staff_id') or '').strip()
+        new_staff_id = None
+        if raw_staff:
+            st = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s',
+                            (raw_staff, current_user.id)).fetchone()
+            new_staff_id = st['id'] if st else None
+        db.execute('UPDATE appointments SET staff_id=%s WHERE id=%s AND business_id=%s',
+                   (new_staff_id, apt_id, current_user.id))
     db.execute(
         'UPDATE appointments SET appointment_dt=%s WHERE id=%s AND business_id=%s',
         (new_dt_str, apt_id, current_user.id)
@@ -655,21 +694,27 @@ def reschedule_appointment(apt_id):
         new_disp_en = new_dt.strftime('%b %-d, %Y %-H:%M')
         biz_name = current_user.name
         biz_phone = current_user.phone or ''
+        time_changed = (row['appointment_dt'] != new_dt_str)
+        # 时间变了就展示原→新，只改服务就只报当前时间，文案对三种情况都成立
+        time_line = (f"原时间：{old_disp}\n新时间：{new_disp}" if time_changed else f"时间：{new_disp}")
+        time_line_en = (f"Old time: {old_disp_en}\nNew time: {new_disp_en}" if time_changed else f"Time: {new_disp_en}")
         cust_msg = (
-            f"【预约改期】{row['customer_name']}，您在【{biz_name}】的预约时间已更改。\n\n"
-            f"服务：{row['service_name']}\n原时间：{old_disp}\n新时间：{new_disp}\n\n"
+            f"【预约更新】{row['customer_name']}，您在【{biz_name}】的预约有更新。\n\n"
+            f"服务：{row['service_name']}\n{time_line}\n\n"
             + (f"如有疑问请致电：{biz_phone}" if biz_phone else "如有疑问请联系商家。")
-            + f"\n\n[Booking Rescheduled] {row['customer_name']}, your appointment at {biz_name} has been rescheduled.\n\n"
-            f"Service: {row['service_name']}\nOld time: {old_disp_en}\nNew time: {new_disp_en}\n\n"
+            + f"\n\n[Booking Updated] {row['customer_name']}, your appointment at {biz_name} has been updated.\n\n"
+            f"Service: {row['service_name']}\n{time_line_en}\n\n"
             + (f"Questions? Call {biz_phone}" if biz_phone else "Questions? Contact the business.")
         )
         threading.Thread(target=send_sms, args=(format_phone(row['phone']), cust_msg), daemon=True).start()
         if biz_phone:
+            biz_time = (f"{old_disp} → {new_disp}" if time_changed else new_disp)
+            biz_time_en = (f"{old_disp_en} -> {new_disp_en}" if time_changed else new_disp_en)
             biz_msg = (
-                f"【改期提醒】客人 {row['customer_name']} 的预约已改期。\n"
-                f"服务：{row['service_name']}\n{old_disp} → {new_disp}\n\n"
-                f"[Reschedule Alert] {row['customer_name']}'s booking has been rescheduled.\n"
-                f"Service: {row['service_name']}\n{old_disp_en} -> {new_disp_en}"
+                f"【预约更新】客人 {row['customer_name']} 的预约有更新。\n"
+                f"服务：{row['service_name']}\n{biz_time}\n\n"
+                f"[Booking Updated] {row['customer_name']}'s booking was updated.\n"
+                f"Service: {row['service_name']}\n{biz_time_en}"
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
     flash('flash.apt.rescheduled', 'success')

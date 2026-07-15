@@ -46,6 +46,15 @@
       {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
     </select>
     {% endif %}
+    <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)" title="{{ t('dash.calendar.snap_hint') }}">
+      ⏱️ {{ t('dash.calendar.snap_label') }}
+      <select id="snap-select" class="dash-input" style="width:auto;min-width:88px" onchange="saveSnap(this.value)">
+        <option value="5">5 {{ t('dash.calendar.minutes') }}</option>
+        <option value="10">10 {{ t('dash.calendar.minutes') }}</option>
+        <option value="15">15 {{ t('dash.calendar.minutes') }}</option>
+        <option value="30">30 {{ t('dash.calendar.minutes') }}</option>
+      </select>
+    </label>
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap" id="legend"></div>
   </div>
 </div>
@@ -61,6 +70,15 @@
     <div id="apt-modal-body" style="font-size:14px;color:var(--muted);line-height:1.9"></div>
 
     <div id="apt-reschedule-box" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.service_label') }}</label>
+      <select id="resched-service" class="dash-input" style="margin-bottom:10px">
+        {% for sv in services %}<option value="{{ sv.id }}">{{ sv.name }}</option>{% endfor %}
+      </select>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.apt_staff_label') }}</label>
+      <select id="resched-staff" class="dash-input" style="margin-bottom:10px">
+        <option value="">{{ t('dash.calendar.unlimited') }}</option>
+        {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
+      </select>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.new_time_label') }}</label>
       <input type="datetime-local" id="apt-new-dt" class="dash-input" style="margin-bottom:10px">
       <div style="display:flex;justify-content:flex-end;gap:8px">
@@ -153,6 +171,7 @@
 <script src="{{ url_for('static', filename='vendor/fullcalendar.min.js') }}"></script>
 <script>
 var CAL_LOCALE = {{ ('en' if lang == 'en' else 'zh-CN')|tojson }};
+var SNAP_MINUTES = {{ snap_minutes|default(15)|int }};
 var CAL_FC_LOCALE = {{ ('en' if lang == 'en' else 'zh-cn')|tojson }};
 var I18N = {
   today: {{ t('dash.calendar.js.today')|tojson }},
@@ -186,12 +205,29 @@ function toLocalInputValue(d) {
   return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
 
-function rescheduleAppointment(id, newDtValue, onDone, onFail) {
+function rescheduleAppointment(id, newDtValue, onDone, onFail, extra) {
   var fd = new FormData();
   fd.append('new_dt', newDtValue);
+  if (extra) {
+    if (extra.service_id != null) fd.append('service_id', extra.service_id);
+    if (extra.staff_id != null) fd.append('staff_id', extra.staff_id);
+  }
   fetch('/dashboard/appointments/' + id + '/reschedule', { method: 'POST', body: fd })
     .then(function(r) { if (onDone) onDone(r); })
     .catch(function() { if (onFail) onFail(); });
+}
+
+function saveSnap(val) {
+  var fd = new FormData();
+  fd.append('snap_minutes', val);
+  fetch('/dashboard/settings/snap', { method: 'POST', body: fd })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(d) {
+      if (d && d.snap_minutes) {
+        SNAP_MINUTES = d.snap_minutes;
+        if (calendar) calendar.setOption('snapDuration', { minutes: SNAP_MINUTES });
+      }
+    });
 }
 
 function closeSlotModal() {
@@ -271,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
     firstDay: 1,
     slotMinTime: '08:00:00',
     slotMaxTime: '21:00:00',
-    snapDuration: '00:05:00',
+    snapDuration: { minutes: SNAP_MINUTES },
     nowIndicator: true,
     selectable: true,
     longPressDelay: 250,
@@ -355,6 +391,8 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('apt-reschedule-box').style.display = 'none';
       document.getElementById('apt-note-box').style.display = 'none';
       document.getElementById('apt-new-dt').value = toLocalInputValue(info.event.start);
+      if (p.service_id != null) document.getElementById('resched-service').value = p.service_id;
+      document.getElementById('resched-staff').value = (p.staff_id != null ? p.staff_id : '');
       document.getElementById('apt-note-input').value = p.note || '';
       var esc = function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
       if (p.customer_id) {
@@ -389,6 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   calendar.render();
+  var snapSel = document.getElementById('snap-select');
+  if (snapSel) snapSel.value = String(SNAP_MINUTES);
 
   document.getElementById('apt-modal-cancel-btn').addEventListener('click', function() {
     if (!activeAptId) return;
@@ -410,11 +450,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!activeAptId) return;
     var newDt = document.getElementById('apt-new-dt').value;
     if (!newDt) { alert(I18N.selectNewTime); return; }
+    var extra = {
+      service_id: document.getElementById('resched-service').value,
+      staff_id: document.getElementById('resched-staff').value
+    };
     rescheduleAppointment(activeAptId, newDt, function(r) {
       if (!r.ok) { alert(I18N.rescheduleFailed); return; }
       document.getElementById('apt-modal').style.display = 'none';
       calendar.refetchEvents();
-    }, function() { alert(I18N.rescheduleFailed); });
+    }, function() { alert(I18N.rescheduleFailed); }, extra);
   });
 
   document.getElementById('apt-modal-note-btn').addEventListener('click', function() {

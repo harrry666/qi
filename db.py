@@ -155,6 +155,7 @@ def init_db():
         "ALTER TABLE businesses ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'none'",
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS snap_minutes INTEGER DEFAULT 15',
         "UPDATE businesses SET trial_ends_at = NOW() + INTERVAL '30 days', subscription_status = 'trialing' WHERE trial_ends_at IS NULL",
         '''CREATE TABLE IF NOT EXISTS staff (
             id SERIAL PRIMARY KEY,
