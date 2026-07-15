@@ -144,7 +144,7 @@
 
     <form id="slot-appointment-form" style="display:none;margin-top:4px">
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.start_time') }}</label>
-      <input type="time" id="apt-start-time" class="dash-input" step="{{ snap_minutes * 60 }}" style="margin-bottom:10px">
+      <select id="apt-start-time" class="dash-input" style="margin-bottom:10px"></select>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.service_label') }}</label>
       <select id="apt-service" class="dash-input" style="margin-bottom:10px">
         {% for sv in services %}<option value="{{ sv.id }}">{{ sv.name }}</option>{% endfor %}
@@ -229,13 +229,39 @@ function saveSnap(val) {
       if (d && d.snap_minutes) {
         SNAP_MINUTES = d.snap_minutes;
         if (calendar) calendar.setOption('snapDuration', { minutes: SNAP_MINUTES });
-        var stepSec = SNAP_MINUTES * 60;
-        var st = document.getElementById('apt-start-time');
         var nd = document.getElementById('apt-new-dt');
-        if (st) st.step = stepSec;
-        if (nd) nd.step = stepSec;
+        if (nd) nd.step = SNAP_MINUTES * 60;
+        buildTimeOptions();
       }
     });
+}
+
+// iOS Safari 忽略 <input type=time> 的 step，改用 select 只列出按间隔的整点时间
+function buildTimeOptions() {
+  var sel = document.getElementById('apt-start-time');
+  if (!sel || sel.tagName !== 'SELECT') return;
+  var cur = sel.value;
+  var step = SNAP_MINUTES || 15;
+  var html = '';
+  for (var m = 0; m < 1440; m += step) {
+    var hh = Math.floor(m / 60), mm = m % 60;
+    var v = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+    html += '<option value="' + v + '">' + v + '</option>';
+  }
+  sel.innerHTML = html;
+  if (cur) setTimeSelect(cur);
+}
+function setTimeSelect(hhmm) {
+  var sel = document.getElementById('apt-start-time');
+  if (!sel) return;
+  var parts = (hhmm || '').split(':');
+  if (parts.length !== 2) return;
+  var step = SNAP_MINUTES || 15;
+  var total = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  var rounded = Math.round(total / step) * step;
+  if (rounded >= 1440) rounded = 1440 - step;
+  var hh = Math.floor(rounded / 60), mm = rounded % 60;
+  sel.value = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
 }
 
 var _custTimer = null;
@@ -286,7 +312,7 @@ function showSlotForm(kind) {
     document.getElementById('block-end-time').value = end.toTimeString().slice(0, 5);
     document.getElementById('slot-block-form').style.display = 'block';
   } else {
-    document.getElementById('apt-start-time').value = slotState.time;
+    setTimeSelect(slotState.time);
     document.getElementById('slot-appointment-form').style.display = 'block';
   }
 }
@@ -476,6 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
   calendar.render();
   var snapSel = document.getElementById('snap-select');
   if (snapSel) snapSel.value = String(SNAP_MINUTES);
+  buildTimeOptions();
 
   var suggestBox = document.getElementById('cust-suggest');
   if (suggestBox) {
