@@ -55,6 +55,8 @@
 </p>
 
 {% if customers %}
+<input type="text" id="cust-search" class="dash-input" placeholder="{{ t('dash.customers.search_ph') }}" oninput="filterCustomers()" autocomplete="off" style="max-width:360px;margin-bottom:16px">
+<p id="cust-no-result" style="display:none;color:var(--muted);font-size:14px">{{ t('dash.customers.no_match') }}</p>
 <table class="apt-table">
   <thead>
     <tr>
@@ -95,5 +97,20 @@
 {% else %}
   <div class="empty-table">{{ t('dash.customers.empty') }}</div>
 {% endif %}
+
+<script>
+function filterCustomers() {
+  var q = document.getElementById('cust-search').value.trim().toLowerCase();
+  var rows = document.querySelectorAll('tr.customer-row');
+  var shown = 0;
+  rows.forEach(function(r) {
+    var hit = !q || r.textContent.toLowerCase().indexOf(q) !== -1;
+    r.style.display = hit ? '' : 'none';
+    if (hit) shown++;
+  });
+  var none = document.getElementById('cust-no-result');
+  if (none) none.style.display = (shown === 0 && q) ? 'block' : 'none';
+}
+</script>
 
 {% endblock %}

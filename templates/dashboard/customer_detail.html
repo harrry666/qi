@@ -29,6 +29,12 @@
   <div style="min-width:0;flex:1">
     <div class="cust-name" style="font-size:22px;font-weight:800;color:var(--text)">{{ c.name or t('dash.custdetail.unnamed') }}</div>
     <div style="color:#A78BFA;font-size:14px">{{ c.phone }}</div>
+    {% if past_names %}
+    <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+      <span style="font-size:12px;color:var(--muted)">{{ t('dash.custdetail.past_names') }}</span>
+      {% for pn in past_names %}<span style="font-size:12px;color:var(--text);background:var(--gold-light);padding:2px 9px;border-radius:999px">{{ pn }}</span>{% endfor %}
+    </div>
+    {% endif %}
   </div>
   <div class="cust-balance" style="margin-left:auto;text-align:right">
     <div style="font-size:12px;color:var(--muted)">{{ t('dash.custdetail.balance_label') }}</div>

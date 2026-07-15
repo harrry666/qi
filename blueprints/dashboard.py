@@ -366,6 +366,29 @@ def calendar():
     snap_minutes = (biz['snap_minutes'] if biz and biz['snap_minutes'] else 15)
     return render_template('dashboard/calendar.html', staff=staff_rows, services=service_rows, snap_minutes=snap_minutes)
 
+@dashboard_bp.route('/api/customer-search')
+@login_required
+def customer_search():
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify({'results': []})
+    db = get_db()
+    like = f'%{q}%'
+    digits = normalize_phone(q)
+    if digits:
+        rows = db.execute(
+            "SELECT name, phone FROM customers WHERE business_id=%s AND (name ILIKE %s OR phone LIKE %s) "
+            "ORDER BY name LIMIT 8",
+            (current_user.id, like, f'%{digits}%')
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT name, phone FROM customers WHERE business_id=%s AND name ILIKE %s ORDER BY name LIMIT 8",
+            (current_user.id, like)
+        ).fetchall()
+    db.close()
+    return jsonify({'results': [{'name': r['name'], 'phone': r['phone']} for r in rows]})
+
 @dashboard_bp.route('/settings/snap', methods=['POST'])
 @login_required
 def save_snap_minutes():
@@ -1029,8 +1052,16 @@ def customer_detail(cid):
         "SELECT * FROM balance_transactions WHERE customer_id=%s ORDER BY created_at DESC LIMIT 20",
         (cid,)
     ).fetchall()
+    # 曾用名：该客户历次预约填过的不同名字（跟当前档案名不同的），最近用过的在前
+    name_rows = db.execute(
+        "SELECT customer_name, MAX(appointment_dt) AS last_used FROM appointments "
+        "WHERE customer_id=%s AND customer_name IS NOT NULL AND customer_name <> '' AND customer_name <> %s "
+        "GROUP BY customer_name ORDER BY last_used DESC LIMIT 10",
+        (cid, cust['name'] or '')
+    ).fetchall()
+    past_names = [r['customer_name'] for r in name_rows]
     db.close()
-    return render_template('dashboard/customer_detail.html', c=cust, visits=visits, photos=photos, transactions=transactions)
+    return render_template('dashboard/customer_detail.html', c=cust, visits=visits, photos=photos, transactions=transactions, past_names=past_names)
 
 @dashboard_bp.route('/customers/<int:cid>/profile', methods=['POST'])
 @login_required

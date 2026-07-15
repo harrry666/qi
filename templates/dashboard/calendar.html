@@ -80,7 +80,7 @@
         {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
       </select>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.new_time_label') }}</label>
-      <input type="datetime-local" id="apt-new-dt" class="dash-input" style="margin-bottom:10px">
+      <input type="datetime-local" id="apt-new-dt" class="dash-input" step="{{ snap_minutes * 60 }}" style="margin-bottom:10px">
       <div style="display:flex;justify-content:flex-end;gap:8px">
         <button onclick="document.getElementById('apt-reschedule-box').style.display='none'" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:13px">{{ t('dash.calendar.cancel') }}</button>
         <button id="apt-reschedule-save-btn" style="padding:6px 14px;border:none;border-radius:8px;background:var(--gold);color:white;cursor:pointer;font-size:13px;font-weight:600">{{ t('dash.calendar.save_new_time') }}</button>
@@ -144,7 +144,7 @@
 
     <form id="slot-appointment-form" style="display:none;margin-top:4px">
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.start_time') }}</label>
-      <input type="time" id="apt-start-time" class="dash-input" style="margin-bottom:10px">
+      <input type="time" id="apt-start-time" class="dash-input" step="{{ snap_minutes * 60 }}" style="margin-bottom:10px">
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.service_label') }}</label>
       <select id="apt-service" class="dash-input" style="margin-bottom:10px">
         {% for sv in services %}<option value="{{ sv.id }}">{{ sv.name }}</option>{% endfor %}
@@ -155,7 +155,10 @@
         {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
       </select>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.customer_name_label') }}</label>
-      <input type="text" id="apt-name" class="dash-input" style="margin-bottom:10px">
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" id="apt-name" class="dash-input" style="margin-bottom:0" autocomplete="off" oninput="searchCustomers()">
+        <div id="cust-suggest" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:white;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);max-height:210px;overflow-y:auto;margin-top:2px"></div>
+      </div>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.phone_label') }}</label>
       <input type="text" id="apt-phone" class="dash-input" style="margin-bottom:10px">
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.comment_label') }}</label>
@@ -226,8 +229,45 @@ function saveSnap(val) {
       if (d && d.snap_minutes) {
         SNAP_MINUTES = d.snap_minutes;
         if (calendar) calendar.setOption('snapDuration', { minutes: SNAP_MINUTES });
+        var stepSec = SNAP_MINUTES * 60;
+        var st = document.getElementById('apt-start-time');
+        var nd = document.getElementById('apt-new-dt');
+        if (st) st.step = stepSec;
+        if (nd) nd.step = stepSec;
       }
     });
+}
+
+var _custTimer = null;
+function searchCustomers() {
+  var nameEl = document.getElementById('apt-name');
+  var box = document.getElementById('cust-suggest');
+  var q = (nameEl.value || '').trim();
+  if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  clearTimeout(_custTimer);
+  _custTimer = setTimeout(function() {
+    fetch('/dashboard/api/customer-search?q=' + encodeURIComponent(q))
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(d) {
+        if (!d || !d.results || !d.results.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+        var esc = function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+        box.innerHTML = d.results.map(function(c) {
+          return '<div class="cust-suggest-item" data-name="' + esc(c.name) + '" data-phone="' + esc(c.phone) + '" '
+            + 'style="padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border)">'
+            + '<span style="font-weight:600;color:var(--text)">' + esc(c.name) + '</span>'
+            + '<span style="color:var(--muted);font-size:13px">' + esc(c.phone) + '</span></div>';
+        }).join('');
+        box.style.display = 'block';
+      })
+      .catch(function() {});
+  }, 250);
+}
+function pickCustomer(name, phone) {
+  document.getElementById('apt-name').value = name;
+  document.getElementById('apt-phone').value = phone;
+  var box = document.getElementById('cust-suggest');
+  box.style.display = 'none';
+  box.innerHTML = '';
 }
 
 function closeSlotModal() {
@@ -300,8 +340,15 @@ function submitAppointment() {
 document.addEventListener('DOMContentLoaded', function() {
   var calEl = document.getElementById('cal');
   var isMobile = window.matchMedia('(max-width: 768px)').matches;
+  var VALID_VIEWS = ['timeGridDay', 'timeGridWeek', 'dayGridMonth'];
+  var savedView = null;
+  try { savedView = localStorage.getItem('hastrid_cal_view'); } catch (e) {}
+  if (VALID_VIEWS.indexOf(savedView) === -1) savedView = isMobile ? 'timeGridDay' : 'timeGridWeek';
   calendar = new FullCalendar.Calendar(calEl, {
-    initialView: isMobile ? 'timeGridDay' : 'timeGridWeek',
+    initialView: savedView,
+    datesSet: function(arg) {
+      try { localStorage.setItem('hastrid_cal_view', arg.view.type); } catch (e) {}
+    },
     height: 'auto',
     locale: CAL_FC_LOCALE,
     firstDay: 1,
@@ -429,6 +476,25 @@ document.addEventListener('DOMContentLoaded', function() {
   calendar.render();
   var snapSel = document.getElementById('snap-select');
   if (snapSel) snapSel.value = String(SNAP_MINUTES);
+
+  var suggestBox = document.getElementById('cust-suggest');
+  if (suggestBox) {
+    suggestBox.addEventListener('mousedown', function(e) {
+      var item = e.target.closest('.cust-suggest-item');
+      if (!item) return;
+      e.preventDefault();
+      pickCustomer(item.dataset.name, item.dataset.phone);
+    });
+  }
+  var nameInput = document.getElementById('apt-name');
+  if (nameInput) {
+    nameInput.addEventListener('blur', function() {
+      setTimeout(function() {
+        var b = document.getElementById('cust-suggest');
+        if (b) b.style.display = 'none';
+      }, 150);
+    });
+  }
 
   document.getElementById('apt-modal-cancel-btn').addEventListener('click', function() {
     if (!activeAptId) return;
