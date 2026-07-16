@@ -293,7 +293,9 @@ a:hover { text-decoration: underline; }
   height: 80px;
   background: linear-gradient(to bottom, var(--bg), var(--text));
   pointer-events: none;
+  z-index: 0;
 }
+.cta-section > * { position: relative; z-index: 1; }
 .cta-section h2 { font-size: 30px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
 .cta-section p { font-size: 15px; opacity: 0.55; margin-bottom: 28px; }
 .cta-section .btn-lg { background: var(--gold); color: var(--text); }
