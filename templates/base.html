@@ -27,7 +27,7 @@
     Hastrid
   </a>
   <div class="nav-links">
-    <a href="{{ url_for('auth.explore') }}">{{ t('nav.explore') }}</a>
+    <a href="{{ url_for('auth.explore') }}" class="nav-sm-hide">{{ t('nav.explore') }}</a>
     {% if current_user.is_authenticated %}
       <a href="{{ url_for('dashboard.index') }}">{{ t('nav.home') }}</a>
       <a href="{{ url_for('auth.logout') }}">{{ t('nav.logout') }}</a>

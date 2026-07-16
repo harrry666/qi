@@ -66,8 +66,10 @@ a:hover { text-decoration: underline; }
 .nav-links a { color: var(--muted); }
 .nav-links a:hover { color: var(--text); text-decoration: none; }
 .btn-sm {
+  display: inline-flex; align-items: center; justify-content: center;
   background: var(--gold); color: var(--text);
   padding: 7px 18px; border-radius: 20px; font-weight: 700;
+  white-space: nowrap; line-height: 1.1;
 }
 .btn-sm:hover { background: var(--gold-h); color: var(--text); text-decoration: none; }
 .nav-links .btn-sm { color: var(--text); }
@@ -899,7 +901,15 @@ a:hover { text-decoration: underline; }
   .slot-btn { font-size: 10px; padding: 8px 0; min-height: 36px; }
 
   /* Public pages */
-  .public-nav { padding: 0 20px; }
+  .public-nav { padding: 0 14px; height: 60px; }
+  .nav-sm-hide { display: none; }
+  .nav-logo { font-size: 17px; gap: 5px; flex-shrink: 0; }
+  .nav-logo-img { height: 40px; }
+  .nav-links { gap: 12px; font-size: 13px; flex-shrink: 0; }
+  .nav-links a { white-space: nowrap; }
+  .nav-links .btn-sm { padding: 8px 13px; font-size: 13px; }
+  .lang-switch { font-size: 11px; padding: 2px; }
+  .lang-switch a { padding: 3px 8px; }
   .hero-rich { padding: 48px 20px 40px; }
   .hero-preview { display: none; }
   .hero-actions { flex-direction: column; align-items: center; }
