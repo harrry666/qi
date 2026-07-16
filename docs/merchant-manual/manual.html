@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --bg:#FAF8F5; --surface:#FFFFFF; --surface-2:#F7F2EA;
+    --gold:#C9A84C; --gold-deep:#B2913A; --gold-soft:#FDF3DC;
+    --ink:#1A1209; --ink-2:#6B6155; --ink-3:#A89F92; --line:#EFE9E0;
+    --success:#4CA86B; --danger:#E5634D;
+  }
+  @page{ size:A4; margin:0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.7; font-size:11pt;
+  }
+  .page{
+    width:210mm; min-height:297mm; padding:20mm 18mm; margin:0 auto;
+    background:var(--bg); position:relative; page-break-after:always; overflow:hidden;
+  }
+  .page:last-child{ page-break-after:auto; }
+
+  /* cover */
+  .cover{ display:flex; flex-direction:column; justify-content:center; min-height:297mm;
+    background:linear-gradient(160deg,#FDF3DC 0%,#FAF8F5 55%,#F7F2EA 100%); }
+  .cover .kicker{ font-size:12pt; letter-spacing:.35em; color:var(--gold-deep); text-transform:uppercase; margin-bottom:24px; }
+  .cover h1{ font-size:40pt; line-height:1.15; font-weight:800; letter-spacing:-1px; color:var(--ink); }
+  .cover h1 .g{ color:var(--gold-deep); }
+  .cover .sub{ font-size:15pt; color:var(--ink-2); margin-top:20px; max-width:60%; }
+  .cover .meta{ position:absolute; bottom:20mm; left:18mm; right:18mm; display:flex; justify-content:space-between;
+    border-top:2px solid var(--gold); padding-top:14px; font-size:10pt; color:var(--ink-3); }
+  .cover .badge{ display:inline-flex; gap:10px; margin-top:34px; }
+  .cover .badge span{ background:var(--surface); border:1px solid var(--line); border-radius:999px;
+    padding:7px 16px; font-size:10.5pt; color:var(--ink); box-shadow:0 4px 14px rgba(120,95,40,.08); }
+
+  /* section headers */
+  .part-head{ break-before:page; padding-top:6mm; }
+  .part-tag{ font-size:10pt; letter-spacing:.25em; color:var(--gold-deep); text-transform:uppercase; }
+  .part-head h2{ font-size:26pt; font-weight:800; letter-spacing:-.5px; margin-top:6px; color:var(--ink);
+    border-bottom:3px solid var(--gold); padding-bottom:14px; }
+  .part-head p{ color:var(--ink-2); margin-top:12px; font-size:11.5pt; }
+
+  h3{ font-size:15pt; font-weight:800; color:var(--ink); margin:26px 0 8px;
+    display:flex; align-items:center; gap:10px; break-after:avoid; }
+  .num{ flex:0 0 auto; width:30px; height:30px; border-radius:50%; background:var(--gold);
+    color:#fff; font-size:13pt; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+  h4{ font-size:12.5pt; font-weight:700; color:var(--gold-deep); margin:18px 0 6px; break-after:avoid; }
+  p{ margin:6px 0; }
+  ul{ margin:8px 0 8px 4px; list-style:none; }
+  li{ padding-left:20px; position:relative; margin:5px 0; }
+  li::before{ content:"›"; position:absolute; left:4px; color:var(--gold); font-weight:800; }
+  strong{ color:var(--ink); }
+  .tip{ background:var(--gold-soft); border-left:4px solid var(--gold); border-radius:8px;
+    padding:12px 16px; margin:14px 0; font-size:10.5pt; color:var(--ink); break-inside:avoid; }
+  .tip b{ color:var(--gold-deep); }
+  .warn{ background:#FBEBE7; border-left:4px solid var(--danger); border-radius:8px;
+    padding:12px 16px; margin:14px 0; font-size:10.5pt; break-inside:avoid; }
+
+  figure{ break-inside:avoid; margin:16px 0 6px; }
+  figure img{ width:100%; border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 8px 26px rgba(120,95,40,.12); display:block; }
+  figcaption{ font-size:9.5pt; color:var(--ink-3); margin-top:7px; text-align:center; }
+  .half{ width:100%; }
+  .row{ display:flex; gap:14px; break-inside:avoid; }
+  .row figure{ flex:1; margin:16px 0 6px; }
+
+  .placeholder{ border:2px dashed var(--gold); border-radius:12px; background:var(--surface-2);
+    height:150mm; max-height:150mm; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:var(--ink-3); text-align:center; padding:20px; break-inside:avoid; }
+  .placeholder .ph-ico{ font-size:34pt; margin-bottom:10px; }
+  .placeholder b{ color:var(--gold-deep); font-size:12pt; }
+
+  .toc{ margin-top:10mm; }
+  .toc-item{ display:flex; justify-content:space-between; border-bottom:1px dashed var(--line);
+    padding:9px 0; font-size:12pt; }
+  .toc-item b{ color:var(--gold-deep); margin-right:10px; }
+
+  .feature-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
+  .fcard{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; break-inside:avoid; }
+  .fcard .ic{ font-size:18pt; }
+  .fcard b{ display:block; margin:6px 0 2px; font-size:11.5pt; }
+  .fcard span{ font-size:10pt; color:var(--ink-2); }
+
+  .footer-note{ position:absolute; bottom:12mm; left:18mm; right:18mm; text-align:center;
+    font-size:9pt; color:var(--ink-3); border-top:1px solid var(--line); padding-top:8px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== COVER ===================== -->
+<section class="page cover">
+  <div class="kicker">Hastrid Booking · 商家使用手册</div>
+  <h1>预约管理<span class="g">全流程</span><br>上手指南</h1>
+  <div class="sub">从注册开店到每天接单，网页版后台 + 微信小程序，一本手册讲清楚。</div>
+  <div class="badge">
+    <span>🖥️ 网页版后台</span>
+    <span>📱 哈瓜小约小程序</span>
+    <span>💬 短信+微信提醒</span>
+  </div>
+  <div class="meta">
+    <span>hastridbooking.com</span>
+    <span>面向美国华人小商家 · 美甲/美发/美睫/按摩</span>
+  </div>
+</section>
+
+<!-- ===================== 目录 + 简介 ===================== -->
+<section class="page">
+  <div class="part-tag" style="padding-top:2mm">开始之前</div>
+  <h2 style="font-size:24pt;font-weight:800;border-bottom:3px solid var(--gold);padding-bottom:12px;margin-top:6px">这是什么？</h2>
+  <p style="margin-top:14px;font-size:11.5pt">Hastrid Booking 是一套给小店用的预约管理工具，让你告别微信来回问时间、手写小本子记客人。它由两部分组成：</p>
+
+  <div class="feature-grid" style="margin-top:16px">
+    <div class="fcard"><div class="ic">🖥️</div><b>网页版后台（你用）</b><span>手机或电脑打开网址就能用，管日历、客人、员工、收款。你日常在这里接单。</span></div>
+    <div class="fcard"><div class="ic">📱</div><b>专属预约链接 / 小程序（客人用）</b><span>把链接发给客人，或让客人在微信小程序「哈瓜小约」上自己选时间下单。</span></div>
+  </div>
+
+  <div class="tip"><b>一句话流程：</b>你在后台把店铺、服务、员工、营业时间设好 → 拿到专属预约链接 → 发给客人 → 客人自己下单 → 你在日历上看到预约，系统自动发短信确认和提前提醒。</div>
+
+  <h3 style="margin-top:24px"><span class="num">目</span>本手册包含</h3>
+  <div class="toc">
+    <div class="toc-item"><span><b>第一部分</b>网页版后台：从零把店开起来（注册→设置→服务→员工→营业时间）</span></div>
+    <div class="toc-item"><span><b>第二部分</b>日常使用：日历接单、客户管理、群发短信、数据分析</span></div>
+    <div class="toc-item"><span><b>第三部分</b>客人怎么预约：专属链接 + 短信确认</span></div>
+    <div class="toc-item"><span><b>第四部分</b>微信小程序「哈瓜小约」</span></div>
+    <div class="toc-item"><span><b>第五部分</b>收费说明 + 常见问题</span></div>
+  </div>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 1 页</div>
+</section>
+
+<!-- ===================== 第一部分：开店设置 ===================== -->
+<section class="page">
+  <div class="part-head">
+    <div class="part-tag">第一部分</div>
+    <h2>网页版后台：把店开起来</h2>
+    <p>第一次用，跟着下面 7 步走一遍，大概 10 分钟就能把店铺配好、拿到你的专属预约链接。</p>
+  </div>
+
+  <h3><span class="num">1</span>注册账号</h3>
+  <p>手机或电脑浏览器打开 <strong>hastridbooking.com</strong>，点「注册」。填店名、邮箱、手机号、设置密码。注册后自动获得 <strong>30 天免费试用</strong>。</p>
+  <figure><img src="assets/02_register.png"><figcaption>注册页：填店铺名、邮箱、手机号、密码</figcaption></figure>
+
+  <h3><span class="num">2</span>登录后台</h3>
+  <p>用刚才的邮箱和密码登录。忘记密码可以用手机号找回（会收到短信验证码）。</p>
+  <figure><img src="assets/01_login.png"><figcaption>登录页：右上角可切换中 / EN 双语</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 2 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">3</span>完善店铺信息</h3>
+  <p>进「设置」，填店铺名、地址、简介、分类，上传头像和封面图。这些会显示在客人看到的预约页上，装修好看一点，客人更信任。</p>
+  <figure><img src="assets/04_settings.png"><figcaption>设置页：店铺信息 + 头像/封面上传</figcaption></figure>
+
+  <h3><span class="num">4</span>添加服务项目</h3>
+  <p>进「服务项目」，把你提供的项目一个个加进去：名字、时长、价格。时长决定预约块在日历上占多久；价格用于数据分析统计营业额（不填价则显示「价格面议」）。每个服务还能选一个颜色，方便在日历上一眼区分。</p>
+  <figure><img src="assets/05_services.png"><figcaption>服务项目：可设时长、价格、颜色</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 3 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">5</span>添加员工（可选）</h3>
+  <p>如果店里有多个技师/员工，在「员工」里把他们加进来。之后预约可以指定到某个员工，日历也能按员工筛选查看。只有你一个人做的话，这步可以跳过。</p>
+  <figure><img src="assets/06_staff.png"><figcaption>员工管理：每个员工可单独排班</figcaption></figure>
+
+  <h3><span class="num">6</span>设置营业时间</h3>
+  <p>进「营业时间」，设定每天几点到几点营业、哪天休息。客人在预约页只能选到你营业时间内的空档，避免约到打烊后。另外「休业时期」可以标假期/临时休息，那几天客人约不了。</p>
+  <figure><img src="assets/07_hours.png"><figcaption>营业时间：逐天设置，控制客人可约的范围</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 4 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">7</span>拿到你的专属预约链接</h3>
+  <p>以上设好后，后台左下角有「<strong>查看预约页面 ↗</strong>」，这就是你的专属预约页。把这个链接：</p>
+  <ul>
+    <li>发到朋友圈 / 微信群 / 个人签名</li>
+    <li>做成二维码贴在店里</li>
+    <li>放进你的小红书 / Instagram 主页</li>
+  </ul>
+  <p>客人点开就能自己选服务、选时间、下单，不用再私信问你有没有空。</p>
+
+  <div class="tip"><b>设置完成！</b> 到这里你的店就正式「上线」了。接下来看第二部分，学怎么用日历每天接单。</div>
+
+  <h3 style="margin-top:30px"><span class="num">🏠</span>后台主页长什么样</h3>
+  <p>登录后第一眼看到的是主页：今天的预约、本周数据、经营小结一目了然。左侧是所有功能的导航。</p>
+  <figure><img src="assets/03_dashboard.png"><figcaption>后台主页：今日预约 + 本周概览</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 5 页</div>
+</section>
+
+<!-- ===================== 第二部分：日常使用 ===================== -->
+<section class="page">
+  <div class="part-head">
+    <div class="part-tag">第二部分</div>
+    <h2>日常使用：日历接单</h2>
+    <p>日历是你每天用得最多的地方。看预约、加预约、改期、改备注、锁时段，都在这里。</p>
+  </div>
+
+  <figure><img src="assets/08_calendar.png"><figcaption>日历页：按周/日/月查看，颜色对应不同服务</figcaption></figure>
+
+  <h4>日历上能做什么</h4>
+  <ul>
+    <li><strong>看预约</strong>：每个预约块显示客人名字（第一行）和时间。不同服务用不同颜色。</li>
+    <li><strong>切换视图</strong>：右上角切「日 / 周 / 月」，系统会记住你上次看的，下次打开还是那个。</li>
+    <li><strong>按员工筛选</strong>：左上下拉选某个员工，只看他的预约。</li>
+    <li><strong>拖动改时间</strong>：按住预约块上下拖，就能改到别的时间。旁边「拖动间隔」可设 5/10/15/30 分钟一格。</li>
+  </ul>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 6 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">➕</span>手动加预约</h3>
+  <p>客人打电话或当面来约，你可以自己加：点日历上任意空白格 → 选「加预约」→ 选时间、服务、员工，填客人姓名和手机号 → 确认添加。</p>
+  <figure><img src="assets/09_add_appointment.png"><figcaption>加预约弹层：时间只显示整点，选服务和员工</figcaption></figure>
+  <div class="tip"><b>省事技巧：</b>在「客人姓名」栏直接打字，会自动搜出你已有的客人（带电话），点一下名字和电话就都填好了，不用重新输。</div>
+
+  <h4>点已有的预约，能做这些</h4>
+  <ul>
+    <li><strong>查看客户档案</strong>：点客人名字直接跳到他的档案</li>
+    <li><strong>改预约</strong>：改时间、改服务、改员工都行，不用取消重约</li>
+    <li><strong>改备注</strong>：给这次预约加内部备注（只有你能看）</li>
+    <li><strong>取消预约</strong>：取消后系统自动发短信通知客人</li>
+  </ul>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 7 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">👥</span>客户管理</h3>
+  <p>「客户列表」里是你所有的客人。顶部有搜索框，输名字或电话都能快速找到。点任意客人进他的档案。</p>
+  <figure><img src="assets/10_customers.png"><figcaption>客户列表：顶部可搜索姓名/电话</figcaption></figure>
+
+  <h4>客户档案能记什么</h4>
+  <div class="feature-grid">
+    <div class="fcard"><b>📝 客人可见备注</b><span>客人自己也能看到，比如偏好</span></div>
+    <div class="fcard"><b>🔒 我的私密备注</b><span>只有你能看，客人看不到</span></div>
+    <div class="fcard"><b>💰 储值余额</b><span>记录充值/核销，做会员卡</span></div>
+    <div class="fcard"><b>📷 服务照片档案</b><span>存发型/美甲款式，下次参考</span></div>
+    <div class="fcard"><b>🏷️ 曾用名</b><span>客人换过的名字自动收集，不怕认错</span></div>
+    <div class="fcard"><b>📅 到店记录</b><span>历次预约一目了然</span></div>
+  </div>
+  <figure><img src="assets/11_customer_detail.png"><figcaption>客户档案：备注、储值、照片、到店记录</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 8 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">📣</span>群发短信</h3>
+  <p>「群发短信」可以给选中的客人一次性发消息，比如做活动、通知放假、召回老客。勾选客人 → 写内容 → 发送。</p>
+  <figure><img src="assets/15_broadcast.png"><figcaption>群发短信：选客人 + 写内容群发</figcaption></figure>
+
+  <h3><span class="num">📊</span>数据分析</h3>
+  <p>「分析报告」自动统计你的营业额、预约量、热门服务、高峰时段。不用自己算，一眼看清生意好不好、什么时候最忙。</p>
+  <figure><img src="assets/12_analytics.png"><figcaption>数据分析：营业额、预约趋势、热门服务</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 9 页</div>
+</section>
+
+<!-- ===================== 第三部分：客人怎么预约 ===================== -->
+<section class="page">
+  <div class="part-head">
+    <div class="part-tag">第三部分</div>
+    <h2>客人怎么预约</h2>
+    <p>客人打开你的专属链接，整个下单过程不用你插手。</p>
+  </div>
+
+  <h4>客人的操作（3 步）</h4>
+  <ul>
+    <li><strong>选服务</strong>：打开链接看到你的所有服务和价格，点想要的</li>
+    <li><strong>选时间</strong>：日历上只显示你还空着的时间段，选一个</li>
+    <li><strong>填手机号验证</strong>：填姓名手机号，收一条短信验证码填进去，确认预约</li>
+  </ul>
+  <div class="tip"><b>为什么要短信验证：</b>防止乱填假号码放你鸽子。验证过的号码才能约，也方便后面发提醒。</div>
+
+  <figure><img src="assets/14_bookpage.png"><figcaption>客人看到的预约页：选服务 → 选时间 → 填手机验证</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 10 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">💬</span>自动短信：确认 + 提醒</h3>
+  <p>客人约好后，系统全自动发短信，你什么都不用做：</p>
+  <div class="feature-grid">
+    <div class="fcard"><div class="ic">✅</div><b>预约成功确认</b><span>下单立刻收到，含服务、时间、地址、取消链接</span></div>
+    <div class="fcard"><div class="ic">⏰</div><b>提前一天提醒</b><span>到店前约 24 小时自动提醒，降低放鸽子</span></div>
+    <div class="fcard"><div class="ic">🔁</div><b>改期/取消通知</b><span>你改动预约，客人自动收到更新短信</span></div>
+    <div class="fcard"><div class="ic">📲</div><b>微信提醒（小程序客人）</b><span>通过小程序约的，临近还会收到微信服务通知</span></div>
+  </div>
+  <div class="tip"><b>短信是英文的：</b>发到美国号码送达更稳，中英文客人都看得懂时间和验证码数字。</div>
+
+  <h4>客人自己也能取消</h4>
+  <p>确认短信里带一个取消链接，客人点开就能自己取消，取消后你的日历自动更新、你也会收到通知。省得来回沟通。</p>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 11 页</div>
+</section>
+
+<!-- ===================== 第四部分：小程序 ===================== -->
+<section class="page">
+  <div class="part-head">
+    <div class="part-tag">第四部分</div>
+    <h2>微信小程序「哈瓜小约」</h2>
+    <p>除了网页链接，客人也能在微信里搜「哈瓜小约」小程序找到你的店预约，对习惯用微信的客人更方便。</p>
+  </div>
+
+  <h4>小程序能做什么</h4>
+  <ul>
+    <li><strong>客人端</strong>：在「发现好店」里找到你的店 → 选服务时间下单 → 在「我的预约」查看/取消，还能收到微信提醒</li>
+    <li><strong>商家端</strong>：小程序右上角「商家登录」，用同一个账号登录，也能在手机小程序里管日历、客户、加预约（功能和网页版基本一致）</li>
+  </ul>
+  <div class="tip"><b>数据是打通的：</b>不管客人在网页链接约、还是小程序约，都会出现在你同一个后台日历和客户列表里，不会漏。</div>
+
+  <div class="row" style="justify-content:center;gap:20px;align-items:flex-start">
+    <figure style="flex:0 1 auto;text-align:center;margin:16px 0 6px">
+      <img src="assets/mp_home.png" style="height:150mm;width:auto;max-width:100%">
+      <figcaption>客人端：发现好店，搜索并选择你的店</figcaption>
+    </figure>
+    <figure style="flex:0 1 auto;text-align:center;margin:16px 0 6px">
+      <img src="assets/mp_calendar.png" style="height:150mm;width:auto;max-width:100%">
+      <figcaption>商家端：手机上管理日历与预约</figcaption>
+    </figure>
+  </div>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 12 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">🔗</span>把你的店直接分享给客人</h3>
+  <p>不用让客人自己在首页一家家搜。在小程序里打开<strong>你自己的店铺页</strong>，点右上角「···」，就能把你的店一键分享出去：</p>
+  <ul>
+    <li><strong>发送给朋友</strong>：把你的店铺卡片直接发到微信聊天，发给某个客人或客户群</li>
+    <li><strong>分享到朋友圈</strong>：一键发圈，谁看到都能点进来直接约</li>
+    <li><strong>复制短链</strong>：复制一条短链接，贴到微信群、公众号、电子名片、小红书主页</li>
+  </ul>
+  <div class="tip"><b>为什么这样最方便：</b>客人点你分享的卡片或链接，<strong>直接进到你的店</strong>看服务、选时间、下单，跳过在首页搜索找店这一步，客人少一步操作，成交更顺。</div>
+  <figure style="max-width:80mm;margin:18px auto 6px">
+    <img src="assets/mp_share.png">
+    <figcaption>在你的店铺页点右上角「···」→ 发送给朋友 / 分享到朋友圈 / 复制短链</figcaption>
+  </figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 13 页</div>
+</section>
+
+<!-- ===================== 第五部分：收费 + FAQ ===================== -->
+<section class="page">
+  <div class="part-head">
+    <div class="part-tag">第五部分</div>
+    <h2>收费说明 &amp; 常见问题</h2>
+  </div>
+
+  <h3 style="margin-top:6mm"><span class="num">💳</span>收费怎么算</h3>
+  <ul>
+    <li><strong>30 天免费试用</strong>：注册就送，期间所有功能随便用</li>
+    <li><strong>$19.99 / 月</strong>：试用到期后订阅，随时可取消</li>
+    <li>试用期结束前订阅，功能不中断；不订阅则暂停，客人会看到「暂停接受预约」</li>
+  </ul>
+  <figure><img src="assets/13_billing.png"><figcaption>订阅账单页：查看试用剩余天数、订阅</figcaption></figure>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 14 页</div>
+</section>
+
+<section class="page">
+  <h3 style="padding-top:4mm"><span class="num">❓</span>常见问题</h3>
+
+  <h4>Q：客人一定要下载 App 吗？</h4>
+  <p>不用。网页链接在任何手机浏览器都能打开，客人点开就能约。习惯微信的客人也可以用「哈瓜小约」小程序，同样免安装。</p>
+
+  <h4>Q：我可以自己帮客人下单吗？</h4>
+  <p>可以。在日历点空白格就能手动加预约，姓名栏还能搜出老客户自动填。</p>
+
+  <h4>Q：客人放鸽子怎么办？</h4>
+  <p>系统会自动提前一天发短信提醒，降低放鸽子概率。你也能在客户私密备注里标记「容易爽约」提醒自己。</p>
+
+  <h4>Q：同一个客人换了名字，会认错吗？</h4>
+  <p>不会。系统按手机号认人，一个手机号一个档案。客人用过的不同名字会自动收进「曾用名」，你点进档案能看到。</p>
+
+  <h4>Q：忘记密码了？</h4>
+  <p>登录页点「忘记密码」，用手机号收短信验证码重置。</p>
+
+  <h4>Q：换手机还能用吗？</h4>
+  <p>能。所有数据存在云端，任何设备登录同一个账号看到的都一样。</p>
+
+  <div style="margin-top:26px;background:var(--surface);border:2px solid var(--gold);border-radius:16px;padding:20px 24px;break-inside:avoid;box-shadow:0 8px 26px rgba(120,95,40,.1)">
+    <div style="font-size:13pt;font-weight:800;color:var(--gold-deep);margin-bottom:10px">💬 有任何问题，随时联系 Harry</div>
+    <div style="display:flex;gap:30px;flex-wrap:wrap;font-size:12pt">
+      <div><span style="color:var(--ink-3)">微信</span><br><b style="font-size:13pt">ii9so_lovz</b></div>
+      <div><span style="color:var(--ink-3)">电话</span><br><b style="font-size:13pt">(626) 559-6294</b></div>
+    </div>
+    <div style="margin-top:12px;font-size:10.5pt;color:var(--ink-2)">开通账号、使用问题、功能建议，随时找我，帮你搞定。</div>
+  </div>
+
+  <div style="margin-top:30px;text-align:center;color:var(--gold-deep);font-weight:800;font-size:14pt">Hastrid Booking · 让预约变简单</div>
+  <div style="text-align:center;color:var(--ink-3);font-size:10pt;margin-top:6px">hastridbooking.com</div>
+  <div class="footer-note">Hastrid Booking 商家使用手册 · 第 15 页</div>
+</section>
+
+</body>
+</html>
