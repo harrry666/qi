@@ -227,6 +227,7 @@ def init_db():
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_id INTEGER',
+        "ALTER TABLE appointments ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'zh'",
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS support_contact TEXT DEFAULT \'\'',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS calendar_token TEXT',
         '''CREATE TABLE IF NOT EXISTS platform_feedback (
