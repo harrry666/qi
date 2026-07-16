@@ -130,6 +130,11 @@ TRANSLATIONS = {
     'landing.cta_heading':    {'zh': '今天就开始接受预约。', 'en': 'Start taking bookings today.'},
     'landing.cta_sub':        {'zh': '已有 50+ 商家使用 · 首月免费试用', 'en': '50+ businesses already on board · First month free'},
     'landing.cta_button':     {'zh': '免费试用 1 个月', 'en': 'Start your free month'},
+    'landing.contact_eyebrow': {'zh': '想开店 / 有疑问', 'en': 'Questions? Get started'},
+    'landing.contact_heading': {'zh': '直接联系我，帮你开通', 'en': 'Contact me directly'},
+    'landing.contact_sub':     {'zh': '开通账号、使用问题、演示，随时找我。', 'en': 'Account setup, questions, a live demo — reach out anytime.'},
+    'landing.contact_wechat':  {'zh': '微信', 'en': 'WeChat'},
+    'landing.contact_phone':   {'zh': '电话', 'en': 'Phone'},
     'landing.footer_tagline': {'zh': '专为本地小商家打造', 'en': 'Built for local small businesses'},
     'landing.footer_privacy': {'zh': '隐私政策', 'en': 'Privacy policy'},
 
