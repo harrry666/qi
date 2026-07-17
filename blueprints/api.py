@@ -1752,7 +1752,7 @@ def merchant_create_appointment():
         return jsonify({'error': '请输入有效的10位手机号'}), 400
     db = get_db()
     try:
-        svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
+        svc = db.execute('SELECT id, name, duration_mins FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
         if not svc:
             return jsonify({'error': '服务不存在'}), 404
         svc = dict(svc)
@@ -1760,6 +1760,13 @@ def merchant_create_appointment():
             own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, biz['id'])).fetchone()
             if not own:
                 staff_id = None
+        try:
+            date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': '日期时间格式无效'}), 400
+        from blueprints.booking import slots_for_service
+        if time_ not in slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=staff_id):
+            return jsonify({'error': '该时段已被锁定或预约，请选择其他时间'}), 409
         apt_dt = f'{date} {time_}'
         customer_id = upsert_customer(db, biz['id'], phone, name) if phone else None
         cancel_token = str(uuid.uuid4())

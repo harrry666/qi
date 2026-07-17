@@ -539,7 +539,7 @@ def calendar_quick_appointment():
     if len(phone) != 10:
         return jsonify({'error': t('flash.common.phone_invalid')}), 400
     db = get_db()
-    svc = db.execute('SELECT id, name FROM services WHERE id=%s AND business_id=%s', (service_id, current_user.id)).fetchone()
+    svc = db.execute('SELECT id, name, duration_mins FROM services WHERE id=%s AND business_id=%s', (service_id, current_user.id)).fetchone()
     if not svc:
         db.close()
         return jsonify({'error': t('flash.calendar.service_not_found')}), 404
@@ -547,6 +547,15 @@ def calendar_quick_appointment():
         own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, current_user.id)).fetchone()
         if not own:
             staff_id = None
+    try:
+        date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        db.close()
+        return jsonify({'error': t('flash.calendar.invalid_time_range')}), 400
+    from blueprints.booking import slots_for_service
+    if time_ not in slots_for_service(current_user.id, date_obj, svc['duration_mins'], service_id, staff_id=staff_id):
+        db.close()
+        return jsonify({'error': t('flash.calendar.slot_conflict')}), 409
     apt_dt = f'{date} {time_}'
     from db import upsert_customer
     customer_id = upsert_customer(db, current_user.id, phone, name)
