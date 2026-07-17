@@ -111,7 +111,7 @@ def filter_available(business_id, date_str, slots, duration_mins, staff_id=None)
         ).fetchall()
     else:
         blocks = db.execute(
-            "SELECT start_time, end_time FROM time_blocks WHERE business_id=%s AND date=%s AND staff_id IS NULL",
+            "SELECT start_time, end_time FROM time_blocks WHERE business_id=%s AND date=%s",
             (business_id, date_str)
         ).fetchall()
     db.close()
