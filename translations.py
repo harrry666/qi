@@ -676,6 +676,7 @@ TRANSLATIONS = {
     'flash.calendar.invalid_time_range': {'zh': '时间范围无效', 'en': 'Invalid time range'},
     'flash.calendar.fill_all_fields': {'zh': '请填写完整信息', 'en': 'Please fill in all fields'},
     'flash.calendar.service_not_found': {'zh': '服务不存在', 'en': 'Service not found'},
+    'flash.calendar.slot_conflict': {'zh': '该时段已被锁定或预约，请选择其他时间', 'en': 'This time is locked or already booked, please choose another time'},
 
     'admin.title': {'zh': '哈瓜小约 · 管理后台', 'en': 'Hastrid · Admin'},
     'admin.logout': {'zh': '退出', 'en': 'Log out'},
