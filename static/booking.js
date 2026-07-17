@@ -13,7 +13,7 @@ const T = {
   zh: {
     step_staff: '② 选员工', step_time: '② 选时间', step_time_s: '③ 选时间',
     step_info: '③ 填信息', step_info_s: '④ 填信息', step_confirm: '④ 确认', step_confirm_s: '⑤ 确认',
-    no_services: '暂无可用服务。', popular: '热门', price_tbd: '价格面议', any_staff: '任意可用',
+    no_services: '暂无可用服务。', price_tbd: '价格面议', any_staff: '任意可用',
     phone_invalid: '请先输入有效的10位美国手机号', sending: '发送中...', resend: '重新发送',
     send_code: '获取验证码', send_fail: '发送失败，请重试',
     need_name: '请填写姓名。', need_code: '请先点击「获取验证码」并输入收到的验证码',
@@ -27,7 +27,7 @@ const T = {
   en: {
     step_staff: '② Staff', step_time: '② Time', step_time_s: '③ Time',
     step_info: '③ Info', step_info_s: '④ Info', step_confirm: '④ Confirm', step_confirm_s: '⑤ Confirm',
-    no_services: 'No services available yet.', popular: 'Popular', price_tbd: 'Price on request', any_staff: 'Any available',
+    no_services: 'No services available yet.', price_tbd: 'Price on request', any_staff: 'Any available',
     phone_invalid: 'Please enter a valid 10-digit US phone number', sending: 'Sending...', resend: 'Resend',
     send_code: 'Send code', send_fail: 'Failed to send, please try again',
     need_name: 'Please enter your name.', need_code: 'Please tap "Send code" and enter the code you receive',
@@ -154,7 +154,6 @@ function renderServices() {
     return;
   }
   list.innerHTML = state.services.map((s, i) => {
-    const hotBadge = i === 0 ? `<span style="display:inline-block;background:#FBF4E3;color:#A8882A;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;border:1px solid #E8D59A;">${L('popular')}</span>` : '';
     const priceHtml = s.price
       ? `<div class="svc-price-main">$${s.price % 1 === 0 ? s.price|0 : s.price}</div>`
       : `<div class="svc-price-tbd">${L('price_tbd')}</div>`;
@@ -166,7 +165,7 @@ function renderServices() {
     <div class="service-item" onclick="selectService(${s.id})">
       <div class="svc-icon">${iconHtml}</div>
       <div class="svc-info">
-        <div class="svc-name">${esc(s.name)}${hotBadge}</div>
+        <div class="svc-name">${esc(s.name)}</div>
         ${s.name_sub ? `<div class="svc-name-sub">${esc(s.name_sub)}</div>` : ''}
         ${priceHtml}
       </div>
