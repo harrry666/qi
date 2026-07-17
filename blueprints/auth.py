@@ -259,6 +259,7 @@ def explore():
                LEFT JOIN services s ON s.business_id = b.id AND s.is_active = 1
                WHERE b.category = %s
                GROUP BY b.id
+               HAVING COUNT(s.id) > 0
                ORDER BY b.name''',
             (cat,)
         ).fetchall()
@@ -268,6 +269,7 @@ def explore():
                FROM businesses b
                LEFT JOIN services s ON s.business_id = b.id AND s.is_active = 1
                GROUP BY b.id
+               HAVING COUNT(s.id) > 0
                ORDER BY b.name'''
         ).fetchall()
     db.close()
