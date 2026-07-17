@@ -1007,9 +1007,15 @@ def import_customers():
     if not file or not file.filename:
         flash('flash.customers.csv_required', 'error')
         return redirect(url_for('dashboard.customers'))
-    try:
-        content = file.stream.read().decode('utf-8-sig')
-    except UnicodeDecodeError:
+    raw = file.stream.read()
+    content = None
+    for enc in ('utf-8-sig', 'gb18030'):
+        try:
+            content = raw.decode(enc)
+            break
+        except UnicodeDecodeError:
+            continue
+    if content is None:
         flash('flash.customers.csv_encoding', 'error')
         return redirect(url_for('dashboard.customers'))
     rows = list(csv.reader(io.StringIO(content)))
