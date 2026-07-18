@@ -1,4 +1,5 @@
 import os
+import sys
 import stripe
 from flask import Blueprint, request, redirect, url_for, jsonify, flash
 from flask_login import login_required, current_user
@@ -70,10 +71,15 @@ def checkout():
     if days >= 1:
         sub_data['trial_period_days'] = days
 
+    line_items = [{'price': os.environ['STRIPE_PRICE_ID'], 'quantity': 1}]
+    metered = os.environ.get('STRIPE_SMS_PRICE_ID', '')
+    if metered:
+        line_items.append({'price': metered})  # 用量计费项不能带 quantity
+
     session = stripe.checkout.Session.create(
         mode='subscription',
         customer=customer_id,
-        line_items=[{'price': os.environ['STRIPE_PRICE_ID'], 'quantity': 1}],
+        line_items=line_items,
         subscription_data=sub_data,
         client_reference_id=str(current_user.id),
         success_url=f"{_base()}/dashboard/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
@@ -81,6 +87,28 @@ def checkout():
         allow_promotion_codes=True,
     )
     return redirect(session.url, code=303)
+
+def report_sms_overage(business_id, segments):
+    """把超出配额的段数推给 Stripe Meter，按 $0.02/段累进下月账单。"""
+    meter = os.environ.get('STRIPE_METER_EVENT_NAME', '')
+    _init()
+    if not (stripe.api_key and meter and segments > 0):
+        return
+    db = get_db()
+    row = db.execute('SELECT stripe_customer_id, subscription_status FROM businesses WHERE id=%s',
+                     (business_id,)).fetchone()
+    db.close()
+    # comp / 试用期商家不计超额费
+    if not row or not row['stripe_customer_id'] or row['subscription_status'] != 'active':
+        return
+    try:
+        stripe.billing.MeterEvent.create(
+            event_name=meter,
+            payload={'stripe_customer_id': row['stripe_customer_id'], 'value': str(segments)},
+        )
+    except Exception as e:
+        print(f'[SMS] meter report failed biz={business_id} seg={segments}: {e}',
+              flush=True, file=sys.stderr)
 
 @stripe_bp.route('/dashboard/billing/success')
 @login_required

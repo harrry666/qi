@@ -251,6 +251,15 @@ def init_db():
             created_at TIMESTAMPTZ DEFAULT NOW(),
             reviewed_at TIMESTAMPTZ
         )''',
+        '''CREATE TABLE IF NOT EXISTS sms_usage (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            segments INTEGER NOT NULL DEFAULT 1,
+            kind TEXT NOT NULL DEFAULT 'other',
+            to_phone TEXT DEFAULT '',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )''',
+        'CREATE INDEX IF NOT EXISTS idx_sms_usage_biz_month ON sms_usage (business_id, created_at)',
         # Backfill: some old appointments (e.g. WeChat mini-program bookings before
         # create_booking() linked customers) have phone/name but no customer_id.
         '''INSERT INTO customers (business_id, phone, name, profile_token)

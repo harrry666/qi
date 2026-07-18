@@ -1,8 +1,33 @@
 import math
 from datetime import datetime, timezone
 
-PLAN_PRICE = '19.99'
+PLAN_PRICE = '29.00'
 TRIAL_DAYS = 30
+SMS_INCLUDED = 300          # 订阅内含短信段数/月
+SMS_OVERAGE_RATE = 0.02     # 超出后每段单价（成本约 $0.01225）
+
+def sms_usage(business_id, when=None):
+    """本自然月短信用量。返回 used / included / over / overage_cost。"""
+    from db import get_db
+    now = when or datetime.now(timezone.utc)
+    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    db = get_db()
+    row = db.execute(
+        'SELECT COALESCE(SUM(segments), 0) AS n FROM sms_usage '
+        'WHERE business_id=%s AND created_at >= %s',
+        (business_id, start)
+    ).fetchone()
+    db.close()
+    used = int(row['n'] if row else 0)
+    over = max(0, used - SMS_INCLUDED)
+    return {
+        'used': used,
+        'included': SMS_INCLUDED,
+        'over': over,
+        'overage_cost': round(over * SMS_OVERAGE_RATE, 2),
+        'pct': min(100, round(used / SMS_INCLUDED * 100)) if SMS_INCLUDED else 0,
+        'period_start': start,
+    }
 
 def _days_left(ends):
     if not ends:

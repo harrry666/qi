@@ -19,6 +19,15 @@
   .billing-active-note { text-align:center; padding:12px; border-radius:12px; background:#DCFCE7; color:#166534; font-weight:700; font-size:14px; }
   .billing-active-note.comp { background:var(--gold-light); color:var(--gold-h); border:1px solid var(--gold-border); }
   .billing-badge.comp { background:var(--gold-light); color:var(--gold-h); border:1px solid var(--gold-border); }
+  .sms-card { max-width:420px; margin-top:20px; background:var(--white); border:1px solid var(--border); border-radius:20px; padding:24px 28px; }
+  .sms-title { font-size:14px; font-weight:800; margin-bottom:14px; }
+  .sms-count { font-size:32px; font-weight:800; color:var(--gold-h); line-height:1; }
+  .sms-count small { font-size:15px; font-weight:600; color:var(--muted); }
+  .sms-bar { height:8px; border-radius:6px; background:var(--border); overflow:hidden; margin:14px 0 10px; }
+  .sms-bar span { display:block; height:100%; background:var(--gold-h); border-radius:6px; }
+  .sms-bar.over span { background:#DC2626; }
+  .sms-note { font-size:13px; color:var(--muted); line-height:1.5; }
+  .sms-over { font-size:13px; font-weight:700; color:#991B1B; }
 </style>
 
 <div class="page-title">{{ t('dash.billing.page_title') }}</div>
@@ -60,5 +69,17 @@
     </form>
     <p class="billing-note">{{ t('dash.billing.subscribe_note') }}</p>
   {% endif %}
+</div>
+
+<div class="sms-card">
+  <div class="sms-title">{{ t('dash.billing.sms_title') }}</div>
+  <div class="sms-count">{{ sms.used }}<small> / {{ sms.included }} {{ t('dash.billing.sms_unit') }}</small></div>
+  <div class="sms-bar{% if sms.over %} over{% endif %}"><span style="width:{{ sms.pct }}%"></span></div>
+  {% if sms.over %}
+    <div class="sms-over">{{ t('dash.billing.sms_over', n=sms.over, amt='%.2f'|format(sms.overage_cost)) }}</div>
+  {% else %}
+    <div class="sms-note">{{ t('dash.billing.sms_within', n=sms.included - sms.used) }}</div>
+  {% endif %}
+  <div class="sms-note" style="margin-top:8px;">{{ t('dash.billing.sms_rate_note', rate='%.2f'|format(sms_rate)) }}</div>
 </div>
 {% endblock %}

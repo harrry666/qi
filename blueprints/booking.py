@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 _LA = ZoneInfo('America/Los_Angeles')
 import os
 import re
+import math
 import threading
 import sys
 import uuid
@@ -31,16 +32,52 @@ def format_phone(raw):
     return f'+1{digits}'
 
 
-def send_sms(to_phone, message):
+def count_segments(message):
+    """短信段数。含非 GSM 字符（如中文）走 UCS-2：单段 70 字，多段 67 字。"""
+    unicode_msg = any(ord(c) > 127 for c in message)
+    limit, multi = (70, 67) if unicode_msg else (160, 153)
+    n = len(message)
+    return 1 if n <= limit else math.ceil(n / multi)
+
+
+def record_sms(business_id, segments, kind='other', to_phone=''):
+    if not business_id:
+        return
+    try:
+        db = get_db()
+        db.execute(
+            'INSERT INTO sms_usage (business_id, segments, kind, to_phone) VALUES (%s, %s, %s, %s)',
+            (business_id, segments, kind, to_phone)
+        )
+        db.commit()
+        db.close()
+    except Exception as e:
+        print(f'[SMS] usage record failed biz={business_id}: {e}', flush=True, file=sys.stderr)
+        return
+    try:
+        from billing import sms_usage, SMS_INCLUDED
+        from blueprints.stripe_billing import report_sms_overage
+        used = sms_usage(business_id)['used']
+        # 只上报这批里真正跨过配额线的那部分，避免重复计费
+        billable = min(segments, max(0, used - SMS_INCLUDED))
+        if billable > 0:
+            report_sms_overage(business_id, billable)
+    except Exception as e:
+        print(f'[SMS] overage check failed biz={business_id}: {e}', flush=True, file=sys.stderr)
+
+
+def send_sms(to_phone, message, business_id=None, kind='other'):
     if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM]):
         print(f'[SMS] credentials missing, skip {to_phone}', flush=True, file=sys.stderr)
         return
     try:
         from twilio.rest import Client
-        Client(TWILIO_SID, TWILIO_TOKEN).messages.create(
+        msg = Client(TWILIO_SID, TWILIO_TOKEN).messages.create(
             body=message, from_=TWILIO_FROM, to=to_phone
         )
-        print(f'[SMS] sent to {to_phone}', flush=True, file=sys.stderr)
+        segments = int(getattr(msg, 'num_segments', 0) or 0) or count_segments(message)
+        record_sms(business_id, segments, kind, to_phone)
+        print(f'[SMS] sent to {to_phone} ({segments} seg, biz={business_id})', flush=True, file=sys.stderr)
     except Exception as e:
         print(f'[SMS] FAILED {to_phone}: {e}', flush=True, file=sys.stderr)
 
@@ -339,7 +376,7 @@ def api_create(slug):
             + (f"问询致电{biz_phone}，" if biz_phone else '')
             + "取消回复「取消」"
         )
-    threading.Thread(target=send_sms, args=(formatted_phone, customer_msg), daemon=True).start()
+    threading.Thread(target=send_sms, args=(formatted_phone, customer_msg, biz['id'], 'confirm'), daemon=True).start()
 
     if biz_phone:
         last4 = re.sub(r'[^0-9]', '', phone)[-4:]
@@ -349,7 +386,7 @@ def api_create(slug):
             + (f"备注：{comment}\n" if comment else '')
             + f"取消回复「取消 {last4}」"
         )
-        threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
+        threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg, biz['id'], 'owner_new'), daemon=True).start()
 
     return jsonify({'success': True, 'service': svc['name']})
 
@@ -429,7 +466,7 @@ def sms_incoming():
                         f"原定时间：{dt_display}\n"
                         + (f"如有疑问请致电：{merchant['phone']}" if merchant.get('phone') else '')
                     )
-                threading.Thread(target=send_sms, args=(format_phone(apt['phone']), customer_msg), daemon=True).start()
+                threading.Thread(target=send_sms, args=(format_phone(apt['phone']), customer_msg, apt['business_id'], 'cancel_by_biz'), daemon=True).start()
                 resp.message(f'已取消 {apt["customer_name"]}（尾号{last4}）的预约（{dt_display}）。')
             else:
                 resp.message(f'未找到手机尾号为 {last4} 的待取消预约。')
@@ -467,7 +504,7 @@ def sms_incoming():
                         f"服务：{apt['service_name']}\n"
                         f"原定时间：{dt_display}"
                     )
-                    threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), owner_msg), daemon=True).start()
+                    threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), owner_msg, apt['business_id'], 'owner_cancel'), daemon=True).start()
                 resp.message(f'已取消您在【{apt["biz_name"]}】的预约（{dt_display}）。如需重新预约，请打开哈瓜小约。')
             elif merchant:
                 # 发信人是商家但没有客人预约，提示商家格式
@@ -531,7 +568,7 @@ def cancel_by_token(token):
                 f"服务：{apt['service_name']}\n"
                 f"原定时间：{apt['dt_display_zh']}"
             )
-            threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(apt['biz_phone']), msg, apt['business_id'], 'owner_cancel'), daemon=True).start()
 
         return render_template('cancel.html', success=True, apt=apt)
 
@@ -588,7 +625,7 @@ def my_request(slug):
             base_url = os.environ.get('BASE_URL', request.host_url).rstrip('/')
             link = f"{base_url}/my/{cust['profile_token']}"
             msg = f"【{biz['name']}】你的专属客户档案链接：\n{link}\n\n可以设置偏好、上传照片。请勿转发给他人。"
-            threading.Thread(target=send_sms, args=(format_phone(phone), msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(phone), msg, biz['id'], 'profile_link'), daemon=True).start()
             sent = True
         else:
             error = t('flash.myrequest.not_found')

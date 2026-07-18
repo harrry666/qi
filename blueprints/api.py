@@ -300,7 +300,7 @@ def create_booking():
                 + (f"问询致电{biz_phone}，" if biz_phone else '')
                 + "取消回复「取消」"
             )
-        threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg), daemon=True).start()
+        threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg, biz['id'], 'confirm'), daemon=True).start()
 
         if biz_phone:
             import re as _re
@@ -311,7 +311,7 @@ def create_booking():
                 + (f"备注：{comment}\n" if comment else '')
                 + f"取消回复「取消 {last4}」"
             )
-            threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg, biz['id'], 'owner_new'), daemon=True).start()
 
         return jsonify({'success': True, 'cancel_token': cancel_token, 'message': '预约成功'})
     except Exception as e:
@@ -381,7 +381,7 @@ def cancel_booking(cancel_token):
                 f"服务：{row['service_name']}\n"
                 f"原定时间：{dt_display}"
             )
-            threading.Thread(target=send_sms, args=(format_phone(row['biz_phone']), owner_msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(row['biz_phone']), owner_msg, row['business_id'], 'owner_cancel'), daemon=True).start()
 
         if row.get('phone'):
             if row.get('lang') == 'en':
@@ -396,7 +396,7 @@ def cancel_booking(cancel_token):
                     f"服务：{row['service_name']}\n"
                     f"原定时间：{dt_display}"
                 )
-            threading.Thread(target=send_sms, args=(format_phone(row['phone']), customer_msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(row['phone']), customer_msg, row['business_id'], 'cancel_confirm'), daemon=True).start()
 
         return jsonify({'success': True})
     except Exception as e:
@@ -580,13 +580,13 @@ def merchant_cancel_appointment(apt_id):
                     f"时间：{dt_display}\n\n"
                     + (f"如需重新预约请致电：{biz_phone}" if biz_phone else "如需重新预约请联系商家。")
                 )
-            threading.Thread(target=send_sms, args=(format_phone(cust_phone), message), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(cust_phone), message, biz['id'], 'cancel_by_biz'), daemon=True).start()
         if biz_phone:
             biz_msg = (
                 f"【取消提醒】客人 {row['customer_name']} 的预约已取消。\n"
                 f"服务：{row['service_name']}\n时间：{dt_display}"
             )
-            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg, biz['id'], 'owner_cancel'), daemon=True).start()
 
         return jsonify({'success': True})
     except Exception as e:
@@ -1801,7 +1801,7 @@ def merchant_create_appointment():
             + "取消回复「取消」"
         )
     if phone:
-        threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
+        threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg, biz['id'], 'confirm'), daemon=True).start()
     return jsonify({'success': True})
 
 
@@ -1890,14 +1890,14 @@ def merchant_reschedule_appointment(apt_id):
                 f"服务：{row['service_name']}\n{time_line}\n\n"
                 + (f"如有疑问请致电：{biz_phone}" if biz_phone else "如有疑问请联系商家。")
             )
-        threading.Thread(target=send_sms, args=(format_phone(cust_phone), cust_msg), daemon=True).start()
+        threading.Thread(target=send_sms, args=(format_phone(cust_phone), cust_msg, biz['id'], 'reschedule'), daemon=True).start()
     if biz_phone:
         biz_time = (f"{old_disp} → {new_disp}" if time_changed else new_disp)
         biz_msg = (
             f"【预约更新】客人 {row['customer_name']} 的预约有更新。\n"
             f"服务：{row['service_name']}\n{biz_time}"
         )
-        threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
+        threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg, biz['id'], 'owner_reschedule'), daemon=True).start()
     return jsonify({'success': True})
 
 

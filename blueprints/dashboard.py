@@ -593,7 +593,7 @@ def calendar_quick_appointment():
             + (f"问询致电{biz_phone}，" if biz_phone else '')
             + "取消回复「取消」"
         )
-    threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
+    threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg, current_user.id, 'confirm'), daemon=True).start()
 
     return jsonify({'success': True})
 
@@ -661,13 +661,13 @@ def cancel_appointment(apt_id):
                 f"时间：{dt_display}\n\n"
                 + (f"如需重新预约请致电：{biz_phone}" if biz_phone else "如需重新预约请联系商家。")
             )
-        threading.Thread(target=send_sms, args=(format_phone(row['phone']), message), daemon=True).start()
+        threading.Thread(target=send_sms, args=(format_phone(row['phone']), message, current_user.id, 'cancel_by_biz'), daemon=True).start()
         if biz_phone:
             biz_msg = (
                 f"【取消提醒】客人 {row['customer_name']} 的预约已取消。\n"
                 f"服务：{row['service_name']}\n时间：{dt_display}"
             )
-            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg, current_user.id, 'owner_cancel'), daemon=True).start()
 
     flash('flash.apt.cancelled', 'success')
     return redirect(url_for('dashboard.appointments'))
@@ -745,14 +745,14 @@ def reschedule_appointment(apt_id):
                 f"服务：{row['service_name']}\n{time_line}\n\n"
                 + (f"如有疑问请致电：{biz_phone}" if biz_phone else "如有疑问请联系商家。")
             )
-        threading.Thread(target=send_sms, args=(format_phone(row['phone']), cust_msg), daemon=True).start()
+        threading.Thread(target=send_sms, args=(format_phone(row['phone']), cust_msg, current_user.id, 'reschedule'), daemon=True).start()
         if biz_phone:
             biz_time = (f"{old_disp} → {new_disp}" if time_changed else new_disp)
             biz_msg = (
                 f"【预约更新】客人 {row['customer_name']} 的预约有更新。\n"
                 f"服务：{row['service_name']}\n{biz_time}"
             )
-            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg), daemon=True).start()
+            threading.Thread(target=send_sms, args=(format_phone(biz_phone), biz_msg, current_user.id, 'owner_reschedule'), daemon=True).start()
     flash('flash.apt.rescheduled', 'success')
     return redirect(url_for('dashboard.appointments'))
 
@@ -1195,8 +1195,10 @@ def customer_adjust_balance(cid):
 @dashboard_bp.route('/billing')
 @login_required
 def billing():
-    from billing import PLAN_PRICE
-    return render_template('dashboard/billing.html', price=PLAN_PRICE)
+    from billing import PLAN_PRICE, SMS_INCLUDED, SMS_OVERAGE_RATE, sms_usage
+    return render_template('dashboard/billing.html', price=PLAN_PRICE,
+                           sms=sms_usage(current_user.id),
+                           sms_included=SMS_INCLUDED, sms_rate=SMS_OVERAGE_RATE)
 
 @dashboard_bp.route('/settings', methods=['GET', 'POST'])
 @login_required

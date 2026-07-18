@@ -121,6 +121,7 @@ def broadcast_approve(bid):
         except Exception:
             phones = []
         body = row['message'] + '\n\n【' + (row['biz_name'] or '') + '】回复 STOP 退订'
+        biz_id = row['business_id']
         db.execute(
             "UPDATE broadcast_requests SET status='approved', sent_count=%s, reviewed_at=NOW() WHERE id=%s",
             (len(phones), bid)
@@ -129,10 +130,10 @@ def broadcast_approve(bid):
     finally:
         db.close()
 
-    def _send_all(nums, text):
+    def _send_all(nums, text, business_id):
         for n in nums:
-            send_sms(n, text)
-    threading.Thread(target=_send_all, args=(phones, body), daemon=True).start()
+            send_sms(n, text, business_id, 'broadcast')
+    threading.Thread(target=_send_all, args=(phones, body, biz_id), daemon=True).start()
     return redirect(url_for('admin.broadcasts'))
 
 @admin_bp.route('/broadcasts/<int:bid>/reject', methods=['POST'])
