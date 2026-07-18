@@ -1,15 +1,22 @@
-"""跑法: python3 tests/test_time_blocks.py（连本地 qi_dev，用完自动清理测试商家）"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+"""时段锁定回归测试。跑法: pytest tests/test_time_blocks.py（连本地 qi_dev，用完自动清理测试商家）
+
+护的是 2026-07-16 那个 bug：后台锁定的时段客户还能约进去。
+改 booking.py 排档/锁定逻辑前必跑。
+"""
 from datetime import date
-from db import get_db
-from blueprints.booking import slots_for_service
+import pytest
+
+pytestmark = pytest.mark.db
+
+# db / booking 的 import 必须延后到函数内：extensions.py 在 import 时就建连接池，
+# 顶层 import 会让「连不上库自动跳过」和「拦住生产库」的守门在收集阶段就失效。
 
 SLUG = 'regtest-time-blocks'
 DATE = date(2026, 7, 20)  # Monday
 
-def setup(with_staff_link):
+
+def make_business(with_staff_link):
+    from db import get_db
     db = get_db()
     db.execute("DELETE FROM businesses WHERE slug=%s", (SLUG,))
     db.commit()
@@ -36,13 +43,22 @@ def setup(with_staff_link):
     db.close()
     return biz_id, service_id, staff_a, staff_b
 
-def teardown():
+
+@pytest.fixture
+def shop(request):
+    """建测试商家，测试跑完无论成败都删掉。参数 True=员工关联了服务"""
+    from db import get_db
+    with_staff_link = getattr(request, 'param', False)
+    ids = make_business(with_staff_link)
+    yield ids
     db = get_db()
     db.execute("DELETE FROM businesses WHERE slug=%s", (SLUG,))
     db.commit()
     db.close()
 
+
 def block(biz_id, staff_id, start, end):
+    from db import get_db
     db = get_db()
     db.execute(
         "INSERT INTO time_blocks (business_id, staff_id, date, start_time, end_time, reason) VALUES (%s,%s,%s,%s,%s,'')",
@@ -51,50 +67,32 @@ def block(biz_id, staff_id, start, end):
     db.commit()
     db.close()
 
-def check(label, condition):
-    status = 'PASS' if condition else 'FAIL'
-    print(f'[{status}] {label}')
-    return condition
 
-def test_no_staff_linked_respects_staff_specific_block():
-    """无员工关联服务：锁定某个员工的时段，客户"不限员工"预约也不能约进去（本次修复的 bug）"""
-    biz_id, service_id, staff_a, _ = setup(with_staff_link=False)
-    try:
-        block(biz_id, staff_a, '10:30', '11:00')
-        slots = slots_for_service(biz_id, DATE, 30, service_id)
-        return check('无关联员工时，员工专属锁定生效', '10:30' not in slots)
-    finally:
-        teardown()
+@pytest.mark.parametrize('shop', [False], indirect=True)
+def test_no_staff_linked_respects_staff_specific_block(shop):
+    """无员工关联服务：锁定某个员工的时段，客户"不限员工"预约也不能约进去（2026-07-16 修的 bug）"""
+    biz_id, service_id, staff_a, _ = shop
+    block(biz_id, staff_a, '10:30', '11:00')
+    from blueprints.booking import slots_for_service
+    slots = slots_for_service(biz_id, DATE, 30, service_id)
+    assert '10:30' not in slots, '员工专属锁定没生效，锁了还能约进去'
 
-def test_multi_staff_union_still_works():
+
+@pytest.mark.parametrize('shop', [True], indirect=True)
+def test_multi_staff_union_still_works(shop):
     """多员工都关联服务：锁定其中一人，另一人还有空，该时段仍应可约（不能锁过头）"""
-    biz_id, service_id, staff_a, staff_b = setup(with_staff_link=True)
-    try:
-        block(biz_id, staff_a, '10:30', '11:00')
-        slots = slots_for_service(biz_id, DATE, 30, service_id)
-        return check('锁一人不影响其他有空员工', '10:30' in slots)
-    finally:
-        teardown()
+    biz_id, service_id, staff_a, _ = shop
+    block(biz_id, staff_a, '10:30', '11:00')
+    from blueprints.booking import slots_for_service
+    slots = slots_for_service(biz_id, DATE, 30, service_id)
+    assert '10:30' in slots, '锁一个员工把其他有空的员工也锁掉了'
 
-def test_whole_store_block_always_blocks():
+
+@pytest.mark.parametrize('shop', [False], indirect=True)
+def test_whole_store_block_always_blocks(shop):
     """整店锁定（staff_id 为空）：任何情况下都不可约"""
-    biz_id, service_id, _, _ = setup(with_staff_link=False)
-    try:
-        block(biz_id, None, '10:30', '11:00')
-        slots = slots_for_service(biz_id, DATE, 30, service_id)
-        return check('整店锁定生效', '10:30' not in slots)
-    finally:
-        teardown()
-
-if __name__ == '__main__':
-    results = [
-        test_no_staff_linked_respects_staff_specific_block(),
-        test_multi_staff_union_still_works(),
-        test_whole_store_block_always_blocks(),
-    ]
-    if all(results):
-        print('\n全部通过')
-        sys.exit(0)
-    else:
-        print('\n有测试失败，锁定时段的逻辑可能又被破坏了')
-        sys.exit(1)
+    biz_id, service_id, _, _ = shop
+    block(biz_id, None, '10:30', '11:00')
+    from blueprints.booking import slots_for_service
+    slots = slots_for_service(biz_id, DATE, 30, service_id)
+    assert '10:30' not in slots, '整店锁定没生效'
