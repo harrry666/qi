@@ -451,7 +451,7 @@ def merchant_appointments():
     biz, err = require_merchant()
     if err:
         return err
-    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    date_str = request.args.get('date', datetime.now(_LA).strftime('%Y-%m-%d'))
     db = get_db()
     try:
         rows = db.execute(
@@ -475,7 +475,7 @@ def merchant_appointments_list():
     if err:
         return err
     filter_val = request.args.get('filter', 'all')
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = datetime.now(_LA).strftime('%Y-%m-%d')
     db = get_db()
     try:
         sql = (
@@ -764,7 +764,7 @@ def merchant_analytics():
         return err
     db = get_db()
     try:
-        now = datetime.now()
+        now = datetime.now(_LA)
         this_month = now.strftime('%Y-%m')
         last_month = (now.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
         tomorrow = (now + timedelta(days=1)).strftime('%Y-%m-%d')

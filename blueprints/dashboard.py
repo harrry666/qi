@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from db import get_db, normalize_phone
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import threading
 import os
 import uuid
@@ -13,6 +14,8 @@ from blueprints.auth import CATEGORIES
 from cloud import upload_to_cloudinary as _upload_to_cloudinary
 from translations import t
 from flask import g
+
+_LA = ZoneInfo('America/Los_Angeles')
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -45,8 +48,8 @@ def fmt_dt(value):
 @login_required
 def index():
     db = get_db()
-    today = datetime.now().strftime('%Y-%m-%d')
-    now = datetime.now()
+    today = datetime.now(_LA).strftime('%Y-%m-%d')
+    now = datetime.now(_LA)
     hour = now.hour
     greeting = t('dash.index.greeting_morning') if hour < 12 else (t('dash.index.greeting_afternoon') if hour < 17 else t('dash.index.greeting_evening'))
 
@@ -109,7 +112,7 @@ def index():
 @login_required
 def analytics():
     db = get_db()
-    now = datetime.now()
+    now = datetime.now(_LA)
     this_month = now.strftime('%Y-%m')
     last_month_dt = (now.replace(day=1) - timedelta(days=1))
     last_month = last_month_dt.strftime('%Y-%m')
@@ -602,7 +605,7 @@ def calendar_quick_appointment():
 def appointments():
     f = request.args.get('filter', 'upcoming')
     db = get_db()
-    now = datetime.now().strftime('%Y-%m-%d %H:%M')
+    now = datetime.now(_LA).strftime('%Y-%m-%d %H:%M')
 
     base = ("SELECT a.*, s.name as service_name, s.name_sub, s.duration_mins, s.price "
             "FROM appointments a JOIN services s ON a.service_id=s.id WHERE a.business_id=%s")
@@ -834,7 +837,7 @@ def blocks():
         (current_user.id,)
     ).fetchall()
     db.close()
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = datetime.now(_LA).strftime('%Y-%m-%d')
     date_fmt = '%b %-d' if getattr(g, 'lang', 'zh') == 'en' else '%-m月%-d日'
     block_list = []
     for r in rows:

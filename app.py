@@ -8,6 +8,9 @@ import sys
 import threading
 import atexit
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+_LA = ZoneInfo('America/Los_Angeles')
 
 load_dotenv()
 
@@ -146,7 +149,7 @@ def send_reminders():
     from db import get_db
     from blueprints.booking import send_sms, format_phone
     try:
-        now = datetime.now()
+        now = datetime.now(_LA)
         window_start = (now + timedelta(hours=23)).strftime('%Y-%m-%d %H:%M')
         window_end   = (now + timedelta(hours=25)).strftime('%Y-%m-%d %H:%M')
         db = get_db()
@@ -191,7 +194,7 @@ def send_wx_reminders():
     if not wx_configured():
         return
     try:
-        now = datetime.now()
+        now = datetime.now(_LA)
         window_start = (now + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M')
         window_end   = (now + timedelta(minutes=90)).strftime('%Y-%m-%d %H:%M')
         db = get_db()
