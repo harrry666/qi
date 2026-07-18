@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Hastrid 哈瓜小约 · 商家传单</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Heiti SC", sans-serif;
+    color: #141414;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 210mm; height: 297mm;
+    padding: 16mm 15mm 12mm;
+    display: flex; flex-direction: column;
+  }
+  .serif { font-family: "Songti SC", "Noto Serif SC", "STSong", serif; }
+
+  /* 页眉 */
+  .head { display: flex; align-items: baseline; justify-content: space-between;
+          padding-bottom: 5mm; border-bottom: 1.2px solid #141414; }
+  .brand { display: flex; align-items: baseline; gap: 3mm; }
+  .brand .en { font-size: 21pt; font-weight: 600; letter-spacing: .5px; }
+  .brand .cn { font-size: 11pt; color: #555; letter-spacing: 1px; }
+  .tagline { font-size: 8.5pt; font-weight: 600; letter-spacing: 2px; color: #333; }
+
+  /* 主标题 */
+  .hero { margin-top: 11mm; }
+  h1 { font-size: 33pt; font-weight: 600; letter-spacing: 1px; line-height: 1.32; }
+  h1 u { text-decoration: none; border-bottom: 2.5px solid #141414; padding-bottom: 1mm; }
+  .lead { margin-top: 6mm; font-size: 10.5pt; line-height: 1.95; color: #333; max-width: 165mm; }
+
+  /* 条目 */
+  .items { margin-top: 10mm; border-top: 1px solid #ddd; }
+  .item { display: flex; gap: 6mm; padding: 4.6mm 0; border-bottom: 1px solid #ddd; }
+  .num { font-size: 10pt; color: #b0b0b0; width: 8mm; flex: none; padding-top: .8mm; }
+  .it-title { font-size: 12.5pt; font-weight: 600; width: 34mm; flex: none; letter-spacing: .5px; }
+  .it-body { font-size: 9.5pt; line-height: 1.8; color: #444; }
+
+  /* 价格块 */
+  .price { display: flex; gap: 6mm; padding: 5.5mm 0 5mm; border-bottom: 1px solid #ddd;
+           background: #fcfbf7; }
+  .price .it-title { color: #8a6d1f; }
+  .price-main { font-size: 17pt; font-weight: 600; letter-spacing: .5px; }
+  .price-main .unit { font-size: 10pt; font-weight: 400; color: #555; }
+  .price-sub { margin-top: 2.5mm; font-size: 9.5pt; line-height: 1.8; color: #444; }
+  .price-sub b { font-weight: 600; color: #141414; }
+
+  /* 联系块 */
+  .contact { margin-top: auto; background: #141414; color: #fff;
+             padding: 7mm 8mm; display: flex; gap: 8mm; align-items: center; }
+  .qr { text-align: center; flex: none; }
+  .qr img { width: 32mm; height: 32mm; display: block; background: #fff; }
+  .qr span { display: block; margin-top: 2.5mm; font-size: 7.5pt; color: #bbb; }
+  .c-body { flex: 1; }
+  .c-body h3 { font-size: 11pt; font-weight: 600; margin-bottom: 4mm; letter-spacing: .5px; }
+  .row { display: flex; align-items: baseline; gap: 5mm; margin-bottom: 2.2mm; }
+  .row .k { font-size: 8.5pt; color: #999; width: 12mm; flex: none; }
+  .row .v { font-size: 13pt; font-weight: 600; letter-spacing: .3px; }
+  .row .v.web { font-size: 11.5pt; }
+  .c-note { margin-top: 3.5mm; font-size: 8pt; color: #999; line-height: 1.7; }
+
+  /* 页脚 */
+  .foot { margin-top: 5mm; padding-top: 3.5mm; border-top: 1px solid #ddd;
+          display: flex; justify-content: space-between; font-size: 8pt; color: #666; }
+  .foot b { color: #141414; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div class="brand">
+      <span class="en serif">Hastrid</span>
+      <span class="cn">哈瓜小约</span>
+    </div>
+    <div class="tagline">在线预约系统 · 华人小商家专用</div>
+  </div>
+
+  <div class="hero">
+    <h1 class="serif">客人自己约，<u>你专心做生意</u></h1>
+    <p class="lead">
+      客人用微信小程序，或者手机浏览器点开你的预约链接，直接选服务、挑时间下单。
+      你在手机上管预约、管客人、管员工排班，不用开电脑。
+      美甲、理发、按摩、宠物美容这类靠预约做生意的小店都能用。
+    </p>
+  </div>
+
+  <div class="items">
+    <div class="item">
+      <div class="num serif">01</div>
+      <div class="it-title serif">接不了电话<br>也不丢单</div>
+      <div class="it-body">
+        你正在给客人做头发，电话响了接不了，那一单就飞了。
+        现在客人自己在手机上挑时间下单，半夜也能约，你第二天打开就看到。
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="num serif">02</div>
+      <div class="it-title serif">微信、网页<br>两边都能用</div>
+      <div class="it-body">
+        客人可以微信搜「哈瓜小约」小程序，也可以直接点你的专属链接，
+        用手机浏览器打开就能约，不用下载任何 App。
+        你自己管店也一样，小程序和电脑网页版数据实时同步。
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="num serif">03</div>
+      <div class="it-title serif">自动提醒<br>少放鸽子</div>
+      <div class="it-body">
+        预约前一天自动给客人发短信提醒，微信下单的客人还会多收一条微信提醒。
+        客人忘了来的情况会明显变少。
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="num serif">04</div>
+      <div class="it-title serif">客人信息<br>不用记本子</div>
+      <div class="it-body">
+        谁来过、做过什么、上次哪天来的、有什么偏好，系统自动存档。
+        老客回头一查就知道，不用再翻手机备忘录。
+      </div>
+    </div>
+
+    <div class="item price">
+      <div class="num serif">05</div>
+      <div class="it-title serif">价格透明</div>
+      <div class="it-body">
+        <div class="price-main">$29.99 <span class="unit">/ 月，含 300 条短信提醒</span></div>
+        <div class="price-sub">
+          先<b>免费用 30 天</b>，觉得好用再付，随时可停，不绑合约。<br>
+          界面全中文，本地在读大学生开发，<b>可以上门帮你设置好</b>再走。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact">
+    <div class="qr">
+      <img src="assets/mp_qr.png" alt="哈瓜小约小程序码">
+      <span>微信扫一扫体验</span>
+    </div>
+    <div class="c-body">
+      <h3>老板不在？先扫码看看，感兴趣随时联系我</h3>
+      <div class="row"><span class="k">网页版</span><span class="v web">hastridbooking.com</span></div>
+      <div class="row"><span class="k">电话</span><span class="v">626-559-6294</span></div>
+      <div class="row"><span class="k">微信</span><span class="v">ii9so_lovz</span></div>
+      <div class="c-note">微信搜「哈瓜小约」小程序也能找到 · 加微信我可以发一段演示视频给你看</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>美甲 · 理发 · 按摩 · 宠物美容 · 私厨 · 家教等预约类生意均适用</span>
+    <span><b>本地在读大学生独立开发，可上门协助设置</b></span>
+  </div>
+
+</div>
+</body>
+</html>
