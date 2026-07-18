@@ -145,7 +145,6 @@ def handle_csrf_error(e):
 def send_reminders():
     from db import get_db
     from blueprints.booking import send_sms, format_phone
-    base_url = os.environ.get('BASE_URL', '').rstrip('/')
     try:
         now = datetime.now()
         window_start = (now + timedelta(hours=23)).strftime('%Y-%m-%d %H:%M')
@@ -173,13 +172,12 @@ def send_reminders():
                     dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
                 except Exception:
                     dt_display = row['appointment_dt']
-                cancel_part = f"\n\n如需取消：{base_url}/cancel/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
                 msg = (
-                    f"【预约提醒】{row['customer_name']}，您明天在【{row['biz_name']}】有一个预约。\n\n"
+                    f"【预约提醒】{row['customer_name']} 明天在 {row['biz_name']} 有预约\n"
                     f"服务：{row['service_name']}\n"
                     f"时间：{dt_display}\n"
-                    + (f"地址：{row['address']}" if row['address'] else '')
-                    + cancel_part
+                    + (f"地址：{row['address']}\n" if row['address'] else '')
+                    + "取消回复「取消」"
                 )
                 threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg), daemon=True).start()
         db.close()

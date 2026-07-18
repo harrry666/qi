@@ -286,23 +286,21 @@ def create_booking():
 
         if lang == 'en':
             customer_msg = (
-                f"[Appointment Confirmed] Hi {customer_name}, your appointment at {biz['name']} is confirmed.\n"
+                f"[Confirmed] {customer_name}, your {biz['name']} appointment is set.\n"
                 f"Service: {svc['name']}\n"
                 f"Time: {dt_display_en}\n"
-                + (f"Address: {biz['address']}\n" if biz.get('address') else '')
-                + (f"Questions? Call {biz_phone}\n" if biz_phone else '')
-                + (f"\nCancel: {cancel_url}" if cancel_url else '')
-                + "\nOr reply CANCEL to this text"
+                + (f"Addr: {biz['address']}\n" if biz.get('address') else '')
+                + (f"Call {biz_phone}. " if biz_phone else '')
+                + "Reply CANCEL to cancel."
             )
         else:
             customer_msg = (
-                f"【预约确认】{customer_name}，您在【{biz['name']}】的预约已确认。\n\n"
+                f"【预约确认】{customer_name} 您在 {biz['name']} 的预约已确认\n"
                 f"服务：{svc['name']}\n"
                 f"时间：{dt_display}\n"
                 + (f"地址：{biz['address']}\n" if biz.get('address') else '')
-                + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
-                + (f"\n如需取消：{cancel_url}" if cancel_url else '')
-                + "\n或直接回复本短信「取消」"
+                + (f"问询致电{biz_phone}，" if biz_phone else '')
+                + "取消回复「取消」"
             )
         threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg), daemon=True).start()
 
@@ -310,13 +308,10 @@ def create_booking():
             import re as _re
             last4 = _re.sub(r'[^0-9]', '', phone)[-4:]
             owner_msg = (
-                f"【新预约】{biz['name']}\n\n"
-                f"客人：{customer_name}\n"
-                f"电话：{phone}\n"
-                f"服务：{svc['name']}\n"
-                f"时间：{dt_display}\n"
+                f"【新预约】{customer_name} {phone}\n"
+                f"{svc['name']}｜{dt_display}\n"
                 + (f"备注：{comment}\n" if comment else '')
-                + f"\n如需取消，回复「取消 {last4}」"
+                + f"取消回复「取消 {last4}」"
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg), daemon=True).start()
 
@@ -1795,21 +1790,19 @@ def merchant_create_appointment():
     biz_phone = biz.get('phone') or ''
     if lang == 'en':
         customer_msg = (
-            f"[Appointment Confirmed] Hi {name}, your appointment at {biz['name']} is confirmed.\n"
+            f"[Confirmed] {name}, your {biz['name']} appointment is set.\n"
             f"Service: {svc['name']}\n"
             f"Time: {dt_display_en}\n"
-            + (f"Questions? Call {biz_phone}\n" if biz_phone else '')
-            + (f"\nCancel: {cancel_url}" if cancel_url else '')
-            + "\nOr reply CANCEL to this text"
+            + (f"Call {biz_phone}. " if biz_phone else '')
+            + "Reply CANCEL to cancel."
         )
     else:
         customer_msg = (
-            f"【预约确认】{name}，您在【{biz['name']}】的预约已确认。\n\n"
+            f"【预约确认】{name} 您在 {biz['name']} 的预约已确认\n"
             f"服务：{svc['name']}\n"
             f"时间：{dt_display}\n"
-            + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
-            + (f"\n如需取消：{cancel_url}" if cancel_url else '')
-            + "\n或直接回复本短信「取消」"
+            + (f"问询致电{biz_phone}，" if biz_phone else '')
+            + "取消回复「取消」"
         )
     if phone:
         threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()

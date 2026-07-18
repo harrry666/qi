@@ -581,21 +581,19 @@ def calendar_quick_appointment():
     biz_phone = current_user.phone or ''
     if lang == 'en':
         customer_msg = (
-            f"[Appointment Confirmed] Hi {name}, your appointment at {current_user.name} is confirmed.\n"
+            f"[Confirmed] {name}, your {current_user.name} appointment is set.\n"
             f"Service: {svc['name']}\n"
             f"Time: {dt_display_en}\n"
-            + (f"Questions? Call {biz_phone}\n" if biz_phone else '')
-            + f"\nCancel: {cancel_url}"
-            + "\nOr reply CANCEL to this text"
+            + (f"Call {biz_phone}. " if biz_phone else '')
+            + "Reply CANCEL to cancel."
         )
     else:
         customer_msg = (
-            f"【预约确认】{name}，您在【{current_user.name}】的预约已确认。\n\n"
+            f"【预约确认】{name} 您在 {current_user.name} 的预约已确认\n"
             f"服务：{svc['name']}\n"
             f"时间：{dt_display}\n"
-            + (f"如有疑问请致电：{biz_phone}\n" if biz_phone else '')
-            + f"\n如需取消：{cancel_url}"
-            + "\n或直接回复本短信「取消」"
+            + (f"问询致电{biz_phone}，" if biz_phone else '')
+            + "取消回复「取消」"
         )
     threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg), daemon=True).start()
 
