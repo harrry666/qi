@@ -40,20 +40,18 @@
   .it-title { font-size: 12.5pt; font-weight: 600; width: 34mm; flex: none; letter-spacing: .5px; }
   .it-body { font-size: 9.5pt; line-height: 1.8; color: #444; }
 
-  /* 价格块 */
-  .price { display: flex; gap: 6mm; padding: 5.5mm 0 5mm; border-bottom: 1px solid #ddd;
+  /* 试用块 */
+  .trial { display: flex; gap: 6mm; padding: 5.5mm 0 5mm; border-bottom: 1px solid #ddd;
            background: #fcfbf7; }
-  .price .it-title { color: #8a6d1f; }
-  .price-main { font-size: 17pt; font-weight: 600; letter-spacing: .5px; }
-  .price-main .unit { font-size: 10pt; font-weight: 400; color: #555; }
-  .price-sub { margin-top: 2.5mm; font-size: 9.5pt; line-height: 1.8; color: #444; }
-  .price-sub b { font-weight: 600; color: #141414; }
+  .trial .it-title { color: #8a6d1f; }
+  .trial .it-body b { font-weight: 600; color: #141414; }
 
   /* 联系块 */
   .contact { margin-top: auto; background: #141414; color: #fff;
-             padding: 7mm 8mm; display: flex; gap: 8mm; align-items: center; }
-  .qr { text-align: center; flex: none; }
-  .qr img { width: 32mm; height: 32mm; display: block; background: #fff; }
+             padding: 7mm 7mm; display: flex; gap: 7mm; align-items: center; }
+  .qrs { display: flex; gap: 5mm; flex: none; }
+  .qr { text-align: center; }
+  .qr img { width: 29mm; height: 29mm; display: block; background: #fff; padding: 1mm; }
   .qr span { display: block; margin-top: 2.5mm; font-size: 7.5pt; color: #bbb; }
   .c-body { flex: 1; }
   .c-body h3 { font-size: 11pt; font-weight: 600; margin-bottom: 4mm; letter-spacing: .5px; }
@@ -127,30 +125,33 @@
       </div>
     </div>
 
-    <div class="item price">
+    <div class="item trial">
       <div class="num serif">05</div>
-      <div class="it-title serif">价格透明</div>
+      <div class="it-title serif">先免费用<br>30 天</div>
       <div class="it-body">
-        <div class="price-main">$29.99 <span class="unit">/ 月，含 300 条短信提醒</span></div>
-        <div class="price-sub">
-          先<b>免费用 30 天</b>，觉得好用再付，随时可停，不绑合约。<br>
-          界面全中文，本地在读大学生开发，<b>可以上门帮你设置好</b>再走。
-        </div>
+        现在注册，前 30 天完全免费，用得顺手再继续，<b>随时可停，不绑合约</b>。<br>
+        界面全中文，本地在读大学生开发，<b>可以上门帮你设置好</b>再走。
       </div>
     </div>
   </div>
 
   <div class="contact">
-    <div class="qr">
-      <img src="assets/mp_qr.png" alt="哈瓜小约小程序码">
-      <span>微信扫一扫体验</span>
+    <div class="qrs">
+      <div class="qr">
+        <img src="assets/mp_qr.png" alt="哈瓜小约小程序码">
+        <span>微信小程序</span>
+      </div>
+      <div class="qr">
+        <img src="assets/web_qr.png" alt="网页版二维码">
+        <span>网页版</span>
+      </div>
     </div>
     <div class="c-body">
       <h3>老板不在？先扫码看看，感兴趣随时联系我</h3>
-      <div class="row"><span class="k">网页版</span><span class="v web">hastridbooking.com</span></div>
+      <div class="row"><span class="k">网址</span><span class="v web">hastridbooking.com</span></div>
       <div class="row"><span class="k">电话</span><span class="v">626-559-6294</span></div>
       <div class="row"><span class="k">微信</span><span class="v">ii9so_lovz</span></div>
-      <div class="c-note">微信搜「哈瓜小约」小程序也能找到 · 加微信我可以发一段演示视频给你看</div>
+      <div class="c-note">两个码都可以扫，微信搜「哈瓜小约」小程序也能找到</div>
     </div>
   </div>
 
