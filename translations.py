@@ -123,8 +123,8 @@ TRANSLATIONS = {
     'landing.pricing_trial':   {'zh': '先免费用 1 个月，之后订阅', 'en': 'Free for the first month, then billed monthly'},
     'landing.pricing_cancel':  {'zh': '随时可取消', 'en': 'Cancel anytime'},
     'landing.pricing_features_html': {
-        'zh': '✓ 专属预约页 + 日程日历<br>✓ 短信 + 微信预约提醒<br>✓ 员工管理 + 按员工排班<br>✓ 客户档案（储值 / 偏好 / 照片）<br>✓ 数据分析报表<br>✓ 群发短信',
-        'en': '✓ Booking page + calendar<br>✓ SMS + WeChat reminders<br>✓ Staff management + schedules<br>✓ Customer profiles (balance / notes / photos)<br>✓ Analytics dashboard<br>✓ Bulk SMS campaigns',
+        'zh': '✓ 专属预约页 + 日程日历<br>✓ 每月含 300 段预约短信<br>✓ 微信预约提醒（不计入短信）<br>✓ 员工管理 + 按员工排班<br>✓ 客户档案（储值 / 偏好 / 照片）<br>✓ 数据分析报表',
+        'en': '✓ Booking page + calendar<br>✓ 300 SMS segments included / mo<br>✓ WeChat reminders (not counted)<br>✓ Staff management + schedules<br>✓ Customer profiles (balance / notes / photos)<br>✓ Analytics dashboard',
     },
     'landing.pricing_cta':    {'zh': '免费试用 1 个月 →', 'en': 'Start your free month →'},
     'landing.cta_heading':    {'zh': '今天就开始接受预约。', 'en': 'Start taking bookings today.'},

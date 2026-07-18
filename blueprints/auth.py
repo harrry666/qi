@@ -57,7 +57,8 @@ def slugify(text):
 
 @auth_bp.route('/')
 def landing():
-    return render_template('landing.html')
+    from billing import PLAN_PRICE
+    return render_template('landing.html', price=PLAN_PRICE)
 
 @auth_bp.route('/privacy')
 def privacy():
