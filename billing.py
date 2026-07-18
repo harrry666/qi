@@ -1,7 +1,7 @@
 import math
 from datetime import datetime, timezone
 
-PLAN_PRICE = '29.00'
+PLAN_PRICE = '29.99'
 TRIAL_DAYS = 30
 SMS_INCLUDED = 300          # 订阅内含短信段数/月
 SMS_OVERAGE_RATE = 0.02     # 超出后每段单价（成本约 $0.01225）
