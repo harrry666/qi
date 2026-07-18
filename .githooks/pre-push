@@ -1,0 +1,28 @@
+#!/bin/sh
+# push 前自动跑 pytest，红了就拦下。
+# 装法（新克隆一次即可）：git config core.hooksPath .githooks
+# 紧急绕过：git push --no-verify
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT" || exit 1
+
+if [ -x venv/bin/python3 ]; then
+    PY=venv/bin/python3
+else
+    PY=python3
+fi
+
+if ! $PY -c "import pytest" 2>/dev/null; then
+    echo "⚠️  pytest 没装，跳过测试。装：$PY -m pip install -r requirements-dev.txt"
+    exit 0
+fi
+
+echo "▶ push 前跑测试…"
+if $PY -m pytest -q; then
+    echo "✅ 测试通过，继续 push"
+    exit 0
+else
+    echo ""
+    echo "❌ 测试没过，push 已拦下。修完再 push，或 git push --no-verify 强推。"
+    exit 1
+fi
