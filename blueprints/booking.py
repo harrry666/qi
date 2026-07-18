@@ -318,8 +318,6 @@ def api_create(slug):
         dt_display = apt_dt
         dt_display_en = apt_dt
 
-    _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
-    cancel_url = f"{_base}/cancel/{cancel_token}"
     formatted_phone = format_phone(phone)
     biz_phone = biz['phone'] or ''
 
