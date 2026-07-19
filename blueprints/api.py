@@ -1014,23 +1014,9 @@ def merchant_register():
         db.close()
 
 
+from cloud import is_real_image, MAX_UPLOAD
+
 ALLOWED_IMG = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
-MAX_UPLOAD = 5 * 1024 * 1024
-
-
-def is_real_image(file):
-    """按文件头魔数校验真实图片类型，客户端 mimetype 可伪造不可信。读后复位流。"""
-    head = file.read(12)
-    file.seek(0)
-    if head[:3] == b'\xff\xd8\xff':                     # JPEG
-        return True
-    if head[:8] == b'\x89PNG\r\n\x1a\n':                # PNG
-        return True
-    if head[:6] in (b'GIF87a', b'GIF89a'):             # GIF
-        return True
-    if head[:4] == b'RIFF' and head[8:12] == b'WEBP':  # WebP
-        return True
-    return False
 
 
 def save_upload(file, kind):

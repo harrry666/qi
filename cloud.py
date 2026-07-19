@@ -12,10 +12,33 @@ cloudinary.config(
 
 
 AUTO_OPTIMIZE = {'quality': 'auto', 'fetch_format': 'auto'}
+MAX_UPLOAD = 5 * 1024 * 1024
+
+
+def is_real_image(file):
+    """按文件头魔数校验真实图片类型，客户端 mimetype 可伪造不可信。读后复位流。"""
+    head = file.read(12)
+    file.seek(0)
+    if head[:3] == b'\xff\xd8\xff':                     # JPEG
+        return True
+    if head[:8] == b'\x89PNG\r\n\x1a\n':                # PNG
+        return True
+    if head[:6] in (b'GIF87a', b'GIF89a'):             # GIF
+        return True
+    if head[:4] == b'RIFF' and head[8:12] == b'WEBP':  # WebP
+        return True
+    return False
 
 
 def upload_to_cloudinary(file_storage, folder='qi/misc', **kwargs):
     if not file_storage or not file_storage.filename:
+        return None
+    file_storage.seek(0, os.SEEK_END)
+    if file_storage.tell() > MAX_UPLOAD:
+        file_storage.seek(0)
+        return None
+    file_storage.seek(0)
+    if not is_real_image(file_storage):
         return None
     trans = list(kwargs.pop('transformation', None) or [{}])
     trans[-1] = {**trans[-1], **AUTO_OPTIMIZE}

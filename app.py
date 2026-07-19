@@ -24,6 +24,7 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_SECURE=bool(os.environ.get('RAILWAY_ENVIRONMENT')),
+    MAX_CONTENT_LENGTH=10 * 1024 * 1024,
 )
 
 csrf.init_app(app)
@@ -126,6 +127,14 @@ def not_found(e):
 def server_error(e):
     from flask import render_template
     return render_template('500.html'), 500
+
+@app.errorhandler(413)
+def too_large(e):
+    from flask import request, jsonify, flash, redirect
+    if request.path.startswith('/api/') or request.is_json:
+        return jsonify({'error': t('flash.upload_too_large')}), 413
+    flash('flash.upload_too_large', 'error')
+    return redirect(request.referrer or '/'), 302
 
 @app.errorhandler(429)
 def ratelimited(e):
