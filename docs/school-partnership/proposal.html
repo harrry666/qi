@@ -78,6 +78,15 @@
   .foot { margin-top: 4mm; display: flex; justify-content: space-between;
           font-size: 7.8pt; color: #666; }
   .foot b { color: #141414; font-weight: 600; }
+
+  /* 第二页：看板示例图 */
+  .page2 { page-break-before: always; }
+  .shot { margin-top: 6mm; border: 1px solid #ddd; }
+  .shot img { width: 100%; display: block; }
+  .cap { margin-top: 3mm; font-size: 8pt; color: #888; line-height: 1.7; }
+  .cap b { color: #8a6d1f; font-weight: 600; }
+  .notes { margin-top: 7mm; }
+  .notes .item { padding: 3mm 0; }
 </style>
 </head>
 <body>
@@ -187,6 +196,63 @@
   <div class="foot">
     <span>Hastrid 哈瓜小约 · 华人小商家在线预约系统 · 本地在读大学生独立开发</span>
     <span><b>现有美业商家真实在用</b></span>
+  </div>
+
+</div>
+
+<div class="page page2">
+
+  <div class="head">
+    <div class="brand">
+      <span class="en serif">Hastrid</span>
+      <span class="cn">哈瓜小约</span>
+    </div>
+    <div class="tagline">学院看板长什么样</div>
+  </div>
+
+  <div class="hero" style="margin-top:6mm">
+    <h1 class="serif" style="font-size:19pt">学院登录后<u>看到的就是这一页</u></h1>
+    <p class="lead" style="margin-top:3mm">
+      学院拿一个专属链接就能打开，不用记账号密码。数字每次打开都是实时的，不用等我们出报表。
+    </p>
+  </div>
+
+  <div class="shot">
+    <img src="assets/school_dashboard_sample.png" alt="学院看板示例">
+  </div>
+  <p class="cap">
+    <b>↑ 以上为示例数据，用于展示看板界面</b>，不是真实毕业生数据。
+    实际数字要等学院的毕业生开通并同意共享后才会生成。
+  </p>
+
+  <div class="notes">
+    <div class="sec-head">
+      <span class="n serif">04</span>
+      <h2>关于这些数字</h2>
+    </div>
+    <div class="item">
+      <div class="it-title serif">谁能看到</div>
+      <div class="it-body">只有拿到学院专属链接的人能打开，<b>链接不公开、不进搜索引擎</b>。学院可以随时找我们换一条。</div>
+    </div>
+    <div class="item">
+      <div class="it-title serif">毕业生那边</div>
+      <div class="it-body">
+        毕业生注册时自己勾选是否共享，<b>不勾也能正常用系统</b>，只是不进学院统计。
+        勾了之后也能随时在设置里关掉。
+      </div>
+    </div>
+    <div class="item">
+      <div class="it-title serif">不会出现的东西</div>
+      <div class="it-body">客户名单、客户电话、每笔订单金额、营业额，<b>这些一律不进学院看板</b>。</div>
+    </div>
+  </div>
+
+  <div class="contact" style="margin-top:auto">
+    <h3>想先看真的？我可以现场打开一个演示学院给你过一遍</h3>
+    <div class="crow">
+      <div class="row"><span class="k">电话</span><span class="v">626-559-6294</span></div>
+      <div class="row"><span class="k">微信</span><span class="v">ii9so_lovz</span></div>
+    </div>
   </div>
 
 </div>

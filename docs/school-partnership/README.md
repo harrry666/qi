@@ -12,8 +12,16 @@
 - **看板还没开发**。签了就是欠的工作量：要给 business 加学院来源字段 + 毕业生开通时的数据共享同意勾选 + 学院侧只读聚合页面。
 
 ## 文件
-- `proposal.html` — 正文（A4 单页，沿用传单/手册的黑字+暖奶油+宋体品牌风）
+- `proposal.html` — 正文（A4 两页，沿用传单/手册的黑字+暖奶油+宋体品牌风）
+  - 第 1 页：方案本身（数据看板 → 怎么运转 → 价格）
+  - 第 2 页：看板界面示例图 + 隐私边界说明，方便当场给校长看界面
+- `assets/school_dashboard_sample.png` — 看板示例截图，**里面是演示数据，PDF 里已明确标注**
 - `build.sh` — Chrome 无头生成 PDF 到 `~/Downloads/Hastrid美容学院合作方案.pdf`
+
+### 重新生成示例截图
+本地起 `python app.py`，用 `scripts/add_school.py` 建学院并造几家毕业生店，然后 playwright 打开
+`/school/<token>`，先 `document.querySelector('.link-box').remove()` 去掉带 localhost 的链接框，
+再 `full_page` 截图（`device_scale_factor=2` 保证打印清晰）存回 `assets/`。
 
 ## 待确认
 - 价格块用的是改版后的 $15 / $10每人封顶$39.99。代码已落（commit fa7d429），但 **Stripe 的阶梯 price 还没建**，真收钱前要先配 `STRIPE_SEAT_PRICE_ID`
