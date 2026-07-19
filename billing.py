@@ -85,7 +85,10 @@ def sub_state(business):
     in_trial = status == 'trialing' and days > 0
     active = status == 'active'
     comp = status == 'comp' and days > 0
-    subscribed = bool(getattr(business, 'stripe_subscription_id', None))
+    # 只认还有效的订阅：canceled 之后 stripe_subscription_id 不会被清空，
+    # 光看 id 存不存在会让账单页永远不渲染订阅按钮，商家被硬锁在账单页且无法自助复购。
+    subscribed = (bool(getattr(business, 'stripe_subscription_id', None))
+                  and status in ('trialing', 'active', 'past_due'))
     return {
         'status': status,
         'days_left': days,

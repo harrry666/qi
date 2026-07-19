@@ -39,6 +39,39 @@ def test_cap_holds():
         assert p['capped']
 
 
+class _Biz:
+    """冒充 models.Business，sub_state 只用 getattr 取这三个字段。"""
+    def __init__(self, status, sub_id=None, ends=None):
+        self.subscription_status = status
+        self.stripe_subscription_id = sub_id
+        self.trial_ends_at = ends
+
+
+def test_canceled_can_resubscribe():
+    """取消订阅后账单页必须重新出现订阅按钮。
+
+    模板是 {% elif sub.subscribed %} 挡在订阅按钮前面的，subscribed 一旦恒为真，
+    商家会被 dashboard 的硬锁困在账单页且没有任何自助复购入口。
+    """
+    from billing import sub_state
+    s = sub_state(_Biz('canceled', sub_id='sub_dead'))
+    assert not s['subscribed'], 'canceled 还算已订阅，订阅按钮就永远出不来'
+    assert not s['has_access']
+
+
+def test_subscribed_during_trial_still_true():
+    from billing import sub_state
+    from datetime import datetime, timezone, timedelta
+    ends = datetime.now(timezone.utc) + timedelta(days=30)
+    s = sub_state(_Biz('trialing', sub_id='sub_live', ends=ends))
+    assert s['subscribed'], '试用期内已绑卡的不该再显示订阅按钮'
+
+
+def test_never_subscribed_is_not_subscribed():
+    from billing import sub_state
+    assert not sub_state(_Biz('none'))['subscribed']
+
+
 @pytest.mark.db
 def test_seat_count_counts_only_active_staff():
     from db import get_db
