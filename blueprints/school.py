@@ -6,10 +6,16 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from flask import Blueprint, render_template, abort
+from extensions import limiter
 from db import get_db
 
 school_bp = Blueprint('school', __name__)
 _LA = ZoneInfo('America/Los_Angeles')
+
+# 同意共享的店少于这个数就不出任何聚合数字。
+# 学院知道谁是走自己链接注册的，1-2 家时「店均/平均」等于点名某个毕业生的真实经营数据，
+# 跟页面 footer 承诺的「只含聚合数字」冲突。
+MIN_SHOPS = 3
 
 def _stats(db, school_id):
     # appointment_dt 是 'YYYY-MM-DD HH:MM' 文本，不能直接跟 NOW() 比，
@@ -19,8 +25,8 @@ def _stats(db, school_id):
     total = db.execute(
         f'SELECT COUNT(*) AS n FROM businesses WHERE {where}', (school_id,)
     ).fetchone()['n']
-    if not total:
-        return {'total': 0}
+    if total < MIN_SHOPS:
+        return {'total': total, 'ready': False, 'min_shops': MIN_SHOPS}
 
     # 开店月数：注册到现在。不足 1 个月按 1 个月算，避免刚开的店把均值拉到 0
     months = db.execute(
@@ -32,14 +38,14 @@ def _stats(db, school_id):
     active = db.execute(
         'SELECT COUNT(DISTINCT b.id) AS n FROM businesses b '
         'JOIN appointments a ON a.business_id = b.id '
-        'WHERE b.school_id=%s AND b.school_consent=1 AND a.appointment_dt >= %s',
+        "WHERE b.school_id=%s AND b.school_consent=1 AND a.status='confirmed' AND a.appointment_dt >= %s",
         (school_id, cutoff)
     ).fetchone()['n']
 
     # 月均接单量：近 30 天总预约数 / 开店毕业生数
     recent = db.execute(
         'SELECT COUNT(*) AS n FROM appointments a JOIN businesses b ON a.business_id = b.id '
-        'WHERE b.school_id=%s AND b.school_consent=1 AND a.appointment_dt >= %s',
+        "WHERE b.school_id=%s AND b.school_consent=1 AND a.status='confirmed' AND a.appointment_dt >= %s",
         (school_id, cutoff)
     ).fetchone()['n']
 
@@ -51,6 +57,8 @@ def _stats(db, school_id):
 
     return {
         'total': total,
+        'ready': True,
+        'min_shops': MIN_SHOPS,
         'avg_months': round(float(months), 1),
         'active': active,
         'active_pct': round(active / total * 100) if total else 0,
@@ -60,6 +68,7 @@ def _stats(db, school_id):
     }
 
 @school_bp.route('/school/<token>')
+@limiter.limit('30 per minute')
 def dashboard(token):
     db = get_db()
     school = db.execute('SELECT * FROM schools WHERE token=%s', (token,)).fetchone()

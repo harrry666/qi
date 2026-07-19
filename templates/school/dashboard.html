@@ -37,7 +37,9 @@
 
   .empty { background:#17171a; border-radius:16px; padding:38px 30px; margin-top:32px; text-align:center; }
   .empty .big { font-size:20px; font-weight:700; }
+  .empty { background:#17171a; color:#f5f3ee; }
   .empty p { color:#8d8b86; font-size:14px; margin-top:12px; }
+  .empty p.count { color:#c9a94a; font-size:15px; font-weight:700; margin-top:14px; }
 
   .link-box { margin-top:44px; background:#17171a; border-radius:16px; padding:24px; }
   .link-box .k { font-size:13px; color:#8d8b86; }
@@ -58,7 +60,7 @@
     <div class="sub">统计范围：通过学院专属链接开通并同意共享数据的毕业生店铺</div>
   </header>
 
-  {% if s.total %}
+  {% if s.ready %}
   <div class="grid">
     <div class="stat">
       <div class="n">{{ s.total }}</div>
@@ -101,11 +103,20 @@
     <div class="stat muted"><div class="n">—</div><div class="k">店均每月接单量</div></div>
   </div>
   <div class="empty">
+    {% if s.total %}
+    <div class="big">数据积累中</div>
+    <p class="count">已有 {{ s.total }} 家毕业生店铺开通并同意共享数据</p>
+    <p>
+      为了不让单家店铺的经营情况被反推出来，满 {{ s.min_shops }} 家之后才开始展示聚合数字。
+      继续把下面的专属链接发给毕业生，达到门槛后上面四个数字会自动出现。
+    </p>
+    {% else %}
     <div class="big">还没有毕业生通过学院链接开通</div>
     <p>
       把下面的专属链接发给毕业生，他们开店注册并勾选数据共享之后，上面四个数字就会开始有值。
-      第一批数据通常出现在毕业生开店 1 到 2 个月后。
+      聚合数据在满 {{ s.min_shops }} 家同意共享的店铺之后开始展示。
     </p>
+    {% endif %}
   </div>
   {% endif %}
 
