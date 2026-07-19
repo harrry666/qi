@@ -18,6 +18,7 @@
 重复跑会新建一个 price，Stripe 的 price 建了不能改价，只能停用后重建。
 """
 import os
+import re
 import sys
 import stripe
 from dotenv import load_dotenv
@@ -31,9 +32,23 @@ TIERS = [
     {'up_to': 'inf', 'flat_amount': 3999},
 ]
 
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
+# 前后空白和换行都清掉：从后台复制常带尾随换行，直接用会被 Stripe 判成无效 key
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '').strip()
 if not stripe.api_key:
     sys.exit('STRIPE_SECRET_KEY 未设置')
+
+# 提前拦掉粘错/粘重复，不然要等 Stripe 返回 Invalid API Key 才知道，看不出原因
+if not re.fullmatch(r'(sk|rk)_(live|test)_[A-Za-z0-9]+', stripe.api_key):
+    sys.exit(
+        f'这不像 Stripe 密钥（长度 {len(stripe.api_key)}，开头 {stripe.api_key[:12]}…）\n'
+        '要的是 sk_live_ 或 sk_test_ 开头的一整串。\n'
+        '注意后台 ⋯ 菜单里的「Copy API key ID」复制的是 mk_ 开头的对象 ID，不是密钥。'
+    )
+if len(stripe.api_key) > 150:
+    sys.exit(
+        f'密钥长度 {len(stripe.api_key)}，明显偏长（正常 107 左右），多半是粘贴时重复粘了一次。\n'
+        '重新复制再试一次，可以先跑 pbpaste | wc -c 看剪贴板长度。'
+    )
 
 # 密钥有 sk_（标准）和 rk_（受限）两种，都可能是 live。
 # 只认 sk_live 会漏掉 rk_live，导致在生产上不弹确认就直接建，所以按第二段判断。
