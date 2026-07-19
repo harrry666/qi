@@ -681,9 +681,10 @@ def my_profile_update(token):
 
 @booking_bp.route('/my/<token>/avatar', methods=['POST'])
 def my_profile_avatar(token):
-    from cloud import upload_to_cloudinary
+    from cloud import upload_to_cloudinary, destroy_urls
     db = get_db()
-    cust = db.execute('SELECT id FROM customers WHERE profile_token=%s', (token,)).fetchone()
+    cust = db.execute('SELECT id, avatar_url FROM customers WHERE profile_token=%s', (token,)).fetchone()
+    saved = False
     if cust:
         avatar_url = upload_to_cloudinary(
             request.files.get('avatar'), folder='qi/customers',
@@ -692,8 +693,12 @@ def my_profile_avatar(token):
         if avatar_url:
             db.execute('UPDATE customers SET avatar_url=%s WHERE id=%s', (avatar_url, cust['id']))
             db.commit()
+            saved = True
     db.close()
-    return redirect(url_for('booking.my_profile', token=token, saved=1))
+    if saved:
+        destroy_urls(cust['avatar_url'])
+        return redirect(url_for('booking.my_profile', token=token, saved=1))
+    return redirect(url_for('booking.my_profile', token=token, failed=1))
 
 
 def _ical_escape(text):
