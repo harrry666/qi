@@ -1314,6 +1314,15 @@ def merchant_staff():
         db.close()
 
 
+def _sync_seats(business_id):
+    """员工数变了就同步 Stripe 席位。同 dashboard 的 _sync_seats，失败不能挡商家操作。"""
+    try:
+        from blueprints.stripe_billing import sync_seats
+        sync_seats(business_id)
+    except Exception as e:
+        print(f'[API] seat sync failed biz={business_id}: {e}', flush=True, file=sys.stderr)
+
+
 @api_bp.route('/merchant/staff', methods=['POST'])
 def merchant_add_staff():
     biz, err = require_merchant()
@@ -1333,6 +1342,7 @@ def merchant_add_staff():
             (biz['id'], name, emoji, bio, avatar_url)
         ).fetchone()
         db.commit()
+        _sync_seats(biz['id'])
         return jsonify({'id': row['id']})
     except Exception as e:
         print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
@@ -1373,6 +1383,8 @@ def merchant_update_staff(sid):
             params.extend([sid, biz['id']])
             db.execute('UPDATE staff SET ' + ', '.join(fields) + ' WHERE id=%s AND business_id=%s', tuple(params))
             db.commit()
+            if 'is_active' in data:
+                _sync_seats(biz['id'])
         return jsonify({'ok': True})
     except Exception as e:
         print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
@@ -1395,6 +1407,7 @@ def merchant_delete_staff(sid):
         db.execute('DELETE FROM staff_services WHERE staff_id=%s', (sid,))
         db.execute('DELETE FROM staff WHERE id=%s AND business_id=%s', (sid, biz['id']))
         db.commit()
+        _sync_seats(biz['id'])
         return jsonify({'ok': True})
     except Exception as e:
         print(f'[API] {request.method} {request.path}: {type(e).__name__}: {e}', flush=True, file=sys.stderr)
