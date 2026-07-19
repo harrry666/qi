@@ -565,6 +565,8 @@ TRANSLATIONS = {
     'flash.customers.avatar_updated': {'zh': '头像已更新。', 'en': 'Avatar updated.'},
     'flash.customers.avatar_invalid': {'zh': '请上传有效的图片文件。', 'en': 'Please upload a valid image file.'},
     'flash.customers.photo_added': {'zh': '照片已添加。', 'en': 'Photo added.'},
+    'flash.customers.photo_invalid': {'zh': '请上传有效的图片文件。', 'en': 'Please upload a valid image file.'},
+    'flash.customers.not_found': {'zh': '客户不存在。', 'en': 'Customer not found.'},
     'flash.customers.balance_updated': {'zh': '余额已更新。', 'en': 'Balance updated.'},
     'flash.customers.initial_balance_reason': {'zh': '建档初始余额', 'en': 'Initial balance on signup'},
     'flash.customers.import_balance_reason': {'zh': '导入建档初始余额', 'en': 'Initial balance from import'},

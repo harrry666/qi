@@ -1129,35 +1129,43 @@ def customer_delete(cid):
 @dashboard_bp.route('/customers/<int:cid>/avatar', methods=['POST'])
 @login_required
 def customer_update_avatar(cid):
+    db = get_db()
+    cust = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+    if not cust:
+        db.close()
+        flash('flash.customers.not_found', 'error')
+        return redirect(url_for('dashboard.customers'))
     avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/customers', transformation=[{'width': 300, 'height': 300, 'crop': 'fill'}])
     if avatar_url:
-        db = get_db()
         db.execute('UPDATE customers SET avatar_url=%s WHERE id=%s AND business_id=%s', (avatar_url, cid, current_user.id))
         db.commit()
-        db.close()
         flash('flash.customers.avatar_updated', 'success')
     else:
         flash('flash.customers.avatar_invalid', 'error')
+    db.close()
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/photo', methods=['POST'])
 @login_required
 def customer_add_photo(cid):
+    db = get_db()
+    cust = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+    if not cust:
+        db.close()
+        flash('flash.customers.not_found', 'error')
+        return redirect(url_for('dashboard.customers'))
     photo_url = _upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos', transformation=[{'width': 1200, 'height': 1200, 'crop': 'limit'}])
     note = request.form.get('note', '').strip()
     if photo_url:
-        db = get_db()
-        cust = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
-        if cust:
-            db.execute(
-                "INSERT INTO customer_photos (customer_id, photo_url, note, uploaded_by) VALUES (%s,%s,%s,'merchant')",
-                (cid, photo_url, note)
-            )
-            db.commit()
-            flash('flash.customers.photo_added', 'success')
-        db.close()
+        db.execute(
+            "INSERT INTO customer_photos (customer_id, photo_url, note, uploaded_by) VALUES (%s,%s,%s,'merchant')",
+            (cid, photo_url, note)
+        )
+        db.commit()
+        flash('flash.customers.photo_added', 'success')
     else:
-        flash('flash.customers.avatar_invalid', 'error')
+        flash('flash.customers.photo_invalid', 'error')
+    db.close()
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/photo/<int:pid>/delete', methods=['POST'])
