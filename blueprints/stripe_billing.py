@@ -66,12 +66,18 @@ def checkout():
     db.close()
 
     sub_data = {'metadata': {'business_id': str(current_user.id)}}
-    from billing import sub_state
+    from billing import sub_state, seat_count
     days = sub_state(current_user)['days_left']
     if days >= 1:
         sub_data['trial_period_days'] = days
 
-    line_items = [{'price': os.environ['STRIPE_PRICE_ID'], 'quantity': 1}]
+    # 席位阶梯价：quantity 传席位数，封顶 $39.99 交给 Stripe 的 volume tier，不在代码里夹。
+    # 没配 STRIPE_SEAT_PRICE_ID 就退回旧的固定价单席位，避免拿旧的 flat price 乘席位数超收。
+    seat_price_id = os.environ.get('STRIPE_SEAT_PRICE_ID', '')
+    if seat_price_id:
+        line_items = [{'price': seat_price_id, 'quantity': seat_count(current_user.id)}]
+    else:
+        line_items = [{'price': os.environ['STRIPE_PRICE_ID'], 'quantity': 1}]
     metered = os.environ.get('STRIPE_SMS_PRICE_ID', '')
     if metered:
         line_items.append({'price': metered})  # 用量计费项不能带 quantity
@@ -87,6 +93,32 @@ def checkout():
         allow_promotion_codes=True,
     )
     return redirect(session.url, code=303)
+
+def sync_seats(business_id):
+    """员工增减后把席位数同步给 Stripe 订阅。失败只记日志，不挡商家操作。"""
+    _init()
+    price_id = os.environ.get('STRIPE_SEAT_PRICE_ID', '')
+    if not (stripe.api_key and price_id):
+        return
+    db = get_db()
+    row = db.execute('SELECT stripe_subscription_id FROM businesses WHERE id=%s',
+                     (business_id,)).fetchone()
+    db.close()
+    if not row or not row['stripe_subscription_id']:
+        return
+    from billing import seat_count
+    seats = seat_count(business_id)
+    try:
+        sub = stripe.Subscription.retrieve(row['stripe_subscription_id'])
+        for item in _g(sub, 'items')['data']:
+            if _g(_g(item, 'price'), 'id') == price_id:
+                if _g(item, 'quantity') != seats:
+                    stripe.SubscriptionItem.modify(_g(item, 'id'), quantity=seats,
+                                                   proration_behavior='none')
+                return
+    except Exception as e:
+        print(f'[BILLING] seat sync failed biz={business_id} seats={seats}: {e}',
+              flush=True, file=sys.stderr)
 
 def report_sms_overage(business_id, segments):
     """把超出配额的段数推给 Stripe Meter，按 $0.02/段累进下月账单。"""

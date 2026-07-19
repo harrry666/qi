@@ -55,11 +55,11 @@ def record_sms(business_id, segments, kind='other', to_phone=''):
         print(f'[SMS] usage record failed biz={business_id}: {e}', flush=True, file=sys.stderr)
         return
     try:
-        from billing import sms_usage, SMS_INCLUDED
+        from billing import sms_usage
         from blueprints.stripe_billing import report_sms_overage
-        used = sms_usage(business_id)['used']
+        usage = sms_usage(business_id)
         # 只上报这批里真正跨过配额线的那部分，避免重复计费
-        billable = min(segments, max(0, used - SMS_INCLUDED))
+        billable = min(segments, max(0, usage['used'] - usage['included']))
         if billable > 0:
             report_sms_overage(business_id, billable)
     except Exception as e:

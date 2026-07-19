@@ -57,8 +57,9 @@ def slugify(text):
 
 @auth_bp.route('/')
 def landing():
-    from billing import PLAN_PRICE
-    return render_template('landing.html', price=PLAN_PRICE)
+    from billing import SOLO_PRICE, SEAT_PRICE, PRICE_CAP
+    return render_template('landing.html', price='%.0f' % SOLO_PRICE,
+                           seat_price='%.0f' % SEAT_PRICE, cap='%.2f' % PRICE_CAP)
 
 @auth_bp.route('/privacy')
 def privacy():
@@ -102,10 +103,11 @@ def register():
             db.close()
             return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
 
+        from billing import TRIAL_DAYS
         db.execute(
             "INSERT INTO businesses (name, slug, email, password_hash, phone, category, is_approved, trial_ends_at, subscription_status) "
-            "VALUES (%s,%s,%s,%s,%s,%s,0, NOW() + INTERVAL '30 days', 'trialing')",
-            (name, slug, email, generate_password_hash(password), phone, category)
+            "VALUES (%s,%s,%s,%s,%s,%s,0, NOW() + (%s || ' days')::interval, 'trialing')",
+            (name, slug, email, generate_password_hash(password), phone, category, TRIAL_DAYS)
         )
         db.commit()
 

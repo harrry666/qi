@@ -123,6 +123,7 @@
       <span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--text);font-size:13px;font-weight:700;padding:4px 16px;border-radius:20px">{{ t('landing.pricing_badge') }}</span>
       <div style="font-size:18px;font-weight:800;color:var(--text)">{{ t('landing.pricing_plan') }}</div>
       <div style="margin:16px 0 6px"><span style="font-size:48px;font-weight:800;color:var(--gold-h)">${{ price }}</span><span style="color:var(--muted);font-size:16px">{{ t('landing.pricing_period') }}</span></div>
+      <div style="color:var(--muted);font-size:14px;margin-bottom:8px">{{ t('landing.pricing_seats', price=price, seat=seat_price, cap=cap) }}</div>
       <div style="color:var(--gold-h);font-weight:700;font-size:15px">{{ t('landing.pricing_trial') }}</div>
       <div style="color:var(--muted);font-size:14px;margin-bottom:22px">{{ t('landing.pricing_cancel') }}</div>
       <div style="font-size:15px;line-height:2.1;color:var(--text);text-align:left;max-width:300px;margin:0 auto">

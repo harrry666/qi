@@ -1222,10 +1222,11 @@ def customer_adjust_balance(cid):
 @dashboard_bp.route('/billing')
 @login_required
 def billing():
-    from billing import PLAN_PRICE, SMS_INCLUDED, SMS_OVERAGE_RATE, sms_usage
-    return render_template('dashboard/billing.html', price=PLAN_PRICE,
-                           sms=sms_usage(current_user.id),
-                           sms_included=SMS_INCLUDED, sms_rate=SMS_OVERAGE_RATE)
+    from billing import SEAT_PRICE, PRICE_CAP, SMS_OVERAGE_RATE, plan_of, sms_usage
+    plan = plan_of(current_user.id)
+    return render_template('dashboard/billing.html', price='%.2f' % plan['price'],
+                           plan=plan, seat_price='%.0f' % SEAT_PRICE, cap='%.2f' % PRICE_CAP,
+                           sms=sms_usage(current_user.id), sms_rate=SMS_OVERAGE_RATE)
 
 @dashboard_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -1340,6 +1341,10 @@ def staff():
     days = [{'key': STAFF_DAY_KEYS[i], 'name': t('weekday.' + STAFF_DAY_KEYS[i]), 'weekday': i} for i in range(7)]
     return render_template('dashboard/staff.html', staff_list=staff_list, all_services=all_services, days=days)
 
+def _sync_seats():
+    from blueprints.stripe_billing import sync_seats
+    sync_seats(current_user.id)
+
 @dashboard_bp.route('/staff/add', methods=['POST'])
 @login_required
 def add_staff():
@@ -1357,6 +1362,7 @@ def add_staff():
     )
     db.commit()
     db.close()
+    _sync_seats()
     flash('flash.staff.added', 'success')
     return redirect(url_for('dashboard.staff'))
 
@@ -1404,6 +1410,7 @@ def delete_staff(sid):
         db.execute('DELETE FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id))
         db.commit()
     db.close()
+    _sync_seats()
     flash('flash.staff.deleted', 'success')
     return redirect(url_for('dashboard.staff'))
 
@@ -1417,6 +1424,7 @@ def toggle_staff(sid):
     )
     db.commit()
     db.close()
+    _sync_seats()
     flash('flash.staff.status_updated', 'success')
     return redirect(url_for('dashboard.staff'))
 

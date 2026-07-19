@@ -1,10 +1,38 @@
 import math
 from datetime import datetime, timezone
 
-PLAN_PRICE = '29.99'
-TRIAL_DAYS = 30
-SMS_INCLUDED = 300          # 订阅内含短信段数/月
+SOLO_PRICE = 15.00          # 一人店固定价
+SEAT_PRICE = 10.00          # 两人及以上，每员工/月
+PRICE_CAP = 39.99           # 团队版封顶，4 人及以上都是这个价
+TRIAL_DAYS = 180            # 前 6 个月免费
+SMS_SOLO = 200              # 一人店内含短信段数/月
+SMS_TEAM = 600              # 团队版内含短信段数/月
 SMS_OVERAGE_RATE = 0.02     # 超出后每段单价（成本约 $0.01225）
+
+def seat_count(business_id):
+    """计费席位数 = 在职员工数，至少 1（没建员工的一人店也算 1 席）。"""
+    from db import get_db
+    db = get_db()
+    row = db.execute(
+        'SELECT COUNT(*) AS n FROM staff WHERE business_id=%s AND is_active=1',
+        (business_id,)
+    ).fetchone()
+    db.close()
+    return max(1, int(row['n'] if row else 0))
+
+def plan_for(seats):
+    """按席位数算月费和短信配额。1 席 $15，2 席起 $10/席，封顶 $39.99。"""
+    seats = max(1, int(seats))
+    price = SOLO_PRICE if seats == 1 else min(seats * SEAT_PRICE, PRICE_CAP)
+    return {
+        'seats': seats,
+        'price': round(price, 2),
+        'sms_included': SMS_SOLO if seats == 1 else SMS_TEAM,
+        'capped': seats > 1 and seats * SEAT_PRICE >= PRICE_CAP,
+    }
+
+def plan_of(business_id):
+    return plan_for(seat_count(business_id))
 
 def sms_usage(business_id, when=None):
     """本自然月短信用量。返回 used / included / over / overage_cost。"""
@@ -19,13 +47,14 @@ def sms_usage(business_id, when=None):
     ).fetchone()
     db.close()
     used = int(row['n'] if row else 0)
-    over = max(0, used - SMS_INCLUDED)
+    included = plan_of(business_id)['sms_included']
+    over = max(0, used - included)
     return {
         'used': used,
-        'included': SMS_INCLUDED,
+        'included': included,
         'over': over,
         'overage_cost': round(over * SMS_OVERAGE_RATE, 2),
-        'pct': min(100, round(used / SMS_INCLUDED * 100)) if SMS_INCLUDED else 0,
+        'pct': min(100, round(used / included * 100)) if included else 0,
         'period_start': start,
     }
 

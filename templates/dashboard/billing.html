@@ -50,9 +50,14 @@
 <div class="billing-card">
   <div class="billing-plan-name">{{ t('dash.billing.plan_name') }}</div>
   <div class="billing-price"><span class="billing-amount">${{ price }}</span><span class="billing-period">{{ t('dash.billing.per_month') }}</span></div>
+  <div class="billing-note" style="text-align:center;margin-bottom:6px">
+    {% if plan.capped %}{{ t('dash.billing.seats_capped', n=plan.seats, cap=cap) }}
+    {% elif plan.seats > 1 %}{{ t('dash.billing.seats_team', n=plan.seats, seat=seat_price, cap=cap) }}
+    {% else %}{{ t('dash.billing.seats_solo', seat=seat_price) }}{% endif %}
+  </div>
   <ul class="billing-feats">
     <li>{{ t('dash.billing.feat1') }}</li>
-    <li>{{ t('dash.billing.feat2') }}</li>
+    <li>{{ t('dash.billing.feat2', n=sms.included) }}</li>
     <li>{{ t('dash.billing.feat3') }}</li>
     <li>{{ t('dash.billing.feat4') }}</li>
   </ul>
