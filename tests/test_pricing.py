@@ -72,6 +72,29 @@ def test_never_subscribed_is_not_subscribed():
     assert not sub_state(_Biz('none'))['subscribed']
 
 
+def _future():
+    from datetime import datetime, timezone, timedelta
+    return datetime.now(timezone.utc) + timedelta(days=30)
+
+
+@pytest.mark.parametrize('status, sub_id, ends, blocked', [
+    ('none',     None,       None,      False),  # 从没订阅过 -> 放行
+    ('trialing', None,       _future(), False),  # 试用中未绑卡 -> 放行
+    ('trialing', 'sub_live', _future(), True),   # 试用中已绑卡 -> 拦，否则第二条订阅
+    ('active',   'sub_live', None,      True),   # 正常订阅 -> 拦
+    ('past_due', 'sub_live', None,      True),   # 欠费但订阅还在 -> 拦，该走补款不是重开
+    ('canceled', 'sub_dead', None,      False),  # 已取消 -> 必须能复购
+])
+def test_checkout_gate_matrix(status, sub_id, ends, blocked):
+    """stripe_billing.checkout() 的服务端门禁就是 sub_state()['subscribed']。
+
+    绕过前端直接 POST /dashboard/billing/checkout 会给同一个 customer 建第二条订阅，
+    两条都真实扣钱。这个矩阵护的是"该拦的拦住，canceled 的复购路径不能被堵死"。
+    """
+    from billing import sub_state
+    assert sub_state(_Biz(status, sub_id=sub_id, ends=ends))['subscribed'] is blocked
+
+
 @pytest.mark.db
 def test_seat_count_counts_only_active_staff():
     from db import get_db

@@ -248,16 +248,19 @@ def create_booking():
             return jsonify({'error': '服务不存在'}), 400
         svc = dict(svc)
 
-        appointment_dt = f'{date} {time}'
         try:
-            apt_dt_obj = datetime.strptime(appointment_dt, '%Y-%m-%d %H:%M')
+            apt_dt_obj = datetime.strptime(f'{date} {time}', '%Y-%m-%d %H:%M')
             if apt_dt_obj < datetime.now(_LA).replace(tzinfo=None):
                 return jsonify({'error': '不能预约过去的时间'}), 400
         except ValueError:
             return jsonify({'error': '日期时间格式无效'}), 400
+        # strptime 对未补零是宽松的（'2026-7-5 9:00' 能过），必须重新格式化回定宽再往下走。
+        # appointment_dt 是 TEXT 列，SUBSTRING 取小时 / LIKE 查当天 / 字符串比大小都依赖定宽。
+        appointment_dt = apt_dt_obj.strftime('%Y-%m-%d %H:%M')
+        date, time = appointment_dt[:10], appointment_dt[11:]
 
         from blueprints.booking import resolve_staff_id, slots_for_service
-        date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+        date_obj = apt_dt_obj.date()
         if time not in slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=data.get('staff_id') or None):
             return jsonify({'error': '该时段已被预约或不可用，请重新选择时间'}), 409
         staff_id = resolve_staff_id(biz['id'], service_id, date, time, svc['duration_mins'], data.get('staff_id') or None)
@@ -1753,13 +1756,16 @@ def merchant_create_appointment():
             if not own:
                 staff_id = None
         try:
-            date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            apt_dt_obj = datetime.strptime(f'{date} {time_}', '%Y-%m-%d %H:%M')
         except ValueError:
             return jsonify({'error': '日期时间格式无效'}), 400
+        # 同 create_booking：未补零的时间必须归一化后才能入库，否则按定宽切片的统计全错位
+        apt_dt = apt_dt_obj.strftime('%Y-%m-%d %H:%M')
+        date, time_ = apt_dt[:10], apt_dt[11:]
+        date_obj = apt_dt_obj.date()
         from blueprints.booking import slots_for_service
         if time_ not in slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=staff_id):
             return jsonify({'error': '该时段已被锁定或预约，请选择其他时间'}), 409
-        apt_dt = f'{date} {time_}'
         customer_id = upsert_customer(db, biz['id'], phone, name) if phone else None
         cancel_token = str(uuid.uuid4())
         lang = getattr(g, 'lang', 'zh')

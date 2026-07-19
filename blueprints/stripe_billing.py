@@ -54,6 +54,14 @@ def checkout():
         flash('flash.billing.not_configured', 'error')
         return redirect(url_for('dashboard.billing'))
 
+    # 模板层（billing.html 的 {% elif sub.subscribed %}）是唯一门禁，绕过前端直接 POST
+    # 或者双击提交都会给同一个 customer 建出第二条订阅，两条都计费。这里用和模板同一个
+    # sub_state 判断挡住。canceled 的 subscribed 为假，复购路径不受影响。
+    from billing import sub_state, seat_count
+    if sub_state(current_user)['subscribed']:
+        flash('flash.billing.already_subscribed', 'error')
+        return redirect(url_for('dashboard.billing'))
+
     db = get_db()
     biz = db.execute('SELECT * FROM businesses WHERE id=%s', (current_user.id,)).fetchone()
     customer_id = biz.get('stripe_customer_id')
@@ -66,7 +74,6 @@ def checkout():
     db.close()
 
     sub_data = {'metadata': {'business_id': str(current_user.id)}}
-    from billing import sub_state, seat_count
     days = sub_state(current_user)['days_left']
     if days >= 1:
         sub_data['trial_period_days'] = days
@@ -101,10 +108,14 @@ def sync_seats(business_id):
     if not (stripe.api_key and price_id):
         return
     db = get_db()
-    row = db.execute('SELECT stripe_subscription_id FROM businesses WHERE id=%s',
+    row = db.execute('SELECT stripe_subscription_id, subscription_status FROM businesses WHERE id=%s',
                      (business_id,)).fetchone()
     db.close()
     if not row or not row['stripe_subscription_id']:
+        return
+    # 已取消/无订阅的商家没有席位可同步，早退避免白打一次 Stripe 请求还记一条 error 日志
+    status = row['subscription_status'] or 'none'
+    if status in ('canceled', 'none'):
         return
     from billing import seat_count
     seats = seat_count(business_id)
@@ -116,6 +127,12 @@ def sync_seats(business_id):
                     stripe.SubscriptionItem.modify(_g(item, 'id'), quantity=seats,
                                                    proration_behavior='none')
                 return
+        # 一个 item 都没匹配上：商家可能走的是旧的 STRIPE_PRICE_ID 固定价，
+        # 或者 Stripe 改了 price id 而环境变量没同步。不报错就永远查不出来席位为什么不动。
+        print(f'[BILLING] seat sync skipped biz={business_id} seats={seats}: '
+              f'sub={row["stripe_subscription_id"]} 没有 price={price_id} 的 item，'
+              f'现有 items={[_g(_g(i, "price"), "id") for i in _g(sub, "items")["data"]]}',
+              flush=True, file=sys.stderr)
     except Exception as e:
         print(f'[BILLING] seat sync failed biz={business_id} seats={seats}: {e}',
               flush=True, file=sys.stderr)
