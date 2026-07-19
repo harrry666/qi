@@ -52,9 +52,11 @@ def main():
     conn = psycopg2.connect(url)
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    # 用 make_interval 而不是 INTERVAL '%s days'：占位符不能写在 SQL 字符串字面量里面
     cur.execute(
         "SELECT id, name, email, subscription_status AS st, trial_ends_at, "
-        "NOW() + INTERVAL '%s days' AS new_end FROM businesses ORDER BY id" % TRIAL_DAYS
+        "NOW() + make_interval(days => %s) AS new_end FROM businesses ORDER BY id",
+        (TRIAL_DAYS,)
     )
     rows = cur.fetchall()
 
@@ -81,15 +83,17 @@ def main():
     if not changed:
         print('\n没有需要改的。')
     elif args.apply:
-        cur.execute(
-            "UPDATE businesses SET trial_ends_at = NOW() + INTERVAL '%s days', "
+        sql = (
+            "UPDATE businesses SET trial_ends_at = NOW() + make_interval(days => %s), "
             "subscription_status = CASE WHEN subscription_status IN ('canceled','past_due','none') "
             "  OR subscription_status IS NULL THEN 'trialing' ELSE subscription_status END "
-            "WHERE (trial_ends_at IS NULL OR NOW() + INTERVAL '%s days' > trial_ends_at) "
-            "%s" % (TRIAL_DAYS, TRIAL_DAYS,
-                    '' if args.include_comp else
-                    "AND (subscription_status IS NULL OR subscription_status NOT IN %s)" % (SKIP_STATUS,))
+            "WHERE (trial_ends_at IS NULL OR NOW() + make_interval(days => %s) > trial_ends_at) "
         )
+        params = [TRIAL_DAYS, TRIAL_DAYS]
+        if not args.include_comp:
+            sql += "AND (subscription_status IS NULL OR subscription_status NOT IN %s)"
+            params.append(SKIP_STATUS)
+        cur.execute(sql, params)
         conn.commit()
         print(f'\n✓ 已更新 {cur.rowcount} 家。')
     else:
