@@ -168,6 +168,7 @@ def handle_csrf_error(e):
 def send_reminders():
     from db import get_db
     from blueprints.booking import send_sms, format_phone
+    db = None
     try:
         now = datetime.now(_LA)
         window_start = (now + timedelta(hours=23)).strftime('%Y-%m-%d %H:%M')
@@ -203,9 +204,12 @@ def send_reminders():
                     + "取消回复「取消」"
                 )
                 threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg), daemon=True).start()
-        db.close()
     except Exception as e:
         print(f'[Reminder] ERROR: {e}', flush=True, file=sys.stderr)
+    finally:
+        # 定时任务不在请求上下文里，teardown_appcontext 兜底救不了它，必须自己关
+        if db:
+            db.close()
 
 
 def send_wx_reminders():
@@ -213,6 +217,7 @@ def send_wx_reminders():
     from blueprints.wx import send_subscribe_message, wx_configured
     if not wx_configured():
         return
+    db = None
     try:
         now = datetime.now(_LA)
         window_start = (now + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M')
@@ -250,9 +255,11 @@ def send_wx_reminders():
                 threading.Thread(
                     target=send_subscribe_message, args=(row['openid'], data), daemon=True
                 ).start()
-        db.close()
     except Exception as e:
         print(f'[WXReminder] ERROR: {e}', flush=True, file=sys.stderr)
+    finally:
+        if db:
+            db.close()
 
 
 try:
