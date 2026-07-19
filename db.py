@@ -71,9 +71,17 @@ def upsert_customer(db, business_id, phone, name):
     return cur.fetchone()['id']
 
 
+# init_db 的排他锁 key。gunicorn 起 4 个 worker，每个都会 import app 各跑一遍 init_db，
+# 而 CREATE TABLE IF NOT EXISTS / ADD COLUMN IF NOT EXISTS 在 Postgres 里不是并发安全的：
+# 两个 session 同时判断"不存在"都通过，后到的那个会报 duplicate_table 让 worker 起不来。
+# 用事务级 advisory lock 让它们排队，锁随 commit/rollback 自动释放，不会漏锁。
+_INIT_LOCK_KEY = 8274512309
+
+
 def init_db():
     db = get_db()
-    for stmt in [
+    db.execute('SELECT pg_advisory_xact_lock(%s)', (_INIT_LOCK_KEY,))
+    stmts = [
         '''CREATE TABLE IF NOT EXISTS businesses (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -285,7 +293,11 @@ def init_db():
             FROM customers c
             WHERE a.customer_id IS NULL AND a.phone IS NOT NULL AND a.phone <> ''
             AND c.business_id = a.business_id AND c.phone = a.phone''',
-    ]:
-        db.execute(stmt)
-    db.commit()
-    db.close()
+    ]
+    try:
+        for stmt in stmts:
+            db.execute(stmt)
+        db.commit()
+    finally:
+        # 中途报错也要把连接还给池，否则 4 个 worker 轮流试、池很快被占空
+        db.close()
