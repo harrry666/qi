@@ -1143,7 +1143,7 @@ def customer_update_avatar(cid):
 @dashboard_bp.route('/customers/<int:cid>/photo', methods=['POST'])
 @login_required
 def customer_add_photo(cid):
-    photo_url = _upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos')
+    photo_url = _upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos', transformation=[{'width': 1200, 'height': 1200, 'crop': 'limit'}])
     note = request.form.get('note', '').strip()
     if photo_url:
         db = get_db()

@@ -760,7 +760,7 @@ def my_profile_photo(token):
     db = get_db()
     cust = db.execute('SELECT id FROM customers WHERE profile_token=%s', (token,)).fetchone()
     if cust:
-        photo_url = upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos')
+        photo_url = upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos', transformation=[{'width': 1200, 'height': 1200, 'crop': 'limit'}])
         note = request.form.get('note', '').strip()
         if photo_url:
             db.execute(

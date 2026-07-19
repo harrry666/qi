@@ -1047,7 +1047,7 @@ def save_upload(file, kind):
             folder, trans = 'qi/customer_photos', [{'width': 1200, 'height': 1200, 'crop': 'limit'}]
         else:
             folder, trans = 'qi/avatars', [{'width': 400, 'height': 400, 'crop': 'fill'}]
-        result = cloudinary.uploader.upload(file, folder=folder, transformation=trans)
+        result = cloudinary.uploader.upload(file, folder=folder, transformation=[{**trans[0], 'quality': 'auto', 'fetch_format': 'auto'}])
         return result.get('secure_url')
     upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads')
     os.makedirs(upload_dir, exist_ok=True)
