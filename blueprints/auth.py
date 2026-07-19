@@ -70,6 +70,17 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
 
+    # 院校专属开通链接 /register?school=<slug>：认出学院，注册页多一个数据共享勾选
+    school = None
+    school_slug = (request.values.get('school', '') or '').strip()
+    if school_slug:
+        db = get_db()
+        school = db.execute('SELECT id, name, slug FROM schools WHERE slug=%s', (school_slug,)).fetchone()
+        db.close()
+
+    def _reg_page(form):
+        return render_template('auth/register.html', form=form, categories=CATEGORIES, school=school)
+
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         slug = slugify(request.form.get('slug', '') or name)
@@ -82,32 +93,36 @@ def register():
 
         if not all([name, slug, email, phone, password, category]):
             flash('flash.auth.required_fields', 'error')
-            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+            return _reg_page(request.form)
         if len(password) < 6:
             flash('flash.auth.password_min', 'error')
-            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+            return _reg_page(request.form)
         if password != password_confirm:
             flash('flash.auth.password_mismatch', 'error')
-            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+            return _reg_page(request.form)
         if len(phone) != 10:
             flash('flash.common.phone_invalid', 'error')
-            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+            return _reg_page(request.form)
 
         db = get_db()
         if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():
             flash('flash.auth.slug_taken', 'error')
             db.close()
-            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+            return _reg_page(request.form)
         if db.execute('SELECT id FROM businesses WHERE email=%s', (email,)).fetchone():
             flash('flash.auth.email_taken', 'error')
             db.close()
-            return render_template('auth/register.html', form=request.form, categories=CATEGORIES)
+            return _reg_page(request.form)
 
         from billing import TRIAL_DAYS
+        # 没走学院链接进来的，school_id 为空；勾选没打钩的只记归属不进统计
+        school_id = school['id'] if school else None
+        consent = 1 if (school and request.form.get('school_consent')) else 0
         db.execute(
-            "INSERT INTO businesses (name, slug, email, password_hash, phone, category, is_approved, trial_ends_at, subscription_status) "
-            "VALUES (%s,%s,%s,%s,%s,%s,0, NOW() + (%s || ' days')::interval, 'trialing')",
-            (name, slug, email, generate_password_hash(password), phone, category, TRIAL_DAYS)
+            "INSERT INTO businesses (name, slug, email, password_hash, phone, category, is_approved, trial_ends_at, subscription_status, school_id, school_consent) "
+            "VALUES (%s,%s,%s,%s,%s,%s,0, NOW() + (%s || ' days')::interval, 'trialing', %s, %s)",
+            (name, slug, email, generate_password_hash(password), phone, category, TRIAL_DAYS,
+             school_id, consent)
         )
         db.commit()
 
@@ -127,7 +142,7 @@ def register():
         flash('flash.auth.register_success', 'success')
         return redirect(url_for('auth.login'))
 
-    return render_template('auth/register.html', form={}, categories=CATEGORIES)
+    return _reg_page({})
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit('10 per minute')

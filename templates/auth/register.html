@@ -1,12 +1,26 @@
 {% extends "base.html" %}
 {% block title %}{{ t('auth.register.title_tag') }}{% endblock %}
+{% block head %}
+<style>
+  .school-banner { background: var(--cream, #fcfbf7); border: 1px solid var(--gold, #c9a94a);
+                   border-radius: 10px; padding: 10px 14px; margin-bottom: 18px;
+                   font-size: 14px; color: var(--text, #141414); }
+  .school-consent { display: flex; gap: 9px; align-items: flex-start; margin: 4px 0 18px;
+                    font-size: 13px; line-height: 1.6; color: var(--muted, #666); cursor: pointer; }
+  .school-consent input { margin-top: 3px; flex: none; }
+</style>
+{% endblock %}
 {% block content %}
 <div class="auth-container">
   <div class="auth-card">
     <h1>{{ t('auth.register.title') }}</h1>
     <p class="auth-sub">{{ t('auth.register.subtitle') }}</p>
+    {% if school %}
+    <div class="school-banner">{{ t('auth.register.school_from', name=school.name) }}</div>
+    {% endif %}
     <form method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if school %}<input type="hidden" name="school" value="{{ school.slug }}">{% endif %}
       <label class="field-label">{{ t('auth.register.biz_name') }}</label>
       <input class="form-input" type="text" name="name" id="biz-name" placeholder="{{ t('auth.register.biz_name_ph') }}" required value="{{ form.get('name','') }}" autofocus>
 
@@ -46,6 +60,13 @@
         </button>
       </div>
       <p class="field-error" id="pw-error">{{ t('auth.register.password_mismatch_inline') }}</p>
+
+      {% if school %}
+      <label class="school-consent">
+        <input type="checkbox" name="school_consent" value="1" {% if form.get('school_consent') %}checked{% endif %}>
+        <span>{{ t('auth.register.school_consent', name=school.name) }}</span>
+      </label>
+      {% endif %}
 
       <button type="submit" class="btn-primary-full">{{ t('auth.register.submit') }}</button>
     </form>

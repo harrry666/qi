@@ -75,4 +75,21 @@
   </form>
 </div>
 
+{% if school %}
+<div class="settings-card" style="margin-top:20px">
+  <h2>{{ t('dash.settings.school_heading') }}</h2>
+  <p style="font-size:13px;color:#555;margin-bottom:10px">
+    {{ t('dash.settings.school_desc', name=school.name) }}
+  </p>
+  <form method="POST" action="{{ url_for('dashboard.school_consent') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label style="display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.6;cursor:pointer">
+      <input type="checkbox" name="school_consent" value="1" style="margin-top:3px" {% if biz.school_consent %}checked{% endif %}>
+      <span>{{ t('dash.settings.school_consent_label', name=school.name) }}</span>
+    </label>
+    <button type="submit" style="margin-top:12px;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:transparent">{{ t('dash.settings.school_save') }}</button>
+  </form>
+</div>
+{% endif %}
+
 {% endblock %}

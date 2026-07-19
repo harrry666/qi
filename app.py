@@ -76,6 +76,7 @@ from blueprints.booking import booking_bp
 from blueprints.api import api_bp
 from blueprints.admin import admin_bp
 from blueprints.stripe_billing import stripe_bp
+from blueprints.school import school_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
@@ -83,6 +84,7 @@ app.register_blueprint(booking_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(stripe_bp)
+app.register_blueprint(school_bp)
 csrf.exempt(booking_bp)
 csrf.exempt(api_bp)
 csrf.exempt(app.view_functions['stripe_billing.webhook'])

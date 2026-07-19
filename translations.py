@@ -50,6 +50,10 @@ TRANSLATIONS = {
     'auth.register.password_confirm_ph': {'zh': '再次输入密码', 'en': 'Re-enter your password'},
     'auth.register.password_mismatch_inline': {'zh': '两次输入的密码不一致', 'en': "Passwords don't match"},
     'auth.register.submit':         {'zh': '创建账号 →', 'en': 'Create account →'},
+    'auth.register.school_from':    {'zh': '🎓 你正在通过「{name}」的专属链接开通，前 6 个月免费。',
+                                     'en': '🎓 Signing up through {name}. Your first 6 months are free.'},
+    'auth.register.school_consent': {'zh': '同意把我的开店情况（开店时间、服务品类、每月接单量）以汇总形式共享给「{name}」，用于学院统计毕业生就业情况。不包含我的客户名单和营业额，随时可在设置里关闭。',
+                                     'en': 'Share my shop stats (opening date, service category, monthly bookings) with {name} in aggregate form, for graduate outcome reporting. Customer lists and revenue are never shared. You can turn this off in settings anytime.'},
     'auth.register.have_account':   {'zh': '已有账号？', 'en': 'Already have an account?'},
     'auth.register.go_login':       {'zh': '去登录', 'en': 'Log in'},
 
@@ -387,6 +391,13 @@ TRANSLATIONS = {
     'dash.settings.booking_link_heading': {'zh': '你的预约链接', 'en': 'Your booking link'},
     'dash.settings.copy_link':   {'zh': '复制链接', 'en': 'Copy link'},
     'dash.settings.share_hint':  {'zh': '将此链接分享给你的客户。', 'en': 'Share this link with your customers.'},
+    'dash.settings.school_heading': {'zh': '院校数据共享', 'en': 'School data sharing'},
+    'dash.settings.school_desc': {'zh': '你是通过「{name}」的专属链接开通的。',
+                                  'en': 'You signed up through {name}.'},
+    'dash.settings.school_consent_label': {
+        'zh': '同意把我的开店情况（开店时间、服务品类、每月接单量）以汇总形式共享给「{name}」。不包含客户名单和营业额。取消勾选后学院立即看不到我的数据。',
+        'en': 'Share my shop stats (opening date, service category, monthly bookings) with {name} in aggregate form. Customer lists and revenue are never included. Unchecking removes my data from their view immediately.'},
+    'dash.settings.school_save': {'zh': '保存', 'en': 'Save'},
     'dash.settings.calendar_heading': {'zh': '日历订阅', 'en': 'Calendar subscription'},
     'dash.settings.calendar_desc': {
         'zh': '把下面这个链接添加到 Google Calendar / Apple 日历 / Outlook 的"订阅日历"里，预约会自动同步显示（大约每 15 分钟刷新一次，只读，不能在外部日历里改）。',

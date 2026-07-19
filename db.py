@@ -260,6 +260,18 @@ def init_db():
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
         'CREATE INDEX IF NOT EXISTS idx_sms_usage_biz_month ON sms_usage (business_id, created_at)',
+        # 院校合作：毕业生开店数据看板
+        '''CREATE TABLE IF NOT EXISTS schools (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            slug TEXT UNIQUE NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )''',
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS school_id INTEGER',
+        # 毕业生注册时勾选，未勾选的店不进学院看板的任何统计
+        'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS school_consent INTEGER DEFAULT 0',
+        'CREATE INDEX IF NOT EXISTS idx_businesses_school ON businesses (school_id)',
         # Backfill: some old appointments (e.g. WeChat mini-program bookings before
         # create_booking() linked customers) have phone/name but no customer_id.
         '''INSERT INTO customers (business_id, phone, name, profile_token)

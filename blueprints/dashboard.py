@@ -1282,7 +1282,25 @@ def settings():
     _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
     booking_url = f"{_base}{url_for('booking.book_page', slug=biz['slug'])}"
     calendar_url = f"{_base}{url_for('booking.calendar_feed', token=biz['calendar_token'])}"
-    return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url, calendar_url=calendar_url, categories=CATEGORIES)
+    school = None
+    if biz.get('school_id'):
+        db = get_db()
+        school = db.execute('SELECT name FROM schools WHERE id=%s', (biz['school_id'],)).fetchone()
+        db.close()
+    return render_template('dashboard/settings.html', biz=biz, booking_url=booking_url,
+                           calendar_url=calendar_url, categories=CATEGORIES, school=school)
+
+@dashboard_bp.route('/settings/school-consent', methods=['POST'])
+@login_required
+def school_consent():
+    """毕业生自己开关「把开店数据共享给学院」。注册页的同意文案承诺了可以随时关。"""
+    consent = 1 if request.form.get('school_consent') else 0
+    db = get_db()
+    db.execute('UPDATE businesses SET school_consent=%s WHERE id=%s', (consent, current_user.id))
+    db.commit()
+    db.close()
+    flash('flash.settings.saved', 'success')
+    return redirect(url_for('dashboard.settings'))
 
 @dashboard_bp.route('/settings/calendar_token/regenerate', methods=['POST'])
 @login_required
