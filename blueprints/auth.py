@@ -103,6 +103,9 @@ def register():
         if len(phone) != 10:
             flash('flash.common.phone_invalid', 'error')
             return _reg_page(request.form)
+        if category not in CATEGORIES:
+            flash('flash.auth.category_invalid', 'error')
+            return _reg_page(request.form)
 
         db = get_db()
         if db.execute('SELECT id FROM businesses WHERE slug=%s', (slug,)).fetchone():
@@ -118,15 +121,15 @@ def register():
         # 没走学院链接进来的，school_id 为空；勾选没打钩的只记归属不进统计
         school_id = school['id'] if school else None
         consent = 1 if (school and request.form.get('school_consent')) else 0
-        db.execute(
+        # 商家行和 7 条营业时间必须同一个事务，中途失败要整体回滚。
+        # 拆成两次 commit 会留下「能登录但没有营业时间」的半成品，可用时段算不出来。
+        biz_id = db.execute(
             "INSERT INTO businesses (name, slug, email, password_hash, phone, category, is_approved, trial_ends_at, subscription_status, school_id, school_consent) "
-            "VALUES (%s,%s,%s,%s,%s,%s,0, NOW() + (%s || ' days')::interval, 'trialing', %s, %s)",
+            "VALUES (%s,%s,%s,%s,%s,%s,0, NOW() + (%s || ' days')::interval, 'trialing', %s, %s) RETURNING id",
             (name, slug, email, generate_password_hash(password), phone, category, TRIAL_DAYS,
              school_id, consent)
-        )
-        db.commit()
+        ).fetchone()['id']
 
-        biz = db.execute('SELECT id FROM businesses WHERE email=%s', (email,)).fetchone()
         defaults = [
             (0,'09:00','18:00',0),(1,'09:00','18:00',0),(2,'09:00','18:00',0),
             (3,'09:00','18:00',0),(4,'09:00','18:00',0),(5,'09:00','17:00',0),(6,'09:00','17:00',1),
@@ -134,7 +137,7 @@ def register():
         for wd, ot, ct, closed in defaults:
             db.execute(
                 'INSERT INTO business_hours (business_id, weekday, open_time, close_time, is_closed) VALUES (%s,%s,%s,%s,%s)',
-                (biz['id'], wd, ot, ct, closed)
+                (biz_id, wd, ot, ct, closed)
             )
         db.commit()
         db.close()
