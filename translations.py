@@ -355,6 +355,7 @@ TRANSLATIONS = {
     'flash.svc.added':   {'zh': '服务已添加。', 'en': 'Service added.'},
     'flash.svc.updated': {'zh': '服务已更新。', 'en': 'Service updated.'},
     'flash.svc.icon_updated': {'zh': '图片已更新。', 'en': 'Image updated.'},
+    'flash.svc.not_found': {'zh': '服务项目不存在。', 'en': 'Service not found.'},
     'flash.svc.icon_invalid': {'zh': '请上传有效的图片文件（jpg/png/webp/gif）。', 'en': 'Please upload a valid image file (jpg/png/webp/gif).'},
 
     'dash.settings.title_tag':   {'zh': '设置', 'en': 'Settings'},

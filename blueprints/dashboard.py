@@ -232,12 +232,12 @@ def add_service():
     price = float(price_str) if price_str else None
     emoji = request.form.get('emoji', '').strip()
     buffer_mins = int(request.form.get('buffer_mins', 0) or 0)
-    icon_url = _upload_to_cloudinary(request.files.get('icon_image'), transformation=[{'width': 200, 'height': 200, 'crop': 'fill'}])
 
     if not name:
         flash('flash.svc.name_required', 'error')
         return redirect(url_for('dashboard.services'))
 
+    icon_url = _upload_to_cloudinary(request.files.get('icon_image'), transformation=[{'width': 200, 'height': 200, 'crop': 'fill'}])
     db = get_db()
     db.execute(
         'INSERT INTO services (business_id, name, name_sub, duration_mins, duration_min_mins, price, emoji, buffer_mins, icon_url) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
@@ -251,18 +251,25 @@ def add_service():
 @dashboard_bp.route('/services/<int:svc_id>/icon', methods=['POST'])
 @login_required
 def update_service_icon(svc_id):
+    db = get_db()
+    svc = db.execute('SELECT icon_url FROM services WHERE id=%s AND business_id=%s', (svc_id, current_user.id)).fetchone()
+    if not svc:
+        db.close()
+        flash('flash.svc.not_found', 'error')
+        return redirect(url_for('dashboard.services'))
     icon_url = _upload_to_cloudinary(request.files.get('icon_image'), transformation=[{'width': 200, 'height': 200, 'crop': 'fill'}])
     if icon_url:
-        db = get_db()
         db.execute(
             'UPDATE services SET icon_url=%s WHERE id=%s AND business_id=%s',
             (icon_url, svc_id, current_user.id)
         )
         db.commit()
-        db.close()
         flash('flash.svc.icon_updated', 'success')
     else:
         flash('flash.svc.icon_invalid', 'error')
+    db.close()
+    if icon_url:
+        _destroy_urls(svc['icon_url'])
     return redirect(url_for('dashboard.services'))
 
 @dashboard_bp.route('/services/<int:svc_id>/color', methods=['POST'])
@@ -1362,8 +1369,13 @@ def edit_staff(sid):
     if not name:
         flash('flash.staff.name_required', 'error')
         return redirect(url_for('dashboard.staff'))
-    avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/staff', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
     db = get_db()
+    st = db.execute('SELECT avatar_url FROM staff WHERE id=%s AND business_id=%s', (sid, current_user.id)).fetchone()
+    if not st:
+        db.close()
+        flash('flash.staff.not_found', 'error')
+        return redirect(url_for('dashboard.staff'))
+    avatar_url = _upload_to_cloudinary(request.files.get('avatar'), folder='qi/staff', transformation=[{'width': 400, 'height': 400, 'crop': 'fill'}])
     if avatar_url:
         db.execute(
             'UPDATE staff SET name=%s, emoji=%s, bio=%s, avatar_url=%s WHERE id=%s AND business_id=%s',
@@ -1376,6 +1388,8 @@ def edit_staff(sid):
         )
     db.commit()
     db.close()
+    if avatar_url:
+        _destroy_urls(st['avatar_url'])
     flash('flash.staff.updated', 'success')
     return redirect(url_for('dashboard.staff'))
 
