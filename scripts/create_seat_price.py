@@ -34,30 +34,44 @@ TIERS = [
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
 if not stripe.api_key:
     sys.exit('STRIPE_SECRET_KEY 未设置')
-live = stripe.api_key.startswith('sk_live')
-print(f"模式：{'生产 LIVE' if live else '测试 TEST'}")
+
+# 密钥有 sk_（标准）和 rk_（受限）两种，都可能是 live。
+# 只认 sk_live 会漏掉 rk_live，导致在生产上不弹确认就直接建，所以按第二段判断。
+_parts = stripe.api_key.split('_')
+live = len(_parts) > 1 and _parts[1] == 'live'
+restricted = stripe.api_key.startswith('rk_')
+print(f"模式：{'生产 LIVE' if live else '测试 TEST'}"
+      f"{'（受限密钥 rk_）' if restricted else ''}")
 if live:
     ans = input('这会在生产 Stripe 建一个真实 price，继续？输入 yes 确认：')
     if ans.strip().lower() != 'yes':
         sys.exit('已取消')
 
-products = stripe.Product.list(limit=100)
-product = next((p for p in products.data if p.name == 'Hastrid 全功能版'), None)
-if product:
-    print(f'复用已有 product：{product.id}')
-else:
-    product = stripe.Product.create(name='Hastrid 全功能版',
-                                    description='在线预约系统，按在职员工数计费，封顶 $39.99/月')
-    print(f'新建 product：{product.id}')
+try:
+    products = stripe.Product.list(limit=100)
+    product = next((p for p in products.data if p.name == 'Hastrid 全功能版'), None)
+    if product:
+        print(f'复用已有 product：{product.id}')
+    else:
+        product = stripe.Product.create(name='Hastrid 全功能版',
+                                        description='在线预约系统，按在职员工数计费，封顶 $39.99/月')
+        print(f'新建 product：{product.id}')
 
-price = stripe.Price.create(
-    product=product.id,
-    currency='usd',
-    recurring={'interval': 'month'},
-    billing_scheme='tiered',
-    tiers_mode='volume',
-    tiers=TIERS,
-)
+    price = stripe.Price.create(
+        product=product.id,
+        currency='usd',
+        recurring={'interval': 'month'},
+        billing_scheme='tiered',
+        tiers_mode='volume',
+        tiers=TIERS,
+    )
+except stripe.error.PermissionError as e:
+    sys.exit(
+        f'\n权限不够：{e}\n\n'
+        '这个密钥没有建 Product / Price 的权限。两个办法：\n'
+        '  1. 换用标准密钥 sk_live_（Stripe 后台 API keys 页的 Secret key 那一行）\n'
+        '  2. 或者去 Stripe 后台把这个受限密钥的 Products 和 Prices 权限都改成 Write\n'
+    )
 print(f'\n✓ 已建席位阶梯 price：{price.id}\n')
 print('核对一下分层：')
 # stripe 对象不支持 .get()，属性访问，up_to 为 None 表示最高一档
