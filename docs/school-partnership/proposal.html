@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Hastrid 哈瓜小约 · 美容学院合作方案</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Heiti SC", sans-serif;
+    color: #141414;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 210mm; height: 297mm; overflow: hidden;
+    padding: 11mm 14mm 9mm;
+    display: flex; flex-direction: column;
+  }
+  .serif { font-family: "Songti SC", "Noto Serif SC", "STSong", serif; }
+
+  .head { display: flex; align-items: baseline; justify-content: space-between;
+          padding-bottom: 4mm; border-bottom: 1.2px solid #141414; }
+  .brand { display: flex; align-items: baseline; gap: 3mm; }
+  .brand .en { font-size: 19pt; font-weight: 600; letter-spacing: .5px; }
+  .brand .cn { font-size: 10pt; color: #555; letter-spacing: 1px; }
+  .tagline { font-size: 8pt; font-weight: 600; letter-spacing: 2px; color: #333; }
+
+  .hero { margin-top: 6mm; }
+  h1 { font-size: 22pt; font-weight: 600; letter-spacing: 1px; line-height: 1.32; }
+  h1 u { text-decoration: none; border-bottom: 2.5px solid #141414; padding-bottom: 1mm; }
+  .lead { margin-top: 4mm; font-size: 9pt; line-height: 1.8; color: #333; max-width: 172mm; }
+
+  .sec { margin-top: 5.5mm; }
+  .sec-head { display: flex; align-items: baseline; gap: 4mm; padding-bottom: 2.2mm;
+              border-bottom: 1px solid #141414; }
+  .sec-head .n { font-size: 9pt; color: #b0b0b0; }
+  .sec-head h2 { font-size: 13pt; font-weight: 600; letter-spacing: .5px; }
+  .sec-head .note { margin-left: auto; font-size: 8pt; color: #8a6d1f; letter-spacing: .5px; }
+
+  .core { background: #fcfbf7; border-bottom: 1px solid #ddd; padding: 4mm 5mm; }
+  .core p { font-size: 9pt; line-height: 1.8; color: #333; }
+  .core b { color: #141414; font-weight: 600; }
+  .big { display: flex; align-items: baseline; gap: 2mm; margin-bottom: 2.5mm; }
+  .big .pct { font-family: "Songti SC", serif; font-size: 30pt; font-weight: 600;
+              color: #8a6d1f; line-height: 1; }
+  .big .txt { font-size: 10.5pt; font-weight: 600; letter-spacing: .5px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 3mm; }
+  th, td { text-align: left; padding: 1.9mm 3mm; font-size: 8.8pt; border-bottom: 1px solid #e2ded2; }
+  th { font-size: 8pt; color: #777; font-weight: 600; letter-spacing: .5px; border-bottom: 1px solid #c9c2ae; }
+  td.v { font-weight: 600; font-size: 10.5pt; }
+  td.hl { color: #8a6d1f; }
+  .tnote { margin-top: 2.5mm; font-size: 7.8pt; color: #888; line-height: 1.6; }
+
+  .item { display: flex; gap: 5mm; padding: 2.7mm 0; border-bottom: 1px solid #ddd; }
+  .it-title { font-size: 10pt; font-weight: 600; width: 30mm; flex: none; letter-spacing: .5px; }
+  .it-body { font-size: 8.8pt; line-height: 1.7; color: #444; }
+  .it-body b { color: #141414; font-weight: 600; }
+
+  .price { display: flex; gap: 5mm; margin-top: 3mm; }
+  .pcard { flex: 1; border: 1px solid #ddd; padding: 3.5mm 4mm; }
+  .pcard .k { font-size: 8pt; color: #777; letter-spacing: .5px; }
+  .pcard .v { font-size: 13.5pt; font-weight: 600; margin-top: 1.5mm; letter-spacing: .3px; }
+  .pcard .d { font-size: 8.2pt; color: #666; line-height: 1.7; margin-top: 2mm; }
+  .pcard.gold { border-color: #c9a94a; background: #fcfbf7; }
+  .pcard.gold .v { color: #8a6d1f; }
+
+  .contact { margin-top: auto; background: #141414; color: #fff; padding: 5mm 6mm; }
+  .contact h3 { font-size: 10pt; font-weight: 600; margin-bottom: 3mm; letter-spacing: .5px; }
+  .crow { display: flex; gap: 9mm; }
+  .row { display: flex; align-items: baseline; gap: 4mm; }
+  .row .k { font-size: 8pt; color: #999; }
+  .row .v { font-size: 12pt; font-weight: 600; letter-spacing: .3px; }
+  .c-note { margin-top: 3.5mm; font-size: 7.8pt; color: #999; line-height: 1.7; }
+
+  .foot { margin-top: 4mm; display: flex; justify-content: space-between;
+          font-size: 7.8pt; color: #666; }
+  .foot b { color: #141414; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div class="brand">
+      <span class="en serif">Hastrid</span>
+      <span class="cn">哈瓜小约</span>
+    </div>
+    <div class="tagline">美容学院合作方案</div>
+  </div>
+
+  <div class="hero">
+    <h1 class="serif">学院推荐一家店，<u>我们分你一年</u></h1>
+    <p class="lead">
+      Hastrid 是给华人小商家做的在线预约系统，界面全中文，客人用微信小程序或网页链接就能自己下单。
+      学院的毕业生开店第一件事就是接客，接客第一件事就是排预约。
+      我们想把学院变成推荐渠道，学院每推荐一家店签约，我们按订阅费分成给学院。
+    </p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <span class="n serif">01</span>
+      <h2>推荐分成</h2>
+      <span class="note">合作的核心</span>
+    </div>
+    <div class="core">
+      <div class="big">
+        <span class="pct">20%</span>
+        <span class="txt">按学院推荐的每一家店，首年订阅费分成</span>
+      </div>
+      <p>
+        店家通过学院渠道注册，签约后每个月正常付订阅费，我们把其中 <b>20% 打给学院</b>，连续付满一年。
+        推荐越多，学院这块收入越滚越大，<b>是持续的，不是一次性的介绍费</b>。
+      </p>
+      <table>
+        <tr><th>学院推荐店数</th><th>店家平均订阅</th><th>学院首年分成</th></tr>
+        <tr><td>10 家</td><td class="v">$30 / 月</td><td class="v hl">约 $720</td></tr>
+        <tr><td>30 家</td><td class="v">$30 / 月</td><td class="v hl">约 $2,160</td></tr>
+        <tr><td>50 家</td><td class="v">$30 / 月</td><td class="v hl">约 $3,600</td></tr>
+      </table>
+      <p class="tnote">按 3 人小店 $30/月 估算。店家规模越大订阅越高，分成同比例上浮，封顶 $39.99/月的店首年分成约 $96/家。</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <span class="n serif">02</span>
+      <h2>学院这边拿到什么</h2>
+    </div>
+    <div class="item">
+      <div class="it-title serif">系统终身免费</div>
+      <div class="it-body">学院自己排课、排学生实操、管客人，<b>永久免费用，不限人数</b>。</div>
+    </div>
+    <div class="item">
+      <div class="it-title serif">学生实训用</div>
+      <div class="it-body">
+        课上直接用真系统练接单和排班，学生毕业开店已经会用了。
+        这也是学院招生时能讲的东西，<b>毕业生带着一套现成的开店工具走</b>。
+      </div>
+    </div>
+    <div class="item">
+      <div class="it-title serif">学院案例署名</div>
+      <div class="it-body">我们做成合作案例对外发，学院名字和 logo 放在官网合作页，等于免费曝光。</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <span class="n serif">03</span>
+      <h2>价格：毕业生开店负担得起</h2>
+    </div>
+    <div class="price">
+      <div class="pcard gold">
+        <div class="k">前 6 个月</div>
+        <div class="v">完全免费</div>
+        <div class="d">学院推荐来的店，前半年不收钱。新店最缺现金的阶段不用掏一分钱。</div>
+      </div>
+      <div class="pcard">
+        <div class="k">一个人的店</div>
+        <div class="v">$15 / 月</div>
+        <div class="d">含 200 段短信提醒，随时可停，不绑合约。</div>
+      </div>
+      <div class="pcard">
+        <div class="k">带员工的店</div>
+        <div class="v">$10 / 人，封顶 $39.99</div>
+        <div class="d">再多员工也不超过 $39.99/月。同类系统按人头收 $14.95，10 人店要 $149.50。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact">
+    <h3>下一步：学院先免费开通用起来，我上门带一次学生实操课</h3>
+    <div class="crow">
+      <div class="row"><span class="k">网址</span><span class="v">hastridbooking.com</span></div>
+      <div class="row"><span class="k">电话</span><span class="v">626-559-6294</span></div>
+      <div class="row"><span class="k">微信</span><span class="v">ii9so_lovz</span></div>
+    </div>
+    <div class="c-note">分成比例、结算周期、推荐记录方式都可以按学院的要求写进书面协议再签。</div>
+  </div>
+
+  <div class="foot">
+    <span>Hastrid 哈瓜小约 · 华人小商家在线预约系统 · 本地在读大学生独立开发</span>
+    <span><b>现有美业商家真实在用</b></span>
+  </div>
+
+</div>
+</body>
+</html>
