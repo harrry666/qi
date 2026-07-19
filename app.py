@@ -117,8 +117,17 @@ def set_security_headers(response):
     )
     return response
 
-from db import init_db
+from db import init_db, close_open_dbs
 init_db()
+
+@app.teardown_appcontext
+def _release_db_connections(exc):
+    # 兜底回收：调用点在 get_db() 和 db.close() 之间抛异常时，连接不会永久留在池外。
+    # close() 是幂等的，正常关过的连接这里直接跳过。
+    try:
+        close_open_dbs()
+    except Exception:
+        pass
 
 @app.errorhandler(404)
 def not_found(e):

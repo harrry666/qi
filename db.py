@@ -3,6 +3,7 @@ import psycopg2.extras
 import os
 import re
 from dotenv import load_dotenv
+from flask import g, has_app_context
 from extensions import db_pool
 
 load_dotenv()
@@ -16,6 +17,7 @@ class _DB:
     def __init__(self, conn, pooled=False):
         self._conn = conn
         self._pooled = pooled
+        self._closed = False
 
     def execute(self, sql, params=()):
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -26,6 +28,10 @@ class _DB:
         self._conn.commit()
 
     def close(self):
+        # 幂等：同一条连接绝不能 putconn 两次，那会让池里出现重复句柄，比泄露更糟
+        if self._closed:
+            return
+        self._closed = True
         if self._pooled:
             self._conn.rollback()
             db_pool.putconn(self._conn)
@@ -34,10 +40,25 @@ class _DB:
 
 
 def get_db():
-    if db_pool:
-        return _DB(db_pool.getconn(), pooled=True)
-    conn = psycopg2.connect(_URL)
-    return _DB(conn)
+    db = _DB(db_pool.getconn(), pooled=True) if db_pool else _DB(psycopg2.connect(_URL))
+    # 请求上下文里登记，交给 app.py 的 teardown_appcontext 兜底回收；
+    # 脚本 / APScheduler / threading.Thread 没有 app context，走原来的裸路径不变
+    if has_app_context():
+        conns = getattr(g, '_open_dbs', None)
+        if conns is None:
+            conns = []
+            g._open_dbs = conns
+        conns.append(db)
+    return db
+
+
+def close_open_dbs():
+    """teardown 兜底：把本次请求里还没关的连接逐个还给池，单个失败不影响其他。"""
+    for db in getattr(g, '_open_dbs', []) or []:
+        try:
+            db.close()
+        except Exception:
+            pass
 
 
 def normalize_phone(raw):
@@ -123,6 +144,8 @@ def init_db():
             status TEXT DEFAULT 'confirmed',
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
+        # 几乎所有查询都是 WHERE business_id=%s AND appointment_dt ...，customer_id 也常被查
+        'CREATE INDEX IF NOT EXISTS idx_appointments_biz_dt ON appointments (business_id, appointment_dt)',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS category TEXT DEFAULT \'\'',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT \'\'',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS cover_url TEXT DEFAULT \'\'',
@@ -235,6 +258,8 @@ def init_db():
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_id INTEGER',
+        # 必须在上面这条 ALTER 之后：新库建表时 appointments 还没有 customer_id 列
+        'CREATE INDEX IF NOT EXISTS idx_appointments_customer ON appointments (customer_id)',
         "ALTER TABLE appointments ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'zh'",
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS support_contact TEXT DEFAULT \'\'',
         'ALTER TABLE businesses ADD COLUMN IF NOT EXISTS calendar_token TEXT',
