@@ -11,7 +11,7 @@ import io
 import json
 from blueprints.booking import send_sms, format_phone
 from blueprints.auth import CATEGORIES
-from cloud import upload_to_cloudinary as _upload_to_cloudinary
+from cloud import upload_to_cloudinary as _upload_to_cloudinary, destroy_urls as _destroy_urls
 from translations import t
 from flask import g
 
@@ -1112,17 +1112,20 @@ def customer_update_profile(cid):
 @login_required
 def customer_delete(cid):
     db = get_db()
-    own = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+    own = db.execute('SELECT id, avatar_url FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
     if not own:
         db.close()
         flash('flash.customers.not_found', 'error')
         return redirect(url_for('dashboard.customers'))
+    stale = [r['photo_url'] for r in db.execute('SELECT photo_url FROM customer_photos WHERE customer_id=%s', (cid,)).fetchall()]
+    stale.append(own['avatar_url'])
     db.execute('DELETE FROM customer_photos WHERE customer_id=%s', (cid,))
     db.execute('DELETE FROM balance_transactions WHERE customer_id=%s', (cid,))
     db.execute('UPDATE appointments SET customer_id=NULL WHERE customer_id=%s AND business_id=%s', (cid, current_user.id))
     db.execute('DELETE FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id))
     db.commit()
     db.close()
+    _destroy_urls(*stale)
     flash('flash.customers.deleted', 'success')
     return redirect(url_for('dashboard.customers'))
 
@@ -1130,7 +1133,7 @@ def customer_delete(cid):
 @login_required
 def customer_update_avatar(cid):
     db = get_db()
-    cust = db.execute('SELECT id FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+    cust = db.execute('SELECT id, avatar_url FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
     if not cust:
         db.close()
         flash('flash.customers.not_found', 'error')
@@ -1143,6 +1146,8 @@ def customer_update_avatar(cid):
     else:
         flash('flash.customers.avatar_invalid', 'error')
     db.close()
+    if avatar_url:
+        _destroy_urls(cust['avatar_url'])
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/photo', methods=['POST'])
@@ -1172,13 +1177,17 @@ def customer_add_photo(cid):
 @login_required
 def customer_delete_photo(cid, pid):
     db = get_db()
-    db.execute(
-        "DELETE FROM customer_photos WHERE id=%s AND customer_id=%s "
+    row = db.execute(
+        "SELECT photo_url FROM customer_photos WHERE id=%s AND customer_id=%s "
         "AND customer_id IN (SELECT id FROM customers WHERE business_id=%s)",
         (pid, cid, current_user.id)
-    )
-    db.commit()
+    ).fetchone()
+    if row:
+        db.execute('DELETE FROM customer_photos WHERE id=%s', (pid,))
+        db.commit()
     db.close()
+    if row:
+        _destroy_urls(row['photo_url'])
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/balance', methods=['POST'])

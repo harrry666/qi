@@ -1,4 +1,5 @@
 import os
+import re
 import cloudinary
 import cloudinary.uploader
 
@@ -23,3 +24,24 @@ def upload_to_cloudinary(file_storage, folder='qi/misc', **kwargs):
         return result['secure_url']
     except Exception:
         return None
+
+
+def public_id_from_url(url):
+    if not url or 'res.cloudinary.com' not in url or '/upload/' not in url:
+        return None
+    parts = url.split('/upload/', 1)[1].split('/')
+    if parts and re.fullmatch(r'v\d+', parts[0]):
+        parts = parts[1:]
+    pid = '/'.join(parts).rsplit('.', 1)[0]
+    return pid or None
+
+
+def destroy_urls(*urls):
+    for url in urls:
+        pid = public_id_from_url(url)
+        if not pid:
+            continue
+        try:
+            cloudinary.uploader.destroy(pid)
+        except Exception:
+            pass

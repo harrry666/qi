@@ -35,6 +35,9 @@
   {% if request.args.get('saved') %}
   <div style="background:#E7F4EC;color:#2E9E63;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;margin-bottom:14px;text-align:center">{{ t('myprofile.saved') }}</div>
   {% endif %}
+  {% if request.args.get('failed') %}
+  <div style="background:#FCEAEA;color:#C0392B;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;margin-bottom:14px;text-align:center">{{ t('myprofile.upload_failed') }}</div>
+  {% endif %}
 
   <div class="my-card">
     <div class="my-head">

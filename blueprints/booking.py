@@ -759,6 +759,7 @@ def my_profile_photo(token):
     from cloud import upload_to_cloudinary
     db = get_db()
     cust = db.execute('SELECT id FROM customers WHERE profile_token=%s', (token,)).fetchone()
+    saved = False
     if cust:
         photo_url = upload_to_cloudinary(request.files.get('photo'), folder='qi/customer_photos', transformation=[{'width': 1200, 'height': 1200, 'crop': 'limit'}])
         note = request.form.get('note', '').strip()
@@ -768,5 +769,8 @@ def my_profile_photo(token):
                 (cust['id'], photo_url, note)
             )
             db.commit()
+            saved = True
     db.close()
-    return redirect(url_for('booking.my_profile', token=token, saved=1))
+    if saved:
+        return redirect(url_for('booking.my_profile', token=token, saved=1))
+    return redirect(url_for('booking.my_profile', token=token, failed=1))

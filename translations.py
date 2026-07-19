@@ -789,6 +789,7 @@ TRANSLATIONS = {
 
     'myprofile.title_tag': {'zh': '我的档案 · {name}', 'en': 'My profile · {name}'},
     'myprofile.saved': {'zh': '✓ 已保存', 'en': '✓ Saved'},
+    'myprofile.upload_failed': {'zh': '照片上传失败，请重试', 'en': 'Photo upload failed, please try again'},
     'myprofile.unnamed': {'zh': '未命名', 'en': 'Unnamed'},
     'myprofile.customer_of': {'zh': '{name} 的客户档案', 'en': "Customer profile at {name}"},
     'myprofile.balance_label': {'zh': '储值余额', 'en': 'Balance'},
