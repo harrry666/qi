@@ -105,14 +105,31 @@ def generate_slots(business_id, date_obj, duration_mins, staff_id=None):
         'SELECT id FROM business_blackouts WHERE business_id=%s AND start_date<=%s AND end_date>=%s',
         (business_id, ds, ds)
     ).fetchone()
+    # 休息日临时营业：针对该员工的开放优先，其次全店开放（staff_id 为空）。有则盖过休业/黑名单
+    if staff_id:
+        override = db.execute(
+            'SELECT open_time, close_time FROM business_open_overrides '
+            'WHERE business_id=%s AND date=%s AND (staff_id=%s OR staff_id IS NULL) '
+            'ORDER BY staff_id NULLS LAST LIMIT 1',
+            (business_id, ds, staff_id)
+        ).fetchone()
+    else:
+        override = db.execute(
+            'SELECT open_time, close_time FROM business_open_overrides '
+            'WHERE business_id=%s AND date=%s AND staff_id IS NULL LIMIT 1',
+            (business_id, ds)
+        ).fetchone()
     db.close()
 
-    # 店铺当天休业/黑名单 = 硬关闭，员工个人排班也盖不过去，想约只能走加班预约
-    if not biz_bh or biz_bh['is_closed'] or blacked:
-        return []
-    bh = staff_bh or biz_bh
-    if bh['is_closed']:
-        return []
+    if override:
+        bh = override
+    else:
+        # 店铺当天休业/黑名单 = 硬关闭，员工个人排班也盖不过去，想约只能走加班预约
+        if not biz_bh or biz_bh['is_closed'] or blacked:
+            return []
+        bh = staff_bh or biz_bh
+        if bh['is_closed']:
+            return []
 
     sh, sm = map(int, bh['open_time'].split(':'))
     eh, em = map(int, bh['close_time'].split(':'))
@@ -207,10 +224,12 @@ def resolve_staff_id(business_id, service_id, date_str, time_str, duration_mins,
     candidates = get_active_staff_for_service(business_id, service_id)
     if not candidates:
         return None
+    date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
     for st in candidates:
-        if filter_available(business_id, date_str, [time_str], duration_mins, staff_id=st['id']):
+        sl = generate_slots(business_id, date_obj, duration_mins, staff_id=st['id'])
+        if time_str in filter_available(business_id, date_str, sl, duration_mins, staff_id=st['id']):
             return st['id']
-    return candidates[0]['id']
+    return None
 
 @booking_bp.route('/book/<slug>')
 def book_page(slug):

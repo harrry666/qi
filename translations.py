@@ -685,6 +685,12 @@ TRANSLATIONS = {
     'dash.calendar.comment_label': {'zh': '备注（选填）', 'en': 'Note (optional)'},
     'dash.calendar.override_label': {'zh': '加班预约（忽略营业时间，仍会检查时段冲突）', 'en': 'Overtime booking (ignore business hours, still checks conflicts)'},
     'dash.calendar.confirm_add': {'zh': '确认添加', 'en': 'Confirm'},
+    'dash.calendar.slot_open_btn': {'zh': '临时营业', 'en': 'Open this day'},
+    'dash.calendar.open_staff_label': {'zh': '哪些员工上班（不勾=全店开放）', 'en': 'Which staff work (none = whole store)'},
+    'dash.calendar.confirm_open': {'zh': '确认营业', 'en': 'Open day'},
+    'dash.calendar.open_day_label': {'zh': '临时营业 ', 'en': 'Open '},
+    'dash.calendar.open_existing_label': {'zh': '已设临时营业：', 'en': 'Already open:'},
+    'dash.calendar.remove': {'zh': '删除', 'en': 'Remove'},
 
     'dash.calendar.js.today': {'zh': '今天', 'en': 'Today'},
     'dash.calendar.js.week': {'zh': '周', 'en': 'Week'},

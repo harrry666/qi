@@ -113,9 +113,10 @@
       <button onclick="closeSlotModal()" style="border:none;background:none;cursor:pointer;font-size:20px;color:var(--muted);line-height:1;padding:0 2px">×</button>
     </div>
 
-    <div id="slot-actions" style="display:flex;gap:10px">
+    <div id="slot-actions" style="display:flex;gap:10px;flex-wrap:wrap">
       <button onclick="showSlotForm('block')" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:14px;font-weight:600">{{ t('dash.calendar.slot_lock_btn') }}</button>
       <button onclick="showSlotForm('appointment')" style="flex:1;padding:12px;border:1px solid var(--gold-border);border-radius:10px;background:var(--gold-light);cursor:pointer;font-size:14px;font-weight:600;color:var(--gold-h)">{{ t('dash.calendar.slot_add_apt_btn') }}</button>
+      <button onclick="showSlotForm('open')" style="flex-basis:100%;padding:12px;border:1px solid #A7E0B8;border-radius:10px;background:rgba(52,199,89,0.12);cursor:pointer;font-size:14px;font-weight:600;color:#1B7A3D">{{ t('dash.calendar.slot_open_btn') }}</button>
     </div>
 
     <form id="slot-block-form" style="display:none;margin-top:4px">
@@ -175,6 +176,32 @@
         <button type="button" onclick="submitAppointment()" style="padding:8px 16px;border:none;border-radius:8px;background:var(--gold);color:white;cursor:pointer;font-size:14px;font-weight:600">{{ t('dash.calendar.confirm_add') }}</button>
       </div>
     </form>
+
+    <form id="slot-open-form" style="display:none;margin-top:4px">
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.start_time') }}</label>
+          <input type="time" id="open-start-time" class="dash-input" style="margin-bottom:10px">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.end_time') }}</label>
+          <input type="time" id="open-end-time" class="dash-input" style="margin-bottom:10px">
+        </div>
+      </div>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">{{ t('dash.calendar.open_staff_label') }}</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        {% for st in staff %}
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:6px 10px">
+          <input type="checkbox" class="open-staff-cb" value="{{ st.id }}">{{ st.name }}
+        </label>
+        {% endfor %}
+      </div>
+      <div id="open-existing" style="display:none;font-size:13px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" onclick="closeSlotModal()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">{{ t('dash.calendar.cancel') }}</button>
+        <button type="button" onclick="submitOpenDay()" style="padding:8px 16px;border:none;border-radius:8px;background:#34C759;color:white;cursor:pointer;font-size:14px;font-weight:600">{{ t('dash.calendar.confirm_open') }}</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -204,7 +231,10 @@ var I18N = {
   selectNewTime: {{ t('dash.calendar.js.select_new_time')|tojson }},
   customerCommentPrefix: {{ t('dash.calendar.js.customer_comment_prefix')|tojson }},
   noteFailed: {{ t('dash.calendar.js.note_failed')|tojson }},
-  viewProfile: {{ t('dash.calendar.js.view_profile')|tojson }}
+  viewProfile: {{ t('dash.calendar.js.view_profile')|tojson }},
+  openExisting: {{ t('dash.calendar.open_existing_label')|tojson }},
+  wholeStore: {{ t('dash.calendar.whole_business')|tojson }},
+  remove: {{ t('dash.calendar.remove')|tojson }}
 };
 var calendar;
 var slotState = { date: '', time: '' };
@@ -312,6 +342,7 @@ function closeSlotModal() {
   document.getElementById('slot-actions').style.display = 'flex';
   document.getElementById('slot-block-form').style.display = 'none';
   document.getElementById('slot-appointment-form').style.display = 'none';
+  document.getElementById('slot-open-form').style.display = 'none';
 }
 
 function showSlotForm(kind) {
@@ -322,10 +353,65 @@ function showSlotForm(kind) {
     end.setMinutes(end.getMinutes() + 30);
     document.getElementById('block-end-time').value = end.toTimeString().slice(0, 5);
     document.getElementById('slot-block-form').style.display = 'block';
+  } else if (kind === 'open') {
+    document.getElementById('open-start-time').value = slotState.time;
+    var oe = new Date(slotState.date + 'T' + slotState.time);
+    oe.setMinutes(oe.getMinutes() + 120);
+    document.getElementById('open-end-time').value = oe.toTimeString().slice(0, 5);
+    document.querySelectorAll('.open-staff-cb').forEach(function(cb) { cb.checked = false; });
+    loadOpenDays();
+    document.getElementById('slot-open-form').style.display = 'block';
   } else {
     setTimeSelect(slotState.time);
     document.getElementById('slot-appointment-form').style.display = 'block';
   }
+}
+
+function loadOpenDays() {
+  var box = document.getElementById('open-existing');
+  box.style.display = 'none';
+  box.innerHTML = '';
+  fetch('{{ url_for("dashboard.calendar_open_days") }}?date=' + encodeURIComponent(slotState.date))
+    .then(function(r) { return r.json(); })
+    .then(function(list) {
+      if (!list.length) return;
+      var html = '<div style="color:var(--muted);margin-bottom:6px">' + I18N.openExisting + '</div>';
+      list.forEach(function(o) {
+        var who = o.staff_name || I18N.wholeStore;
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">'
+          + '<span>🟢 ' + o.open_time + '-' + o.close_time + '（' + who + '）</span>'
+          + '<button type="button" onclick="removeOpenDay(' + o.id + ')" style="border:none;background:none;color:#C0392B;cursor:pointer;font-size:13px">' + I18N.remove + '</button></div>';
+      });
+      box.innerHTML = html;
+      box.style.display = 'block';
+    });
+}
+
+function removeOpenDay(id) {
+  var fd = new FormData();
+  fd.append('id', id);
+  fetch('{{ url_for("dashboard.calendar_open_day_delete") }}', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadOpenDays(); calendar.refetchEvents(); });
+}
+
+function submitOpenDay() {
+  var startT = document.getElementById('open-start-time').value;
+  var endT = document.getElementById('open-end-time').value;
+  if (!startT || !endT) { alert(I18N.fillStartEnd); return; }
+  if (endT <= startT) { alert(I18N.endAfterStart); return; }
+  var fd = new FormData();
+  fd.append('date', slotState.date);
+  fd.append('open_time', startT);
+  fd.append('close_time', endT);
+  document.querySelectorAll('.open-staff-cb:checked').forEach(function(cb) { fd.append('staff_ids', cb.value); });
+  fetch('{{ url_for("dashboard.calendar_open_day") }}', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { alert(data.error); return; }
+      closeSlotModal();
+      calendar.refetchEvents();
+    });
 }
 
 function submitBlock() {

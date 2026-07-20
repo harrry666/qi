@@ -449,6 +449,16 @@ def calendar_events():
         "SELECT start_date, end_date, reason FROM business_blackouts WHERE business_id=%s",
         (current_user.id,)
     ).fetchall()
+    open_sql = (
+        "SELECT o.id, o.date, o.open_time, o.close_time, o.staff_id, st.name AS staff_name "
+        "FROM business_open_overrides o LEFT JOIN staff st ON o.staff_id=st.id "
+        "WHERE o.business_id=%s"
+    )
+    open_params = [current_user.id]
+    if sf:
+        open_sql += " AND (o.staff_id=%s OR o.staff_id IS NULL)"
+        open_params.append(sf)
+    open_days = db.execute(open_sql, tuple(open_params)).fetchall()
     db.close()
 
     events = []
@@ -507,6 +517,21 @@ def calendar_events():
             'color': 'transparent',
             'title': t('dash.calendar.blackout_label') + (bo['reason'] or ''),
             'extendedProps': {'type': 'blackout'},
+        })
+
+    for o in open_days:
+        label = '🟢 ' + t('dash.calendar.open_day_label') + o['open_time'] + '-' + o['close_time']
+        if o['staff_name']:
+            label += f"（{o['staff_name']}）"
+        events.append({
+            'id': f"open-{o['id']}",
+            'start': f"{o['date']}T{o['open_time']}:00",
+            'end': f"{o['date']}T{o['close_time']}:00",
+            'color': 'rgba(52,199,89,0.12)',
+            'textColor': '#1B7A3D',
+            'editable': False,
+            'title': label,
+            'extendedProps': {'type': 'open_day', 'openId': o['id']},
         })
 
     return jsonify(events)
@@ -615,6 +640,56 @@ def calendar_quick_appointment():
         )
     threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg, current_user.id, 'confirm'), daemon=True).start()
 
+    return jsonify({'success': True})
+
+@dashboard_bp.route('/calendar/open_days')
+@login_required
+def calendar_open_days():
+    date = request.args.get('date', '').strip()
+    db = get_db()
+    rows = db.execute(
+        'SELECT o.id, o.open_time, o.close_time, o.staff_id, st.name AS staff_name '
+        'FROM business_open_overrides o LEFT JOIN staff st ON o.staff_id=st.id '
+        'WHERE o.business_id=%s AND o.date=%s ORDER BY o.staff_id NULLS FIRST, o.open_time',
+        (current_user.id, date)
+    ).fetchall()
+    db.close()
+    return jsonify([{
+        'id': r['id'], 'open_time': r['open_time'], 'close_time': r['close_time'],
+        'staff_id': r['staff_id'], 'staff_name': r['staff_name'],
+    } for r in rows])
+
+@dashboard_bp.route('/calendar/open_day', methods=['POST'])
+@login_required
+def calendar_open_day():
+    date = request.form.get('date', '').strip()
+    open_time = request.form.get('open_time', '').strip()
+    close_time = request.form.get('close_time', '').strip()
+    staff_ids = request.form.getlist('staff_ids')
+    if not date or not open_time or not close_time or close_time <= open_time:
+        return jsonify({'error': t('flash.calendar.invalid_time_range')}), 400
+    db = get_db()
+    owned = {str(r['id']) for r in db.execute(
+        'SELECT id FROM staff WHERE business_id=%s', (current_user.id,)).fetchall()}
+    targets = [int(s) for s in staff_ids if s in owned] or [None]
+    for sid in targets:
+        db.execute(
+            'INSERT INTO business_open_overrides (business_id, date, open_time, close_time, staff_id) '
+            'VALUES (%s,%s,%s,%s,%s)',
+            (current_user.id, date, open_time, close_time, sid)
+        )
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+@dashboard_bp.route('/calendar/open_day/delete', methods=['POST'])
+@login_required
+def calendar_open_day_delete():
+    oid = request.form.get('id', '').strip()
+    db = get_db()
+    db.execute('DELETE FROM business_open_overrides WHERE id=%s AND business_id=%s', (oid, current_user.id))
+    db.commit()
+    db.close()
     return jsonify({'success': True})
 
 @dashboard_bp.route('/appointments')

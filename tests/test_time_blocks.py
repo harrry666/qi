@@ -142,3 +142,25 @@ def test_store_closed_shadows_staff_open(closed_shop):
     from blueprints.booking import slots_for_service
     assert slots_for_service(biz_id, DATE, 30, service_id) == [], '店铺休业没盖过员工排班（不限员工）'
     assert slots_for_service(biz_id, DATE, 30, service_id, staff_id=staff_a) == [], '店铺休业没盖过员工排班（指定员工）'
+
+
+def open_override(biz_id, staff_id, open_t, close_t):
+    from db import get_db
+    db = get_db()
+    db.execute(
+        "INSERT INTO business_open_overrides (business_id, date, open_time, close_time, staff_id) VALUES (%s,%s,%s,%s,%s)",
+        (biz_id, DATE.strftime('%Y-%m-%d'), open_t, close_t, staff_id)
+    )
+    db.commit()
+    db.close()
+
+
+def test_open_override_opens_closed_day_in_window(closed_shop):
+    """休业日设临时营业后，只在时间窗内可约，窗外仍关闭。"""
+    biz_id, service_id, staff_a = closed_shop
+    open_override(biz_id, staff_a, '14:00', '16:00')
+    from blueprints.booking import slots_for_service
+    slots = slots_for_service(biz_id, DATE, 30, service_id)
+    assert '14:00' in slots, '临时营业时段没开出来'
+    assert '10:00' not in slots, '临时营业窗以外的时段被开出来了'
+    assert '16:00' not in slots, '超出临时营业结束时间还能约'

@@ -156,6 +156,17 @@ def init_db():
             end_date TEXT NOT NULL,
             reason TEXT DEFAULT ''
         )''',
+        # 休息日临时营业：针对某一天临时开放一个时间窗，staff_id 为空=全店开放
+        '''CREATE TABLE IF NOT EXISTS business_open_overrides (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            open_time TEXT NOT NULL,
+            close_time TEXT NOT NULL,
+            staff_id INTEGER,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )''',
+        'CREATE INDEX IF NOT EXISTS idx_open_overrides_biz_date ON business_open_overrides (business_id, date)',
         '''CREATE TABLE IF NOT EXISTS password_reset_tokens (
             id SERIAL PRIMARY KEY,
             business_id INTEGER NOT NULL,
