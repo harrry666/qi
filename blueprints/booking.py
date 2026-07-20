@@ -90,16 +90,15 @@ def get_biz_by_slug(slug):
 
 def generate_slots(business_id, date_obj, duration_mins, staff_id=None):
     db = get_db()
-    bh = None
+    biz_bh = db.execute(
+        'SELECT * FROM business_hours WHERE business_id=%s AND weekday=%s',
+        (business_id, date_obj.weekday())
+    ).fetchone()
+    staff_bh = None
     if staff_id:
-        bh = db.execute(
+        staff_bh = db.execute(
             'SELECT * FROM staff_hours WHERE staff_id=%s AND weekday=%s',
             (staff_id, date_obj.weekday())
-        ).fetchone()
-    if bh is None:
-        bh = db.execute(
-            'SELECT * FROM business_hours WHERE business_id=%s AND weekday=%s',
-            (business_id, date_obj.weekday())
         ).fetchone()
     ds = date_obj.strftime('%Y-%m-%d')
     blacked = db.execute(
@@ -108,7 +107,11 @@ def generate_slots(business_id, date_obj, duration_mins, staff_id=None):
     ).fetchone()
     db.close()
 
-    if not bh or bh['is_closed'] or blacked:
+    # 店铺当天休业/黑名单 = 硬关闭，员工个人排班也盖不过去，想约只能走加班预约
+    if not biz_bh or biz_bh['is_closed'] or blacked:
+        return []
+    bh = staff_bh or biz_bh
+    if bh['is_closed']:
         return []
 
     sh, sm = map(int, bh['open_time'].split(':'))
