@@ -3,7 +3,7 @@
 护的是 2026-07-16 那个 bug：后台锁定的时段客户还能约进去。
 改 booking.py 排档/锁定逻辑前必跑。
 """
-from datetime import date
+from datetime import date, timedelta
 import pytest
 
 pytestmark = pytest.mark.db
@@ -12,7 +12,16 @@ pytestmark = pytest.mark.db
 # 顶层 import 会让「连不上库自动跳过」和「拦住生产库」的守门在收集阶段就失效。
 
 SLUG = 'regtest-time-blocks'
-DATE = date(2026, 7, 20)  # Monday
+def _next_monday():
+    """必须取未来的周一：generate_slots 会把「今天」已经过去的时段过滤掉，
+    硬编码日期一旦撞上当天，上午的 slot 全没了，测试结果就跟锁定逻辑无关了。"""
+    d = date.today() + timedelta(days=1)
+    while d.weekday() != 0:
+        d += timedelta(days=1)
+    return d
+
+
+DATE = _next_monday()
 
 
 def make_business(with_staff_link):
