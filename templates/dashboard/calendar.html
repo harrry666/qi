@@ -156,13 +156,20 @@
       </select>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.customer_name_label') }}</label>
       <div style="position:relative;margin-bottom:10px">
-        <input type="text" id="apt-name" class="dash-input" style="margin-bottom:0" autocomplete="off" oninput="searchCustomers()">
-        <div id="cust-suggest" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:white;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);max-height:210px;overflow-y:auto;margin-top:2px"></div>
+        <input type="text" id="apt-name" class="dash-input" style="margin-bottom:0" autocomplete="off" oninput="searchCustomers('apt-name')">
+        <div id="cust-suggest" data-src="apt-name" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:white;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);max-height:210px;overflow-y:auto;margin-top:2px"></div>
       </div>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.phone_label') }}</label>
-      <input type="text" id="apt-phone" class="dash-input" style="margin-bottom:10px">
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" id="apt-phone" class="dash-input" style="margin-bottom:0" autocomplete="off" oninput="searchCustomers('apt-phone')">
+        <div id="phone-suggest" data-src="apt-phone" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:white;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);max-height:210px;overflow-y:auto;margin-top:2px"></div>
+      </div>
       <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.comment_label') }}</label>
-      <input type="text" id="apt-comment" class="dash-input" style="margin-bottom:14px">
+      <input type="text" id="apt-comment" class="dash-input" style="margin-bottom:10px">
+      <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;cursor:pointer">
+        <input type="checkbox" id="apt-override" style="margin-top:2px;flex-shrink:0">
+        <span style="font-size:13px;color:var(--muted);line-height:1.4">{{ t('dash.calendar.override_label') }}</span>
+      </label>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button type="button" onclick="closeSlotModal()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:14px">{{ t('dash.calendar.cancel') }}</button>
         <button type="button" onclick="submitAppointment()" style="padding:8px 16px;border:none;border-radius:8px;background:var(--gold);color:white;cursor:pointer;font-size:14px;font-weight:600">{{ t('dash.calendar.confirm_add') }}</button>
@@ -265,9 +272,12 @@ function setTimeSelect(hhmm) {
 }
 
 var _custTimer = null;
-function searchCustomers() {
-  var nameEl = document.getElementById('apt-name');
-  var box = document.getElementById('cust-suggest');
+function searchCustomers(srcId) {
+  srcId = srcId || 'apt-name';
+  var nameEl = document.getElementById(srcId);
+  var box = document.getElementById(srcId === 'apt-phone' ? 'phone-suggest' : 'cust-suggest');
+  var other = document.getElementById(srcId === 'apt-phone' ? 'cust-suggest' : 'phone-suggest');
+  if (other) { other.style.display = 'none'; other.innerHTML = ''; }
   var q = (nameEl.value || '').trim();
   if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
   clearTimeout(_custTimer);
@@ -291,9 +301,10 @@ function searchCustomers() {
 function pickCustomer(name, phone) {
   document.getElementById('apt-name').value = name;
   document.getElementById('apt-phone').value = phone;
-  var box = document.getElementById('cust-suggest');
-  box.style.display = 'none';
-  box.innerHTML = '';
+  ['cust-suggest', 'phone-suggest'].forEach(function(id) {
+    var box = document.getElementById(id);
+    if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+  });
 }
 
 function closeSlotModal() {
@@ -351,6 +362,7 @@ function submitAppointment() {
   fd.append('date', slotState.date);
   fd.append('time', startT);
   fd.append('comment', document.getElementById('apt-comment').value);
+  if (document.getElementById('apt-override').checked) fd.append('override', '1');
   fetch('{{ url_for("dashboard.calendar_quick_appointment") }}', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -359,6 +371,7 @@ function submitAppointment() {
       document.getElementById('apt-name').value = '';
       document.getElementById('apt-phone').value = '';
       document.getElementById('apt-comment').value = '';
+      document.getElementById('apt-override').checked = false;
       calendar.refetchEvents();
     });
 }
@@ -504,24 +517,23 @@ document.addEventListener('DOMContentLoaded', function() {
   if (snapSel) snapSel.value = String(SNAP_MINUTES);
   buildTimeOptions();
 
-  var suggestBox = document.getElementById('cust-suggest');
-  if (suggestBox) {
-    suggestBox.addEventListener('mousedown', function(e) {
-      var item = e.target.closest('.cust-suggest-item');
-      if (!item) return;
-      e.preventDefault();
-      pickCustomer(item.dataset.name, item.dataset.phone);
-    });
-  }
-  var nameInput = document.getElementById('apt-name');
-  if (nameInput) {
-    nameInput.addEventListener('blur', function() {
-      setTimeout(function() {
-        var b = document.getElementById('cust-suggest');
-        if (b) b.style.display = 'none';
-      }, 150);
-    });
-  }
+  [['cust-suggest', 'apt-name'], ['phone-suggest', 'apt-phone']].forEach(function(pair) {
+    var box = document.getElementById(pair[0]);
+    if (box) {
+      box.addEventListener('mousedown', function(e) {
+        var item = e.target.closest('.cust-suggest-item');
+        if (!item) return;
+        e.preventDefault();
+        pickCustomer(item.dataset.name, item.dataset.phone);
+      });
+    }
+    var input = document.getElementById(pair[1]);
+    if (input) {
+      input.addEventListener('blur', function() {
+        setTimeout(function() { if (box) box.style.display = 'none'; }, 150);
+      });
+    }
+  });
 
   document.getElementById('apt-modal-cancel-btn').addEventListener('click', function() {
     if (!activeAptId) return;

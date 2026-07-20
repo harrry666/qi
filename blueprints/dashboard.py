@@ -562,8 +562,18 @@ def calendar_quick_appointment():
     except ValueError:
         db.close()
         return jsonify({'error': t('flash.calendar.invalid_time_range')}), 400
-    from blueprints.booking import slots_for_service
-    if time_ not in slots_for_service(current_user.id, date_obj, svc['duration_mins'], service_id, staff_id=staff_id):
+    from blueprints.booking import slots_for_service, filter_available
+    override = request.form.get('override') == '1'
+    if override:
+        # 加班预约：跳过营业时间/休业日，但仍不允许撞已有预约或锁定时段
+        ok = filter_available(
+            current_user.id, date, [time_], svc['duration_mins'],
+            staff_id=int(staff_id) if staff_id else None
+        )
+        if not ok:
+            db.close()
+            return jsonify({'error': t('flash.calendar.slot_conflict')}), 409
+    elif time_ not in slots_for_service(current_user.id, date_obj, svc['duration_mins'], service_id, staff_id=staff_id):
         db.close()
         return jsonify({'error': t('flash.calendar.slot_conflict')}), 409
     apt_dt = f'{date} {time_}'

@@ -675,6 +675,7 @@ TRANSLATIONS = {
     'dash.calendar.customer_name_label': {'zh': '客人姓名', 'en': 'Customer name'},
     'dash.calendar.phone_label': {'zh': '手机号', 'en': 'Phone'},
     'dash.calendar.comment_label': {'zh': '备注（选填）', 'en': 'Note (optional)'},
+    'dash.calendar.override_label': {'zh': '加班预约（忽略营业时间，仍会检查时段冲突）', 'en': 'Overtime booking (ignore business hours, still checks conflicts)'},
     'dash.calendar.confirm_add': {'zh': '确认添加', 'en': 'Confirm'},
 
     'dash.calendar.js.today': {'zh': '今天', 'en': 'Today'},
