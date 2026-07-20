@@ -965,7 +965,7 @@ def broadcast_send():
 def customers():
     db = get_db()
     rows = db.execute(
-        "SELECT c.id, c.name, c.phone, c.avatar_url, c.balance, "
+        "SELECT c.id, c.name, c.phone, c.avatar_url, c.balance, c.is_blocked, "
         "COUNT(a.id) as visit_count, MAX(a.appointment_dt) as last_visit, MIN(a.appointment_dt) as first_visit "
         "FROM customers c "
         "LEFT JOIN appointments a ON a.customer_id = c.id AND a.status='confirmed' "
@@ -1123,6 +1123,22 @@ def customer_update_profile(cid):
     db.commit()
     db.close()
     flash('flash.customers.profile_saved', 'success')
+    return redirect(url_for('dashboard.customer_detail', cid=cid))
+
+@dashboard_bp.route('/customers/<int:cid>/block', methods=['POST'])
+@login_required
+def customer_block(cid):
+    db = get_db()
+    own = db.execute('SELECT is_blocked FROM customers WHERE id=%s AND business_id=%s', (cid, current_user.id)).fetchone()
+    if not own:
+        db.close()
+        flash('flash.customers.not_found', 'error')
+        return redirect(url_for('dashboard.customers'))
+    new_val = 0 if own['is_blocked'] else 1
+    db.execute('UPDATE customers SET is_blocked=%s WHERE id=%s AND business_id=%s', (new_val, cid, current_user.id))
+    db.commit()
+    db.close()
+    flash('flash.customers.blocked' if new_val else 'flash.customers.unblocked', 'success')
     return redirect(url_for('dashboard.customer_detail', cid=cid))
 
 @dashboard_bp.route('/customers/<int:cid>/delete', methods=['POST'])

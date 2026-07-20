@@ -298,6 +298,16 @@ def api_create(slug):
     if len(phone) != 10:
         return jsonify({'error': t('flash.common.phone_invalid')}), 400
 
+    _bdb = get_db()
+    _blocked = _bdb.execute(
+        'SELECT 1 FROM customers WHERE business_id=%s AND phone=%s AND is_blocked=1',
+        (biz['id'], phone)
+    ).fetchone()
+    _bdb.close()
+    if _blocked:
+        # 不明说被拉黑，引导致电门店，避免客人炸毛
+        return jsonify({'error': t('flash.booking.blocked')}), 403
+
     try:
         apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
         if apt_dt_obj < datetime.now(_LA).replace(tzinfo=None):

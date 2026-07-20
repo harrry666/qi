@@ -257,6 +257,7 @@ def init_db():
             reason TEXT DEFAULT '',
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
+        'ALTER TABLE customers ADD COLUMN IF NOT EXISTS is_blocked INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS customer_id INTEGER',
         # 必须在上面这条 ALTER 之后：新库建表时 appointments 还没有 customer_id 列
         'CREATE INDEX IF NOT EXISTS idx_appointments_customer ON appointments (customer_id)',

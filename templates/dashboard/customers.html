@@ -83,6 +83,9 @@
         {% if c.visit_count >= 3 %}
           <span class="badge" style="background:#C9A84C;color:#1A1209;margin-left:6px">{{ t('dash.customers.regular_badge') }}</span>
         {% endif %}
+        {% if c.is_blocked %}
+          <span class="badge" style="background:rgba(220,38,38,0.12);color:var(--red);margin-left:6px">{{ t('dash.custdetail.blocked_badge') }}</span>
+        {% endif %}
       </td>
       <td data-label="{{ t('dash.customers.col_phone') }}" style="color:#A78BFA">{{ c.phone }}</td>
       <td data-label="{{ t('dash.customers.col_visits') }}" style="font-weight:700;color:var(--text)">

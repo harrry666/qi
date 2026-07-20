@@ -14,10 +14,16 @@
 
 <div class="cd-topbar" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
   <a href="{{ url_for('dashboard.customers') }}" style="color:var(--muted);font-size:13px;text-decoration:none">{{ t('dash.custdetail.back') }}</a>
-  <form method="POST" action="{{ url_for('dashboard.customer_delete', cid=c.id) }}" onsubmit="return confirm({{ t('dash.custdetail.confirm_delete')|tojson }})">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:8px;padding:9px 16px;min-height:44px;font-size:13px;cursor:pointer">{{ t('dash.custdetail.delete_customer') }}</button>
-  </form>
+  <div style="display:flex;gap:8px">
+    <form method="POST" action="{{ url_for('dashboard.customer_block', cid=c.id) }}" onsubmit="return confirm({{ (t('dash.custdetail.confirm_unblock') if c.is_blocked else t('dash.custdetail.confirm_block'))|tojson }})">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:9px 16px;min-height:44px;font-size:13px;cursor:pointer">{{ t('dash.custdetail.unblock_customer') if c.is_blocked else t('dash.custdetail.block_customer') }}</button>
+    </form>
+    <form method="POST" action="{{ url_for('dashboard.customer_delete', cid=c.id) }}" onsubmit="return confirm({{ t('dash.custdetail.confirm_delete')|tojson }})">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:8px;padding:9px 16px;min-height:44px;font-size:13px;cursor:pointer">{{ t('dash.custdetail.delete_customer') }}</button>
+    </form>
+  </div>
 </div>
 
 <div class="cust-head" style="display:flex;align-items:center;gap:16px;margin:14px 0 24px">
@@ -27,7 +33,7 @@
     <span style="width:64px;height:64px;border-radius:50%;background:var(--gold-light);color:var(--gold-h);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px">{{ (c.name or '?')[:1] }}</span>
   {% endif %}
   <div style="min-width:0;flex:1">
-    <div class="cust-name" style="font-size:22px;font-weight:800;color:var(--text)">{{ c.name or t('dash.custdetail.unnamed') }}</div>
+    <div class="cust-name" style="font-size:22px;font-weight:800;color:var(--text)">{{ c.name or t('dash.custdetail.unnamed') }}{% if c.is_blocked %} <span style="font-size:12px;font-weight:700;color:var(--red);background:rgba(220,38,38,0.1);padding:2px 10px;border-radius:999px;vertical-align:middle">{{ t('dash.custdetail.blocked_badge') }}</span>{% endif %}</div>
     <div style="color:#A78BFA;font-size:14px">{{ c.phone }}</div>
     {% if past_names %}
     <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
