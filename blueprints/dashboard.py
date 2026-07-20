@@ -531,7 +531,11 @@ def calendar_events():
             'textColor': '#1B7A3D',
             'editable': False,
             'title': label,
-            'extendedProps': {'type': 'open_day', 'openId': o['id']},
+            'extendedProps': {
+                'type': 'open_day', 'openId': o['id'],
+                'date': o['date'], 'open_time': o['open_time'], 'close_time': o['close_time'],
+                'staff_id': o['staff_id'],
+            },
         })
 
     return jsonify(events)
@@ -688,6 +692,28 @@ def calendar_open_day_delete():
     oid = request.form.get('id', '').strip()
     db = get_db()
     db.execute('DELETE FROM business_open_overrides WHERE id=%s AND business_id=%s', (oid, current_user.id))
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+@dashboard_bp.route('/calendar/open_day/update', methods=['POST'])
+@login_required
+def calendar_open_day_update():
+    oid = request.form.get('id', '').strip()
+    open_time = request.form.get('open_time', '').strip()
+    close_time = request.form.get('close_time', '').strip()
+    staff_id = request.form.get('staff_id', '').strip() or None
+    if not oid or not open_time or not close_time or close_time <= open_time:
+        return jsonify({'error': t('flash.calendar.invalid_time_range')}), 400
+    db = get_db()
+    if staff_id:
+        own = db.execute('SELECT id FROM staff WHERE id=%s AND business_id=%s', (staff_id, current_user.id)).fetchone()
+        if not own:
+            staff_id = None
+    db.execute(
+        'UPDATE business_open_overrides SET open_time=%s, close_time=%s, staff_id=%s WHERE id=%s AND business_id=%s',
+        (open_time, close_time, staff_id, oid, current_user.id)
+    )
     db.commit()
     db.close()
     return jsonify({'success': True})

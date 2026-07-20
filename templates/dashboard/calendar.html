@@ -205,6 +205,34 @@
   </div>
 </div>
 
+<div id="open-edit-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:24px;width:90%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:17px;font-weight:800;color:var(--text)">🟢 {{ t('dash.calendar.slot_open_btn') }}</div>
+      <button onclick="closeOpenEdit()" style="border:none;background:none;cursor:pointer;font-size:20px;color:var(--muted);line-height:1;padding:0 2px">×</button>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.start_time') }}</label>
+        <input type="time" id="open-edit-start" class="dash-input" style="margin-bottom:10px">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.end_time') }}</label>
+        <input type="time" id="open-edit-end" class="dash-input" style="margin-bottom:10px">
+      </div>
+    </div>
+    <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px">{{ t('dash.calendar.apt_staff_label') }}</label>
+    <select id="open-edit-staff" class="dash-input" style="margin-bottom:14px">
+      <option value="">{{ t('dash.calendar.whole_business') }}</option>
+      {% for st in staff %}<option value="{{ st.id }}">{{ st.name }}</option>{% endfor %}
+    </select>
+    <div style="display:flex;gap:8px;justify-content:space-between">
+      <button type="button" onclick="deleteOpenEdit()" style="padding:8px 16px;border:1px solid #E7B7B0;border-radius:8px;background:white;color:#C0392B;cursor:pointer;font-size:14px">{{ t('dash.calendar.remove') }}</button>
+      <button type="button" onclick="saveOpenEdit()" style="padding:8px 16px;border:none;border-radius:8px;background:#34C759;color:white;cursor:pointer;font-size:14px;font-weight:600">{{ t('dash.calendar.confirm_open') }}</button>
+    </div>
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='vendor/fullcalendar.min.js') }}"></script>
 <script>
 var CAL_LOCALE = {{ ('en' if lang == 'en' else 'zh-CN')|tojson }};
@@ -414,6 +442,47 @@ function submitOpenDay() {
     });
 }
 
+var editOpenId = null;
+function openEditOverride(id, openT, closeT, staffId) {
+  editOpenId = id;
+  document.getElementById('open-edit-start').value = openT;
+  document.getElementById('open-edit-end').value = closeT;
+  document.getElementById('open-edit-staff').value = (staffId != null ? staffId : '');
+  document.getElementById('open-edit-modal').style.display = 'flex';
+}
+
+function closeOpenEdit() {
+  document.getElementById('open-edit-modal').style.display = 'none';
+  editOpenId = null;
+}
+
+function saveOpenEdit() {
+  var startT = document.getElementById('open-edit-start').value;
+  var endT = document.getElementById('open-edit-end').value;
+  if (!startT || !endT) { alert(I18N.fillStartEnd); return; }
+  if (endT <= startT) { alert(I18N.endAfterStart); return; }
+  var fd = new FormData();
+  fd.append('id', editOpenId);
+  fd.append('open_time', startT);
+  fd.append('close_time', endT);
+  fd.append('staff_id', document.getElementById('open-edit-staff').value);
+  fetch('{{ url_for("dashboard.calendar_open_day_update") }}', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { alert(data.error); return; }
+      closeOpenEdit();
+      calendar.refetchEvents();
+    });
+}
+
+function deleteOpenEdit() {
+  var fd = new FormData();
+  fd.append('id', editOpenId);
+  fetch('{{ url_for("dashboard.calendar_open_day_delete") }}', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function() { closeOpenEdit(); calendar.refetchEvents(); });
+}
+
 function submitBlock() {
   var startT = document.getElementById('block-start-time').value;
   var endT = document.getElementById('block-end-time').value;
@@ -556,6 +625,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(r) { if (r.ok) { calendar.refetchEvents(); } else { alert('解锁失败，请重试。'); } })
             .catch(function() { alert('解锁失败，请重试。'); });
         }
+        return;
+      }
+      if (p.type === 'open_day') {
+        openEditOverride(p.openId, p.open_time, p.close_time, p.staff_id);
         return;
       }
       if (p.type !== 'appointment') return;
