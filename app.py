@@ -175,12 +175,14 @@ def send_reminders():
         window_end   = (now + timedelta(hours=25)).strftime('%Y-%m-%d %H:%M')
         db = get_db()
         rows = db.execute(
-            "SELECT a.id, a.customer_name, a.phone, a.appointment_dt, a.cancel_token, "
+            "SELECT a.id, a.business_id, a.customer_name, a.phone, a.appointment_dt, a.cancel_token, "
             "s.name as service_name, b.name as biz_name, b.address "
             "FROM appointments a "
             "JOIN services s ON a.service_id = s.id "
             "JOIN businesses b ON a.business_id = b.id "
             "WHERE a.status = 'confirmed' AND a.reminder_sent = 0 "
+            # 已绑微信且授权订阅消息的客人走免费微信提醒，不再重复发短信
+            "AND (a.openid IS NULL OR a.subscribe_authed = 0) "
             "AND a.appointment_dt >= %s AND a.appointment_dt <= %s",
             (window_start, window_end)
         ).fetchall()
@@ -203,7 +205,7 @@ def send_reminders():
                     + (f"地址：{row['address']}\n" if row['address'] else '')
                     + "取消回复「取消」"
                 )
-                threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg), daemon=True).start()
+                threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg, row['business_id'], 'reminder'), daemon=True).start()
     except Exception as e:
         print(f'[Reminder] ERROR: {e}', flush=True, file=sys.stderr)
     finally:
