@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 import threading
 import os
 import uuid
+import secrets
 import csv
 import io
 import json
@@ -608,7 +609,7 @@ def calendar_quick_appointment():
     apt_dt = f'{date} {time_}'
     from db import upsert_customer
     customer_id = upsert_customer(db, current_user.id, phone, name)
-    cancel_token = str(uuid.uuid4())
+    cancel_token = secrets.token_urlsafe(8)
     lang = getattr(g, 'lang', 'zh')
     db.execute(
         'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id, customer_id, lang) '

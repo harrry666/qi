@@ -9,6 +9,7 @@ _LA = ZoneInfo('America/Los_Angeles')
 import os
 import sys
 import uuid
+import secrets
 import threading
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
@@ -267,7 +268,7 @@ def create_booking():
 
         from db import upsert_customer
         customer_id = upsert_customer(db, biz['id'], phone, customer_name)
-        cancel_token = str(uuid.uuid4())
+        cancel_token = secrets.token_urlsafe(8)
         lang = getattr(g, 'lang', 'zh')
         db.execute(
             'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, status, cancel_token, openid, subscribe_authed, staff_id, customer_id, lang) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
@@ -1767,7 +1768,7 @@ def merchant_create_appointment():
         if time_ not in slots_for_service(biz['id'], date_obj, svc['duration_mins'], service_id, staff_id=staff_id):
             return jsonify({'error': '该时段已被锁定或预约，请选择其他时间'}), 409
         customer_id = upsert_customer(db, biz['id'], phone, name) if phone else None
-        cancel_token = str(uuid.uuid4())
+        cancel_token = secrets.token_urlsafe(8)
         lang = getattr(g, 'lang', 'zh')
         db.execute(
             'INSERT INTO appointments (business_id, service_id, customer_name, phone, appointment_dt, comment, cancel_token, staff_id, customer_id, lang) '

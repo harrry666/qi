@@ -12,6 +12,7 @@ import math
 import threading
 import sys
 import uuid
+import secrets
 
 booking_bp = Blueprint('booking', __name__)
 
@@ -352,7 +353,7 @@ def api_create(slug):
         except Exception:
             return jsonify({'error': '验证失败，请重新获取验证码'}), 400
 
-    cancel_token = str(uuid.uuid4())
+    cancel_token = secrets.token_urlsafe(8)
 
     db = get_db()
     svc = db.execute('SELECT * FROM services WHERE id=%s AND business_id=%s', (service_id, biz['id'])).fetchone()
@@ -555,6 +556,7 @@ def sms_incoming():
 
 
 @booking_bp.route('/cancel/<token>', methods=['GET', 'POST'])
+@booking_bp.route('/c/<token>', methods=['GET', 'POST'])
 def cancel_by_token(token):
     db = get_db()
     row = db.execute(

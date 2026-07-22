@@ -202,16 +202,16 @@ def send_reminders():
                 except Exception:
                     dt_display = row['appointment_dt']
                 base_url = os.environ.get('BASE_URL', '').rstrip('/')
-                cancel_link = f"{base_url}/cancel/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
+                cancel_link = f"{base_url}/c/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
                 if cancel_link:
-                    cancel_line = f"如需取消请点击：{cancel_link}" + (f"\n或致电 {row['biz_phone']}" if row['biz_phone'] else '')
+                    cancel_line = f"如需取消：{cancel_link}" + (f"\n或致电 {row['biz_phone']}" if row['biz_phone'] else '')
                 else:
                     cancel_line = f"如需取消请致电 {row['biz_phone']}" if row['biz_phone'] else ''
+                # 短信按段计费，地址已在确认短信/小程序里，提醒不再重复以省钱
                 msg = (
                     f"【预约提醒】{row['customer_name']} 明天在 {row['biz_name']} 有预约\n"
                     f"服务：{row['service_name']}\n"
                     f"时间：{dt_display}\n"
-                    + (f"地址：{row['address']}\n" if row['address'] else '')
                     + cancel_line
                 )
                 threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg, row['business_id'], 'reminder'), daemon=True).start()

@@ -2,12 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>Hastrid 哈瓜小约 · 商家传单</title>
+<title>Hastrid · 商家传单 | Merchant Flyer</title>
 <style>
   @page { size: A4; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: "PingFang SC", "Heiti SC", sans-serif;
     color: #141414;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -16,7 +15,10 @@
     width: 210mm; height: 297mm;
     padding: 16mm 15mm 12mm;
     display: flex; flex-direction: column;
+    page-break-after: always;
+    font-family: "PingFang SC", "Heiti SC", sans-serif;
   }
+  .page.en { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   .serif { font-family: "Songti SC", "Noto Serif SC", "STSong", serif; }
 
   /* 页眉 */
@@ -65,9 +67,15 @@
   .foot { margin-top: 5mm; padding-top: 3.5mm; border-top: 1px solid #ddd;
           display: flex; justify-content: space-between; font-size: 8pt; color: #666; }
   .foot b { color: #141414; font-weight: 600; }
+
+  /* 单码版联系块 */
+  .contact.single-qr { padding: 10mm 7mm; }
+  .contact.single-qr .qrs { flex-direction: column; align-items: center; }
 </style>
 </head>
 <body>
+
+<!-- ==================== 中文版 正面 ==================== -->
 <div class="page">
 
   <div class="head">
@@ -161,5 +169,90 @@
   </div>
 
 </div>
+
+<!-- ==================== 英文版 背面 ==================== -->
+<div class="page en">
+
+  <div class="head">
+    <div class="brand">
+      <span class="en serif">Hastrid</span>
+      <span class="cn" style="font-size: 10pt; color: #999;">Booking System</span>
+    </div>
+    <div class="tagline">Online Booking for Local Merchants</div>
+  </div>
+
+  <div class="hero">
+    <h1 class="serif" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Your customers book <u>themselves. You focus on business.</u></h1>
+    <p class="lead">
+      Customers browse services and pick their time slots on WeChat Mini Program or your booking link. You manage appointments, clients, and staff schedules on your phone. Perfect for nail salons, hair cuts, massages, pet grooming, and any service-based business.
+    </p>
+  </div>
+
+  <div class="items">
+    <div class="item">
+      <div class="num serif" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">01</div>
+      <div class="it-title" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Never miss<br>a booking again</div>
+      <div class="it-body">
+        No more lost calls when you're busy with clients. Customers book anytime online, even at midnight. You see all bookings the next morning on your phone.
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="num serif" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">02</div>
+      <div class="it-title" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">WeChat & Web<br>both work</div>
+      <div class="it-body">
+        Customers can search "哈瓜小约" on WeChat Mini Program or open your booking link in any browser. No app download needed. Your data syncs instantly across all platforms.
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="num serif" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">03</div>
+      <div class="it-title" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Auto reminders<br>reduce no-shows</div>
+      <div class="it-body">
+        Automated text and WeChat reminders 24 hours before appointment. Your customers won't forget, and you'll have fewer empty slots.
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="num serif" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">04</div>
+      <div class="it-title" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Client history<br>automatic</div>
+      <div class="it-body">
+        The system remembers every customer, their service history, preferences, and last visit. No need to keep notes or search your phone.
+      </div>
+    </div>
+
+    <div class="item trial">
+      <div class="num serif" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">05</div>
+      <div class="it-title" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">30 days<br>completely free</div>
+      <div class="it-body">
+        Sign up today, get 30 days free. <b>No credit card. No contract. Cancel anytime.</b><br>
+        Full Chinese interface. Built by local UC Berkeley student. <b>On-site setup available.</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact single-qr">
+    <div class="qrs">
+      <div class="qr">
+        <img src="assets/web_qr.png" alt="Web booking link QR code">
+        <span>Open in browser</span>
+      </div>
+    </div>
+    <div class="c-body" style="text-align: center; flex: none;">
+      <h3 style="text-align: center;">Not here? Scan to explore</h3>
+      <div class="row" style="justify-content: center; width: 100%;"><span class="k" style="width: auto; margin-right: 3mm;">Website:</span><span class="v web">hastridbooking.com</span></div>
+      <div class="row" style="justify-content: center; width: 100%;"><span class="k" style="width: auto; margin-right: 3mm;">Phone:</span><span class="v">626-559-6294</span></div>
+      <div class="row" style="justify-content: center; width: 100%;"><span class="k" style="width: auto; margin-right: 3mm;">WeChat:</span><span class="v">ii9so_lovz</span></div>
+      <div class="c-note" style="text-align: center;">Visit hastridbooking.com or search 哈瓜小约 on WeChat</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Hair · Nails · Massage · Pet Grooming · Private Chef · Tutoring and more</span>
+    <span><b>Built by a local UC Berkeley student — we'll help you set it up</b></span>
+  </div>
+
+</div>
+
 </body>
 </html>
