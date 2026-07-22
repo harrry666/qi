@@ -171,12 +171,15 @@ def send_reminders():
     db = None
     try:
         now = datetime.now(_LA)
+        # TCPA/Twilio 禁止夜间发短信，同时避免凌晨吵到客人
+        if not (8 <= now.hour < 21):
+            return
         window_start = (now + timedelta(hours=23)).strftime('%Y-%m-%d %H:%M')
         window_end   = (now + timedelta(hours=25)).strftime('%Y-%m-%d %H:%M')
         db = get_db()
         rows = db.execute(
             "SELECT a.id, a.business_id, a.customer_name, a.phone, a.appointment_dt, a.cancel_token, "
-            "s.name as service_name, b.name as biz_name, b.address "
+            "s.name as service_name, b.name as biz_name, b.address, b.phone as biz_phone "
             "FROM appointments a "
             "JOIN services s ON a.service_id = s.id "
             "JOIN businesses b ON a.business_id = b.id "
@@ -198,12 +201,18 @@ def send_reminders():
                     dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
                 except Exception:
                     dt_display = row['appointment_dt']
+                base_url = os.environ.get('BASE_URL', '').rstrip('/')
+                cancel_link = f"{base_url}/cancel/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
+                if cancel_link:
+                    cancel_line = f"如需取消请点击：{cancel_link}" + (f"\n或致电 {row['biz_phone']}" if row['biz_phone'] else '')
+                else:
+                    cancel_line = f"如需取消请致电 {row['biz_phone']}" if row['biz_phone'] else ''
                 msg = (
                     f"【预约提醒】{row['customer_name']} 明天在 {row['biz_name']} 有预约\n"
                     f"服务：{row['service_name']}\n"
                     f"时间：{dt_display}\n"
                     + (f"地址：{row['address']}\n" if row['address'] else '')
-                    + "取消回复「取消」"
+                    + cancel_line
                 )
                 threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg, row['business_id'], 'reminder'), daemon=True).start()
     except Exception as e:
