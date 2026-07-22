@@ -293,7 +293,6 @@ def create_booking():
                 f"[Confirmed] {customer_name}, your {biz['name']} appointment is set.\n"
                 f"Service: {svc['name']}\n"
                 f"Time: {dt_display_en}\n"
-                + (f"Addr: {biz['address']}\n" if biz.get('address') else '')
                 + f"Cancel: {cancel_link}"
                 + (f"\nCall {biz_phone}" if biz_phone else '')
             )
@@ -302,7 +301,6 @@ def create_booking():
                 f"【预约确认】{customer_name} 您在 {biz['name']} 的预约已确认\n"
                 f"服务：{svc['name']}\n"
                 f"时间：{dt_display}\n"
-                + (f"地址：{biz['address']}\n" if biz.get('address') else '')
                 + f"如需取消：{cancel_link}"
                 + (f"\n问询致电 {biz_phone}" if biz_phone else '')
             )

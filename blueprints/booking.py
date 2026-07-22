@@ -398,7 +398,6 @@ def api_create(slug):
             f"[Confirmed] {name}, your {biz['name']} appointment is set.\n"
             f"Service: {svc['name']}\n"
             f"Time: {dt_display_en}\n"
-            + (f"Addr: {biz['address']}\n" if biz['address'] else '')
             + f"Cancel: {cancel_link}"
             + (f"\nCall {biz_phone}" if biz_phone else '')
         )
@@ -407,7 +406,6 @@ def api_create(slug):
             f"【预约确认】{name} 您在 {biz['name']} 的预约已确认\n"
             f"服务：{svc['name']}\n"
             f"时间：{dt_display}\n"
-            + (f"地址：{biz['address']}\n" if biz['address'] else '')
             + f"如需取消：{cancel_link}"
             + (f"\n问询致电 {biz_phone}" if biz_phone else '')
         )
