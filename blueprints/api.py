@@ -285,6 +285,8 @@ def create_booking():
 
         biz_phone = biz.get('phone') or ''
         formatted_customer_phone = format_phone(phone)
+        _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+        cancel_link = f"{_base}/c/{cancel_token}"
 
         if lang == 'en':
             customer_msg = (
@@ -292,8 +294,8 @@ def create_booking():
                 f"Service: {svc['name']}\n"
                 f"Time: {dt_display_en}\n"
                 + (f"Addr: {biz['address']}\n" if biz.get('address') else '')
-                + (f"Call {biz_phone}. " if biz_phone else '')
-                + "Reply CANCEL to cancel."
+                + f"Cancel: {cancel_link}"
+                + (f"\nCall {biz_phone}" if biz_phone else '')
             )
         else:
             customer_msg = (
@@ -301,19 +303,17 @@ def create_booking():
                 f"服务：{svc['name']}\n"
                 f"时间：{dt_display}\n"
                 + (f"地址：{biz['address']}\n" if biz.get('address') else '')
-                + (f"问询致电{biz_phone}，" if biz_phone else '')
-                + "取消回复「取消」"
+                + f"如需取消：{cancel_link}"
+                + (f"\n问询致电 {biz_phone}" if biz_phone else '')
             )
         threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg, biz['id'], 'confirm'), daemon=True).start()
 
         if biz_phone:
-            import re as _re
-            last4 = _re.sub(r'[^0-9]', '', phone)[-4:]
             owner_msg = (
                 f"【新预约】{customer_name} {phone}\n"
                 f"{svc['name']}｜{dt_display}\n"
                 + (f"备注：{comment}\n" if comment else '')
-                + f"取消回复「取消 {last4}」"
+                + f"取消：{cancel_link}"
             )
             threading.Thread(target=send_sms, args=(format_phone(biz_phone), owner_msg, biz['id'], 'owner_new'), daemon=True).start()
 
@@ -1790,21 +1790,23 @@ def merchant_create_appointment():
         dt_display = apt_dt
         dt_display_en = apt_dt
     biz_phone = biz.get('phone') or ''
+    _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
+    cancel_link = f"{_base}/c/{cancel_token}"
     if lang == 'en':
         customer_msg = (
             f"[Confirmed] {name}, your {biz['name']} appointment is set.\n"
             f"Service: {svc['name']}\n"
             f"Time: {dt_display_en}\n"
-            + (f"Call {biz_phone}. " if biz_phone else '')
-            + "Reply CANCEL to cancel."
+            + f"Cancel: {cancel_link}"
+            + (f"\nCall {biz_phone}" if biz_phone else '')
         )
     else:
         customer_msg = (
             f"【预约确认】{name} 您在 {biz['name']} 的预约已确认\n"
             f"服务：{svc['name']}\n"
             f"时间：{dt_display}\n"
-            + (f"问询致电{biz_phone}，" if biz_phone else '')
-            + "取消回复「取消」"
+            + f"如需取消：{cancel_link}"
+            + (f"\n问询致电 {biz_phone}" if biz_phone else '')
         )
     if phone:
         threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg, biz['id'], 'confirm'), daemon=True).start()
