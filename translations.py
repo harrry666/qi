@@ -801,6 +801,8 @@ TRANSLATIONS = {
     'cancel.row_service': {'zh': '服务', 'en': 'Service'},
     'cancel.row_time': {'zh': '时间', 'en': 'Time'},
     'cancel.row_business': {'zh': '商家', 'en': 'Business'},
+    'cancel.row_address': {'zh': '地址', 'en': 'Address'},
+    'cancel.row_phone': {'zh': '电话', 'en': 'Phone'},
     'cancel.confirm_btn': {'zh': '确认取消预约', 'en': 'Confirm cancellation'},
     'cancel.close_btn': {'zh': '关闭页面', 'en': 'Close this page'},
     'cancel.brand_footer': {'zh': '由 <strong>Hastrid Booking</strong> 提供服务', 'en': 'Powered by <strong>Hastrid Booking</strong>'},

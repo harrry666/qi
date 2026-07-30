@@ -10,7 +10,7 @@ import secrets
 import csv
 import io
 import json
-from blueprints.booking import send_sms, format_phone
+from blueprints.booking import send_sms, format_phone, build_confirm_sms
 from blueprints.auth import CATEGORIES
 from cloud import upload_to_cloudinary as _upload_to_cloudinary, destroy_urls as _destroy_urls
 from translations import t
@@ -619,32 +619,9 @@ def calendar_quick_appointment():
     db.commit()
     db.close()
 
-    try:
-        _apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
-        dt_display = _apt_dt_obj.strftime('%Y年%-m月%-d日 %-H:%M')
-        dt_display_en = _apt_dt_obj.strftime('%b %-d, %Y %-H:%M')
-    except ValueError:
-        dt_display = apt_dt
-        dt_display_en = apt_dt
-    biz_phone = current_user.phone or ''
     _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
     cancel_link = f"{_base}/c/{cancel_token}"
-    if lang == 'en':
-        customer_msg = (
-            f"[Confirmed] {name}, your {current_user.name} appointment is set.\n"
-            f"Service: {svc['name']}\n"
-            f"Time: {dt_display_en}\n"
-            + f"Cancel: {cancel_link}"
-            + (f"\nCall {biz_phone}" if biz_phone else '')
-        )
-    else:
-        customer_msg = (
-            f"【预约确认】{name} 您在 {current_user.name} 的预约已确认\n"
-            f"服务：{svc['name']}\n"
-            f"时间：{dt_display}\n"
-            + f"如需取消：{cancel_link}"
-            + (f"\n问询致电 {biz_phone}" if biz_phone else '')
-        )
+    customer_msg = build_confirm_sms(current_user.name, svc['name'], apt_dt, current_user.address, cancel_link, lang)
     threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg, current_user.id, 'confirm'), daemon=True).start()
 
     return jsonify({'success': True})

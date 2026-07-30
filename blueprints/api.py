@@ -195,7 +195,7 @@ def get_business_staff(slug):
 @api_bp.route('/bookings', methods=['POST'])
 @limiter.limit('5 per minute; 30 per hour')
 def create_booking():
-    from blueprints.booking import send_sms, format_phone
+    from blueprints.booking import send_sms, format_phone, build_confirm_sms
     data = request.json or {}
     slug = (data.get('slug') or '').strip()
     service_id = data.get('service_id')
@@ -288,22 +288,7 @@ def create_booking():
         _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
         cancel_link = f"{_base}/c/{cancel_token}"
 
-        if lang == 'en':
-            customer_msg = (
-                f"[Confirmed] {customer_name}, your {biz['name']} appointment is set.\n"
-                f"Service: {svc['name']}\n"
-                f"Time: {dt_display_en}\n"
-                + f"Cancel: {cancel_link}"
-                + (f"\nCall {biz_phone}" if biz_phone else '')
-            )
-        else:
-            customer_msg = (
-                f"【预约确认】{customer_name} 您在 {biz['name']} 的预约已确认\n"
-                f"服务：{svc['name']}\n"
-                f"时间：{dt_display}\n"
-                + f"如需取消：{cancel_link}"
-                + (f"\n问询致电 {biz_phone}" if biz_phone else '')
-            )
+        customer_msg = build_confirm_sms(biz['name'], svc['name'], appointment_dt, biz.get('address', ''), cancel_link, lang)
         threading.Thread(target=send_sms, args=(formatted_customer_phone, customer_msg, biz['id'], 'confirm'), daemon=True).start()
 
         if biz_phone:
@@ -347,7 +332,7 @@ def verify_send():
 
 @api_bp.route('/bookings/<cancel_token>/cancel', methods=['POST'])
 def cancel_booking(cancel_token):
-    from blueprints.booking import send_sms, format_phone
+    from blueprints.booking import send_sms, format_phone, build_confirm_sms
     db = get_db()
     try:
         row = db.execute(
@@ -535,7 +520,7 @@ def merchant_confirm_appointment(apt_id):
 
 @api_bp.route('/merchant/appointments/<int:apt_id>/cancel', methods=['POST'])
 def merchant_cancel_appointment(apt_id):
-    from blueprints.booking import send_sms, format_phone
+    from blueprints.booking import send_sms, format_phone, build_confirm_sms
     biz, err = require_merchant()
     if err:
         return err
@@ -1728,7 +1713,7 @@ def merchant_feedback():
 @api_bp.route('/merchant/appointments', methods=['POST'])
 def merchant_create_appointment():
     from db import upsert_customer
-    from blueprints.booking import send_sms, format_phone
+    from blueprints.booking import send_sms, format_phone, build_confirm_sms
     biz, err = require_merchant()
     if err:
         return err
@@ -1780,32 +1765,9 @@ def merchant_create_appointment():
     finally:
         db.close()
 
-    try:
-        _apt_dt_obj = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
-        dt_display = _apt_dt_obj.strftime('%Y年%-m月%-d日 %-H:%M')
-        dt_display_en = _apt_dt_obj.strftime('%b %-d, %Y %-H:%M')
-    except ValueError:
-        dt_display = apt_dt
-        dt_display_en = apt_dt
-    biz_phone = biz.get('phone') or ''
     _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
     cancel_link = f"{_base}/c/{cancel_token}"
-    if lang == 'en':
-        customer_msg = (
-            f"[Confirmed] {name}, your {biz['name']} appointment is set.\n"
-            f"Service: {svc['name']}\n"
-            f"Time: {dt_display_en}\n"
-            + f"Cancel: {cancel_link}"
-            + (f"\nCall {biz_phone}" if biz_phone else '')
-        )
-    else:
-        customer_msg = (
-            f"【预约确认】{name} 您在 {biz['name']} 的预约已确认\n"
-            f"服务：{svc['name']}\n"
-            f"时间：{dt_display}\n"
-            + f"如需取消：{cancel_link}"
-            + (f"\n问询致电 {biz_phone}" if biz_phone else '')
-        )
+    customer_msg = build_confirm_sms(biz['name'], svc['name'], apt_dt, biz.get('address', ''), cancel_link, lang)
     if phone:
         threading.Thread(target=send_sms, args=(format_phone(phone), customer_msg, biz['id'], 'confirm'), daemon=True).start()
     return jsonify({'success': True})
@@ -1867,7 +1829,7 @@ def merchant_reschedule_appointment(apt_id):
     finally:
         db.close()
 
-    from blueprints.booking import send_sms, format_phone
+    from blueprints.booking import send_sms, format_phone, build_confirm_sms
     try:
         _old_dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
         old_disp = _old_dt.strftime('%Y年%-m月%-d日 %-H:%M')

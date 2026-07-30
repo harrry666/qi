@@ -41,6 +41,45 @@ def count_segments(message):
     return 1 if n <= limit else math.ceil(n / multi)
 
 
+_ADDR_TAIL = re.compile(r',?\s*[A-Za-z]{2}\s*\d{5}(-\d{4})?\s*$')
+
+
+def short_address(address):
+    """短信里的地址去掉州和邮编，客人导航只需要街道和城市，省 10 字符"""
+    return _ADDR_TAIL.sub('', (address or '').strip()).rstrip(' ,')
+
+
+def build_confirm_sms(biz_name, svc_name, apt_dt, address='', cancel_link='', lang='zh'):
+    """客人确认短信。中文走 UCS-2，2 段上限 134 字，超了就依次降级，保证不跳到 3 段。
+    商家电话不放短信里，改在取消链接落地页展示，腾出的空间给地址。"""
+    try:
+        dt = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
+        when = dt.strftime('%b %-d %-H:%M') if lang == 'en' else dt.strftime('%-m月%-d日 %-H:%M')
+    except Exception:
+        when = apt_dt
+    full_addr = short_address(address)
+    # 降级顺序：去协议头 → 截服务名 → 地址只留街道 → 截店名 → 去掉字段标签。信息损失从小到大
+    for level in range(6):
+        link = cancel_link.replace('https://', '') if level >= 1 else cancel_link
+        svc = svc_name[:8] + '…' if (level >= 2 and len(svc_name) > 8) else svc_name
+        addr = full_addr.split(',')[0].strip()[:40] if level >= 3 else full_addr
+        name = biz_name[:10] + '…' if (level >= 4 and len(biz_name) > 10) else biz_name
+        if level >= 5:
+            lines = [f'【预约确认】{name}' if lang != 'en' else f'[Confirmed] {name}', svc, when]
+        elif lang == 'en':
+            lines = [f'[Confirmed] {name}', f'Service: {svc}', f'Time: {when}']
+        else:
+            lines = [f'【预约确认】{name}', f'服务：{svc}', f'时间：{when}']
+        if addr:
+            lines.append(addr if level >= 5 else (f'Address: {addr}' if lang == 'en' else f'地址：{addr}'))
+        if link:
+            lines.append(link if level >= 5 else (f'Cancel: {link}' if lang == 'en' else f'取消：{link}'))
+        msg = '\n'.join(lines)
+        if count_segments(msg) <= 2:
+            break
+    return msg
+
+
 def record_sms(business_id, segments, kind='other', to_phone=''):
     if not business_id:
         return
@@ -393,22 +432,7 @@ def api_create(slug):
     _base = os.environ.get('BASE_URL', request.host_url).rstrip('/')
     cancel_link = f"{_base}/c/{cancel_token}"
 
-    if lang == 'en':
-        customer_msg = (
-            f"[Confirmed] {name}, your {biz['name']} appointment is set.\n"
-            f"Service: {svc['name']}\n"
-            f"Time: {dt_display_en}\n"
-            + f"Cancel: {cancel_link}"
-            + (f"\nCall {biz_phone}" if biz_phone else '')
-        )
-    else:
-        customer_msg = (
-            f"【预约确认】{name} 您在 {biz['name']} 的预约已确认\n"
-            f"服务：{svc['name']}\n"
-            f"时间：{dt_display}\n"
-            + f"如需取消：{cancel_link}"
-            + (f"\n问询致电 {biz_phone}" if biz_phone else '')
-        )
+    customer_msg = build_confirm_sms(biz['name'], svc['name'], apt_dt, biz['address'], cancel_link, lang)
     threading.Thread(target=send_sms, args=(formatted_phone, customer_msg, biz['id'], 'confirm'), daemon=True).start()
 
     if biz_phone:
@@ -559,7 +583,7 @@ def sms_incoming():
 def cancel_by_token(token):
     db = get_db()
     row = db.execute(
-        "SELECT a.*, s.name as service_name, b.name as biz_name, b.phone as biz_phone "
+        "SELECT a.*, s.name as service_name, b.name as biz_name, b.phone as biz_phone, b.address as biz_address "
         "FROM appointments a "
         "JOIN services s ON a.service_id = s.id "
         "JOIN businesses b ON a.business_id = b.id "
