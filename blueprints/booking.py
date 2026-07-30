@@ -42,42 +42,64 @@ def count_segments(message):
 
 
 _ADDR_TAIL = re.compile(r',?\s*[A-Za-z]{2}\s*\d{5}(-\d{4})?\s*$')
+# 商家常把地址栏填成占位符，这种不能原样发给客人
+_ADDR_PLACEHOLDER = re.compile(r'^(n/?a|none|null|无|暂无|待定|-+|\.+)$', re.I)
 
 
 def short_address(address):
     """短信里的地址去掉州和邮编，客人导航只需要街道和城市，省 10 字符"""
-    return _ADDR_TAIL.sub('', (address or '').strip()).rstrip(' ,')
+    addr = _ADDR_TAIL.sub('', (address or '').strip()).rstrip(' ,')
+    return '' if _ADDR_PLACEHOLDER.match(addr) else addr
 
 
-def build_confirm_sms(biz_name, svc_name, apt_dt, address='', cancel_link='', lang='zh'):
-    """客人确认短信。中文走 UCS-2，2 段上限 134 字，超了就依次降级，保证不跳到 3 段。
-    商家电话不放短信里，改在取消链接落地页展示，腾出的空间给地址。"""
+_SMS_TITLE = {
+    ('confirm', 'zh'): '【预约确认】', ('confirm', 'en'): '[Confirmed] ',
+    ('reminder', 'zh'): '【预约提醒】明天 ', ('reminder', 'en'): '[Reminder] Tomorrow ',
+}
+
+
+def build_appointment_sms(kind, biz_name, svc_name, apt_dt, address='', cancel_link='', biz_phone='', lang='zh'):
+    """客人短信。中文走 UCS-2，2 段上限 134 字，超了就依次降级，保证不跳到 3 段。
+    降级顺序按信息损失从小到大：去协议头 → 砍电话行 → 截服务名 → 地址只留街道 → 截店名 → 去字段标签。
+    电话砍掉不丢信息，取消链接落地页上有可拨号的电话和可导航的地址。"""
+    en = lang == 'en'
     try:
         dt = datetime.strptime(apt_dt, '%Y-%m-%d %H:%M')
-        when = dt.strftime('%b %-d %-H:%M') if lang == 'en' else dt.strftime('%-m月%-d日 %-H:%M')
+        when = dt.strftime('%b %-d %-H:%M') if en else dt.strftime('%-m月%-d日 %-H:%M')
     except Exception:
         when = apt_dt
     full_addr = short_address(address)
-    # 降级顺序：去协议头 → 截服务名 → 地址只留街道 → 截店名 → 去掉字段标签。信息损失从小到大
-    for level in range(6):
+    for level in range(7):
         link = cancel_link.replace('https://', '') if level >= 1 else cancel_link
-        svc = svc_name[:8] + '…' if (level >= 2 and len(svc_name) > 8) else svc_name
-        addr = full_addr.split(',')[0].strip()[:40] if level >= 3 else full_addr
-        name = biz_name[:10] + '…' if (level >= 4 and len(biz_name) > 10) else biz_name
-        if level >= 5:
-            lines = [f'【预约确认】{name}' if lang != 'en' else f'[Confirmed] {name}', svc, when]
-        elif lang == 'en':
-            lines = [f'[Confirmed] {name}', f'Service: {svc}', f'Time: {when}']
-        else:
-            lines = [f'【预约确认】{name}', f'服务：{svc}', f'时间：{when}']
+        phone = '' if level >= 2 else biz_phone
+        svc = svc_name[:8] + '…' if (level >= 3 and len(svc_name) > 8) else svc_name
+        # 从尾部砍城市，商家可能把地址写成 "7128, Riley Dr, Fontana" 这种带多余逗号的
+        addr = full_addr.rsplit(',', 1)[0].strip()[:40] if level >= 4 else full_addr
+        name = biz_name[:10] + '…' if (level >= 5 and len(biz_name) > 10) else biz_name
+        bare = level >= 6
+        title = _SMS_TITLE[(kind, 'en' if en else 'zh')]
+        lines = [f'{title}{name}']
+        lines.append(svc if bare else (f'Service: {svc}' if en else f'服务：{svc}'))
+        lines.append(when if bare else (f'Time: {when}' if en else f'时间：{when}'))
         if addr:
-            lines.append(addr if level >= 5 else (f'Address: {addr}' if lang == 'en' else f'地址：{addr}'))
+            lines.append(addr if bare else (f'Address: {addr}' if en else f'地址：{addr}'))
         if link:
-            lines.append(link if level >= 5 else (f'Cancel: {link}' if lang == 'en' else f'取消：{link}'))
+            lines.append(link if bare else (f'Cancel: {link}' if en else f'取消：{link}'))
+        if phone:
+            lines.append(phone if bare else (f'Call {phone}' if en else f'电话 {phone}'))
         msg = '\n'.join(lines)
         if count_segments(msg) <= 2:
             break
     return msg
+
+
+def build_confirm_sms(biz_name, svc_name, apt_dt, address='', cancel_link='', lang='zh'):
+    return build_appointment_sms('confirm', biz_name, svc_name, apt_dt, address, cancel_link, '', lang)
+
+
+def build_reminder_sms(biz_name, svc_name, apt_dt, cancel_link='', biz_phone='', lang='zh'):
+    """提醒不放地址：客人下单时的确认短信里已经有了，这里的额度留给电话"""
+    return build_appointment_sms('reminder', biz_name, svc_name, apt_dt, '', cancel_link, biz_phone, lang)
 
 
 def record_sms(business_id, segments, kind='other', to_phone=''):

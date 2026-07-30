@@ -167,7 +167,7 @@ def handle_csrf_error(e):
 
 def send_reminders():
     from db import get_db
-    from blueprints.booking import send_sms, format_phone
+    from blueprints.booking import send_sms, format_phone, build_reminder_sms
     db = None
     try:
         now = datetime.now(_LA)
@@ -178,8 +178,8 @@ def send_reminders():
         window_end   = (now + timedelta(hours=25)).strftime('%Y-%m-%d %H:%M')
         db = get_db()
         rows = db.execute(
-            "SELECT a.id, a.business_id, a.customer_name, a.phone, a.appointment_dt, a.cancel_token, "
-            "s.name as service_name, b.name as biz_name, b.address, b.phone as biz_phone "
+            "SELECT a.id, a.business_id, a.customer_name, a.phone, a.appointment_dt, a.cancel_token, a.lang, "
+            "s.name as service_name, b.name as biz_name, b.phone as biz_phone "
             "FROM appointments a "
             "JOIN services s ON a.service_id = s.id "
             "JOIN businesses b ON a.business_id = b.id "
@@ -196,23 +196,11 @@ def send_reminders():
             ).fetchone()
             db.commit()
             if claimed:
-                try:
-                    dt = datetime.strptime(row['appointment_dt'], '%Y-%m-%d %H:%M')
-                    dt_display = dt.strftime('%Y年%-m月%-d日 %-H:%M')
-                except Exception:
-                    dt_display = row['appointment_dt']
                 base_url = os.environ.get('BASE_URL', '').rstrip('/')
                 cancel_link = f"{base_url}/c/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
-                if cancel_link:
-                    cancel_line = f"如需取消：{cancel_link}" + (f"\n或致电 {row['biz_phone']}" if row['biz_phone'] else '')
-                else:
-                    cancel_line = f"如需取消请致电 {row['biz_phone']}" if row['biz_phone'] else ''
-                # 短信按段计费，地址已在确认短信/小程序里，提醒不再重复以省钱
-                msg = (
-                    f"【预约提醒】{row['customer_name']} 明天在 {row['biz_name']} 有预约\n"
-                    f"服务：{row['service_name']}\n"
-                    f"时间：{dt_display}\n"
-                    + cancel_line
+                msg = build_reminder_sms(
+                    row['biz_name'], row['service_name'], row['appointment_dt'],
+                    cancel_link, row['biz_phone'] or '', row['lang'] or 'zh'
                 )
                 threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg, row['business_id'], 'reminder'), daemon=True).start()
     except Exception as e:
