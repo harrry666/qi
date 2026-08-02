@@ -25,10 +25,21 @@ def test_confirm_has_address_and_no_phone():
     assert PHONE not in msg
 
 
-def test_reminder_says_tomorrow_and_keeps_phone():
-    msg = build_reminder_sms('Chris Hair Studio', '男士剪发', '2026-07-31 14:00', LINK, PHONE)
+def test_reminder_says_tomorrow_and_has_address():
+    msg = build_reminder_sms('Chris Hair Studio', '男士剪发', '2026-07-31 14:00',
+                             '7128, Riley Dr, Fontana CA 92336', LINK, PHONE)
     assert '明天' in msg
+    assert '7128, Riley Dr, Fontana' in msg
     assert PHONE in msg
+    assert count_segments(msg) == 2
+
+
+def test_reminder_drops_phone_before_address():
+    """额度不够时电话先走，地址是客人当天真正要用的"""
+    msg = build_reminder_sms('超级无敌长名字美容美发养生连锁旗舰店', '深层清洁补水面部护理套餐',
+                             '2026-07-31 14:00', '12345 East Foothill Blvd, Rancho Cucamonga', LINK, PHONE)
+    assert 'Foothill' in msg
+    assert PHONE not in msg
 
 
 def test_placeholder_address_produces_no_address_line():
@@ -48,7 +59,7 @@ def test_placeholder_address_produces_no_address_line():
 def test_never_exceeds_two_segments(lang, biz, svc, addr):
     """短信按段计费，2 段是成本红线。任何店名/服务名/地址长度都得靠降级压住"""
     assert count_segments(build_confirm_sms(biz, svc, '2026-07-31 14:00', addr, LINK, lang)) <= 2
-    assert count_segments(build_reminder_sms(biz, svc, '2026-07-31 14:00', LINK, PHONE, lang)) <= 2
+    assert count_segments(build_reminder_sms(biz, svc, '2026-07-31 14:00', addr, LINK, PHONE, lang)) <= 2
 
 
 def test_bad_date_does_not_crash():

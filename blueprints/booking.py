@@ -97,9 +97,10 @@ def build_confirm_sms(biz_name, svc_name, apt_dt, address='', cancel_link='', la
     return build_appointment_sms('confirm', biz_name, svc_name, apt_dt, address, cancel_link, '', lang)
 
 
-def build_reminder_sms(biz_name, svc_name, apt_dt, cancel_link='', biz_phone='', lang='zh'):
-    """提醒不放地址：客人下单时的确认短信里已经有了，这里的额度留给电话"""
-    return build_appointment_sms('reminder', biz_name, svc_name, apt_dt, '', cancel_link, biz_phone, lang)
+def build_reminder_sms(biz_name, svc_name, apt_dt, address='', cancel_link='', biz_phone='', lang='zh'):
+    """提醒也带地址：客人当天要照着导航，不能指望他去翻几天前的确认短信。
+    额度不够时按降级顺序先砍电话，地址留到最后"""
+    return build_appointment_sms('reminder', biz_name, svc_name, apt_dt, address, cancel_link, biz_phone, lang)
 
 
 def record_sms(business_id, segments, kind='other', to_phone=''):

@@ -179,7 +179,7 @@ def send_reminders():
         db = get_db()
         rows = db.execute(
             "SELECT a.id, a.business_id, a.customer_name, a.phone, a.appointment_dt, a.cancel_token, a.lang, "
-            "s.name as service_name, b.name as biz_name, b.phone as biz_phone "
+            "s.name as service_name, b.name as biz_name, b.phone as biz_phone, b.address as biz_address "
             "FROM appointments a "
             "JOIN services s ON a.service_id = s.id "
             "JOIN businesses b ON a.business_id = b.id "
@@ -200,7 +200,7 @@ def send_reminders():
                 cancel_link = f"{base_url}/c/{row['cancel_token']}" if (base_url and row['cancel_token']) else ''
                 msg = build_reminder_sms(
                     row['biz_name'], row['service_name'], row['appointment_dt'],
-                    cancel_link, row['biz_phone'] or '', row['lang'] or 'zh'
+                    row['biz_address'] or '', cancel_link, row['biz_phone'] or '', row['lang'] or 'zh'
                 )
                 threading.Thread(target=send_sms, args=(format_phone(row['phone']), msg, row['business_id'], 'reminder'), daemon=True).start()
     except Exception as e:
