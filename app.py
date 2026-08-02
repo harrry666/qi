@@ -214,6 +214,7 @@ def send_reminders():
 def send_wx_reminders():
     from db import get_db
     from blueprints.wx import send_subscribe_message, wx_configured
+    from blueprints.booking import wx_short_address
     if not wx_configured():
         return
     db = None
@@ -249,7 +250,7 @@ def send_wx_reminders():
                     'thing6': {'value': (row['biz_name'] or '')[:20]},
                     'thing13': {'value': (row['service_name'] or '')[:20]},
                     'date3': {'value': dt_display},
-                    'thing2': {'value': (row['address'] or '本店')[:20]},
+                    'thing2': {'value': wx_short_address(row['address']) or '本店'},
                 }
                 threading.Thread(
                     target=send_subscribe_message, args=(row['openid'], data), daemon=True

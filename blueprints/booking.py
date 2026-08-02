@@ -52,6 +52,15 @@ def short_address(address):
     return '' if _ADDR_PLACEHOLDER.match(addr) else addr
 
 
+def wx_short_address(address):
+    """微信订阅消息 thing 字段硬上限 20 字。先去州和邮编，再砍城市，硬截是最后一步，
+    保证客人至少看得到完整的门牌号和街名"""
+    addr = short_address(address)
+    if len(addr) > 20:
+        addr = addr.rsplit(',', 1)[0].strip()
+    return addr if len(addr) <= 20 else addr[:19] + '…'
+
+
 _SMS_TITLE = {
     ('confirm', 'zh'): '【预约确认】', ('confirm', 'en'): '[Confirmed] ',
     ('reminder', 'zh'): '【预约提醒】明天 ', ('reminder', 'en'): '[Reminder] Tomorrow ',
