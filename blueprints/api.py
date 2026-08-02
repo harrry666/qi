@@ -212,20 +212,10 @@ def create_booking():
     if len(phone) != 10:
         return jsonify({'error': '请输入有效的10位手机号'}), 400
 
-    if TWILIO_VERIFY_SID:
-        if not verify_code:
-            return jsonify({'error': '请输入手机验证码'}), 400
-        try:
-            from twilio.rest import Client
-            from blueprints.booking import TWILIO_SID, TWILIO_TOKEN, format_phone
-            _client = Client(TWILIO_SID, TWILIO_TOKEN)
-            check = _client.verify.v2.services(TWILIO_VERIFY_SID).verification_checks.create(
-                to=format_phone(phone), code=verify_code
-            )
-            if check.status != 'approved':
-                return jsonify({'error': '验证码错误或已过期'}), 400
-        except Exception:
-            return jsonify({'error': '验证失败，请重新获取验证码'}), 400
+    from blueprints.booking import check_verify_code
+    ok, err = check_verify_code(phone, verify_code)
+    if not ok:
+        return jsonify({'error': err}), 400
 
     client = get_client_from_token()
     openid = client['openid'] if client else None
@@ -312,13 +302,17 @@ def create_booking():
 @limiter.limit('3 per minute; 10 per hour', key_func=_verify_rate_key)
 @limiter.limit('20 per hour')
 def verify_send():
-    from blueprints.booking import TWILIO_SID, TWILIO_TOKEN, format_phone
+    from blueprints.booking import TWILIO_SID, TWILIO_TOKEN, format_phone, phone_verified_recently
     data = request.json or {}
     phone = (data.get('phone') or '').strip()
     if not phone:
         return jsonify({'error': '请输入手机号'}), 400
     if not TWILIO_VERIFY_SID:
         return jsonify({'error': '验证服务未配置'}), 500
+    # skip_ok 是前端表态「我认得 skipped，会把验证码框藏掉」。
+    # 小程序旧版本不传，照旧发码，免得客人干等一条永远不会来的短信
+    if data.get('skip_ok') and phone_verified_recently(normalize_phone(phone)):
+        return jsonify({'sent': True, 'skipped': True})
     try:
         from twilio.rest import Client
         client = Client(TWILIO_SID, TWILIO_TOKEN)

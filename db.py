@@ -167,6 +167,10 @@ def init_db():
             created_at TIMESTAMPTZ DEFAULT NOW()
         )''',
         'CREATE INDEX IF NOT EXISTS idx_open_overrides_biz_date ON business_open_overrides (business_id, date)',
+        '''CREATE TABLE IF NOT EXISTS verified_phones (
+            phone TEXT PRIMARY KEY,
+            verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )''',
         '''CREATE TABLE IF NOT EXISTS password_reset_tokens (
             id SERIAL PRIMARY KEY,
             business_id INTEGER NOT NULL,

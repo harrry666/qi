@@ -15,7 +15,7 @@ const T = {
     step_info: '③ 填信息', step_info_s: '④ 填信息', step_confirm: '④ 确认', step_confirm_s: '⑤ 确认',
     no_services: '暂无可用服务。', price_tbd: '价格面议', any_staff: '任意可用',
     phone_invalid: '请先输入有效的10位美国手机号', sending: '发送中...', resend: '重新发送',
-    send_code: '获取验证码', send_fail: '发送失败，请重试',
+    send_code: '获取验证码', send_fail: '发送失败，请重试', verified: '已验证 ✓',
     need_name: '请填写姓名。', need_code: '请先点击「获取验证码」并输入收到的验证码',
     need_consent: '请勾选短信同意框以确认预约。',
     lbl_service: '服务', lbl_staff: '服务人员', lbl_datetime: '日期时间', lbl_price: '价格',
@@ -29,7 +29,7 @@ const T = {
     step_info: '③ Info', step_info_s: '④ Info', step_confirm: '④ Confirm', step_confirm_s: '⑤ Confirm',
     no_services: 'No services available yet.', price_tbd: 'Price on request', any_staff: 'Any available',
     phone_invalid: 'Please enter a valid 10-digit US phone number', sending: 'Sending...', resend: 'Resend',
-    send_code: 'Send code', send_fail: 'Failed to send, please try again',
+    send_code: 'Send code', send_fail: 'Failed to send, please try again', verified: 'Verified ✓',
     need_name: 'Please enter your name.', need_code: 'Please tap "Send code" and enter the code you receive',
     need_consent: 'Please check the SMS consent box to confirm your appointment.',
     lbl_service: 'Service', lbl_staff: 'Staff', lbl_datetime: 'Date & time', lbl_price: 'Price',
@@ -408,9 +408,15 @@ async function sendVerifyCode() {
     const res = await fetch('/api/verify/send', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, skip_ok: true }),
     });
     const data = await res.json();
+    if (data.skipped) {
+      state.phoneSkipVerify = true;
+      document.getElementById('code-row').style.display = 'none';
+      btn.textContent = L('verified');
+      return;
+    }
     if (data.sent) {
       document.getElementById('code-row').style.display = 'block';
       _codeCountdown = 60;
@@ -449,7 +455,7 @@ function showConfirmScreen() {
   }
   phoneError.style.display = 'none';
   const codeRow = document.getElementById('code-row');
-  if (codeRow) {
+  if (codeRow && !state.phoneSkipVerify) {
     const code = (document.getElementById('cust-code').value || '').trim();
     if (!code) {
       phoneError.textContent = L('need_code');
@@ -561,7 +567,19 @@ function resetBooking() {
   if (codeRow) codeRow.style.display = 'none';
   const sendBtn = document.getElementById('btn-send-code');
   if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = L('send_code'); }
+  state.phoneSkipVerify = false;
   showScreen('screen-services');
+}
+
+// 换了手机号就作废免验证状态，否则用老客号码点一下就能拿新号绕过验证
+const _phoneEl = document.getElementById('cust-phone');
+if (_phoneEl) {
+  _phoneEl.addEventListener('input', () => {
+    if (!state.phoneSkipVerify) return;
+    state.phoneSkipVerify = false;
+    const b = document.getElementById('btn-send-code');
+    if (b) { b.disabled = false; b.textContent = L('send_code'); }
+  });
 }
 
 loadServices();

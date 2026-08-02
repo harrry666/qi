@@ -24,6 +24,68 @@ TWILIO_FROM       = os.environ.get('TWILIO_FROM', '')
 TWILIO_VERIFY_SID = os.environ.get('TWILIO_VERIFY_SID', '')
 
 
+VERIFY_SKIP_DAYS = 90
+
+
+def phone_verified_recently(phone):
+    """90 天内验证过的号码免验证码。Twilio Verify 每次 $0.05，占账单四成，
+    老客复购不该反复付这笔。窗口过期后重新验证一次"""
+    if not phone:
+        return False
+    cutoff = datetime.now(_LA) - timedelta(days=VERIFY_SKIP_DAYS)
+    db = get_db()
+    try:
+        return db.execute(
+            'SELECT 1 FROM verified_phones WHERE phone=%s AND verified_at > %s',
+            (phone, cutoff)
+        ).fetchone() is not None
+    except Exception as e:
+        # 查不到就当没验证过，宁可多发一条也不能把验证关掉
+        print(f'[Verify] lookup failed {phone}: {e}', flush=True, file=sys.stderr)
+        return False
+    finally:
+        db.close()
+
+
+def mark_phone_verified(phone):
+    if not phone:
+        return
+    db = get_db()
+    try:
+        db.execute(
+            'INSERT INTO verified_phones (phone, verified_at) VALUES (%s, NOW()) '
+            'ON CONFLICT (phone) DO UPDATE SET verified_at = NOW()',
+            (phone,)
+        )
+        db.commit()
+    except Exception as e:
+        print(f'[Verify] mark failed {phone}: {e}', flush=True, file=sys.stderr)
+    finally:
+        db.close()
+
+
+def check_verify_code(phone, verify_code):
+    """网页和小程序共用的下单前手机校验，返回 (ok, error)。
+    校验通过就把号码记进免验证名单，下次 90 天内直接放行"""
+    if not TWILIO_VERIFY_SID:
+        return True, None
+    if phone_verified_recently(phone):
+        return True, None
+    if not verify_code:
+        return False, '请输入手机验证码'
+    try:
+        from twilio.rest import Client
+        check = Client(TWILIO_SID, TWILIO_TOKEN).verify.v2.services(TWILIO_VERIFY_SID).verification_checks.create(
+            to=format_phone(phone), code=verify_code
+        )
+        if check.status != 'approved':
+            return False, '验证码错误或已过期'
+    except Exception:
+        return False, '验证失败，请重新获取验证码'
+    mark_phone_verified(phone)
+    return True, None
+
+
 def format_phone(raw):
     digits = re.sub(r'\D', '', raw)
     if len(digits) == 10:
@@ -410,19 +472,9 @@ def api_create(slug):
     except ValueError:
         return jsonify({'error': 'Invalid appointment time'}), 400
 
-    if TWILIO_VERIFY_SID:
-        verify_code = (data.get('verify_code') or '').strip()
-        if not verify_code:
-            return jsonify({'error': '请输入手机验证码'}), 400
-        try:
-            from twilio.rest import Client as _TwilioClient
-            _check = _TwilioClient(TWILIO_SID, TWILIO_TOKEN).verify.v2.services(TWILIO_VERIFY_SID).verification_checks.create(
-                to=format_phone(phone), code=verify_code
-            )
-            if _check.status != 'approved':
-                return jsonify({'error': '验证码错误或已过期'}), 400
-        except Exception:
-            return jsonify({'error': '验证失败，请重新获取验证码'}), 400
+    _ok, _err = check_verify_code(phone, (data.get('verify_code') or '').strip())
+    if not _ok:
+        return jsonify({'error': _err}), 400
 
     cancel_token = secrets.token_urlsafe(8)
 
